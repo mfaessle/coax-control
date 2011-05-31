@@ -1,0 +1,16 @@
+.DS_Store
+*~
+*.mat
+*.asv
+_*.py
+*.pyc
+
+build
+bin
+lib
+
+srv_gen
+msg_gen
+
+coax-software/
+

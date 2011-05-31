@@ -1,0 +1,21 @@
+<package>
+  <description brief="coax_interface">
+
+     coax_interface
+
+  </description>
+  <author>Matthias Faessler</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/coax_interface</url>
+  <depend package="rospy"/>
+  <depend package="roscpp"/>
+  <depend package="std_msgs"/>
+  <depend package="geometry_msgs"/>
+  <depend package="nav_msgs"/>
+  <depend package="coax_msgs"/>
+
+
+</package>
+
+
