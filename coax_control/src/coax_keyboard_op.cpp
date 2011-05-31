@@ -3,10 +3,13 @@
 #include <fcntl.h>
 #include <termios.h>
 #include <stdio.h>
+
+#include <coax_msgs/CoaxConfigureComm.h>
 #include <coax_msgs/CoaxControl.h>
-#include <coax_msgs/CoaxSetControl.h>
 #include <coax_msgs/CoaxReachNavState.h>
 #include <coax_msgs/CoaxSetTrimMode.h>
+
+#include <com/sbapi.h>
 
 #define KEYCODE_RGT 0x36 
 #define KEYCODE_LFT 0x34
@@ -29,10 +32,11 @@
 class CoaxKeyboardOperation
 {
 protected:
-	ros::ServiceClient reach_nav_state_;
-	ros::ServiceClient set_control_;
-	ros::ServiceClient set_trim_mode_;
-	ros::Publisher control_pub_;	
+	ros::ServiceClient reach_nav_state;
+	ros::ServiceClient set_trim_mode;
+	ros::ServiceClient configure_comm;
+	
+	ros::Publisher control_pub;	
 	
 	int kfd;
 	struct termios cooked, raw;
@@ -41,20 +45,35 @@ public:
 	CoaxKeyboardOperation(ros::NodeHandle & n)
 	{
 		kfd = 0;
-		reach_nav_state_ = n.serviceClient<coax_msgs::CoaxReachNavState>("coax_server/reach_nav_state");
-		set_control_ = n.serviceClient<coax_msgs::CoaxSetControl>("coax_server/set_control");
-		set_trim_mode_ = n.serviceClient<coax_msgs::CoaxSetTrimMode>("coax_server/set_trim_mode");
-		control_pub_ = n.advertise<coax_msgs::CoaxControl>("coax_server/control",1);
+		reach_nav_state = n.serviceClient<coax_msgs::CoaxReachNavState>("coax_server/reach_nav_state");
+		set_trim_mode = n.serviceClient<coax_msgs::CoaxSetTrimMode>("coax_server/set_trim_mode");
+		configure_comm = n.serviceClient<coax_msgs::CoaxConfigureComm>("coax_server/configure_comm");
+		
+		control_pub = n.advertise<coax_msgs::CoaxControl>("coax_server/control",1);
 	}
 	~CoaxKeyboardOperation(){
 	}
 	
-	bool reach_nav_state(int des_state, float timeout)
+	bool configureComm(int frequency, int contents)
+	{
+		coax_msgs::CoaxConfigureComm srv;
+		srv.request.frequency = frequency;
+		srv.request.contents = contents;
+		if(configure_comm.call(srv)){
+			ROS_INFO("Communication configured: Freq[%dHz], Cont[%d]", frequency, contents);
+		}else{
+			ROS_INFO("Failed to call service configure_comm");
+		}
+		
+		return 0;
+	}
+	
+	bool reachNavState(int des_state, float timeout)
 	{
 		coax_msgs::CoaxReachNavState srv;
 		srv.request.desiredState = des_state;
 		srv.request.timeout = timeout;
-		if(reach_nav_state_.call(srv)){
+		if(reach_nav_state.call(srv)){
 			ROS_INFO("Set nav_state to: %d, Result: %d", des_state, srv.response.result);
 		}else{
 			ROS_INFO("Failed to call service reach_nav_state");
@@ -63,13 +82,13 @@ public:
 		return 0;
 	}
 	
-	bool set_trim_mode(int mode, float rollTrim, float pitchTrim)
+	bool setTrimMode(int mode, float rollTrim, float pitchTrim)
 	{
 		coax_msgs::CoaxSetTrimMode srv;
 		srv.request.mode.trimMode = mode;
 		srv.request.mode.rollTrim = rollTrim;
 		srv.request.mode.pitchTrim = pitchTrim;
-		if(set_trim_mode_.call(srv)){
+		if(set_trim_mode.call(srv)){
 			ROS_INFO("Trim Mode: [%d], Roll Trim: [%f], Pitch Trim: [%f] ", mode, rollTrim, pitchTrim);
 		}else{
 			ROS_INFO("Failed to call service set_trim_mode");
@@ -91,7 +110,7 @@ public:
 		altitude = 0;
 		pitchTrim = -0.35;
 		rollTrim = -0.24;
-		set_trim_mode(1,rollTrim,pitchTrim);
+		setTrimMode(1,rollTrim,pitchTrim);
 		
 		// get the console in raw mode                                                              
 		tcgetattr(kfd, &cooked);
@@ -110,12 +129,7 @@ public:
 			// get the next event from the keyboard  
 			if(read(kfd, &c, 1) < 0)
 			{
-				if (roll > 0){
-					roll = -0.1;
-				}else {
-					roll = 0.1;
-				}
-				//roll = 0;
+				roll = 0;
 				pitch = 0;
 				yaw = 0;
 			}else{
@@ -163,15 +177,15 @@ public:
 					break;
 				case KEYCODE_I:
 					ROS_DEBUG("I");
-					reach_nav_state(1,0.5);
+					reachNavState(1,0.5);
 					break;
 				case KEYCODE_K:
 					ROS_DEBUG("K");
-					reach_nav_state(0,0.5);
+					reachNavState(0,0.5);
 					break;
 				case KEYCODE_H:
 					ROS_DEBUG("H");
-					reach_nav_state(5,0.5);
+					reachNavState(5,0.5);
 					break;
 				case KEYCODE_Q:
 					ROS_DEBUG("Q");
@@ -180,22 +194,22 @@ public:
 				case KEYCODE_F:
 					ROS_DEBUG("F");
 					pitchTrim -= 0.01;
-					set_trim_mode(1,rollTrim,pitchTrim);
+					setTrimMode(1,rollTrim,pitchTrim);
 					break;
 				case KEYCODE_V:
 					ROS_DEBUG("V");
 					pitchTrim += 0.01;
-					set_trim_mode(1,rollTrim,pitchTrim);
+					setTrimMode(1,rollTrim,pitchTrim);
 					break;
 				case KEYCODE_C:
 					ROS_DEBUG("C");
 					rollTrim -= 0.01;
-					set_trim_mode(1,rollTrim,pitchTrim);
+					setTrimMode(1,rollTrim,pitchTrim);
 					break;
 				case KEYCODE_B:
 					ROS_DEBUG("B");
 					rollTrim += 0.01;
-					set_trim_mode(1,rollTrim,pitchTrim);
+					setTrimMode(1,rollTrim,pitchTrim);
 					break;
 				default:
 					roll = 0;
@@ -211,7 +225,7 @@ public:
 			control.pitch = pitch;
 			control.yaw = yaw;
 			control.altitude = altitude;
-			control_pub_.publish(control);
+			control_pub.publish(control);
 			
 			ros::spinOnce();
 			loop_rate.sleep();
@@ -224,7 +238,7 @@ public:
 	void quit(int sig)
 	{
 		tcsetattr(kfd, TCSANOW, &cooked);
-		reach_nav_state(0,0.5);
+		reachNavState(0,0.5);
 		ros::shutdown();
 		exit(0);
 	}
@@ -243,6 +257,7 @@ int main(int argc, char** argv)
 	
 	CoaxKeyboardOperation api(n);
 	
+	api.configureComm(10, SBS_MODES | SBS_BATTERY); // configuration of sending back data
 	
 	api.keyLoop(10);
 	

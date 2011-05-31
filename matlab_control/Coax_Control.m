@@ -545,35 +545,35 @@ switch CONTROL_MODE
 end
 prev_time = time;
 
-%%%%%%%%%
-pos = [A.pose.pose.position.x A.pose.pose.position.y A.pose.pose.position.z]';
-ori = [A.pose.pose.orientation.x A.pose.pose.orientation.y A.pose.pose.orientation.z A.pose.pose.orientation.w]';
-lintwist = [A.twist.twist.linear.x A.twist.twist.linear.y A.twist.twist.linear.z]';
-angtwist = [A.twist.twist.angular.x A.twist.twist.angular.y A.twist.twist.angular.z]';
-
-TimeStamps(i) = A.header.stamp;
-Positions(:,i) = pos;
-Orientations(:,i) = ori;
-Lintwists(:,i) = lintwist;
-Angtwists(:,i) = angtwist;
-Inputs(:,i) = [motor_up motor_lo servo1 servo2]';
-if (CONTROL_MODE ~= CONTROL_LANDED)
-    i = i+1;
-end
-%%%%%%%%%
+% %%%%%%%%%
+% pos = [A.pose.pose.position.x A.pose.pose.position.y A.pose.pose.position.z]';
+% ori = [A.pose.pose.orientation.x A.pose.pose.orientation.y A.pose.pose.orientation.z A.pose.pose.orientation.w]';
+% lintwist = [A.twist.twist.linear.x A.twist.twist.linear.y A.twist.twist.linear.z]';
+% angtwist = [A.twist.twist.angular.x A.twist.twist.angular.y A.twist.twist.angular.z]';
+% 
+% TimeStamps(i) = A.header.stamp;
+% Positions(:,i) = pos;
+% Orientations(:,i) = ori;
+% Lintwists(:,i) = lintwist;
+% Angtwists(:,i) = angtwist;
+% Inputs(:,i) = [motor_up motor_lo servo1 servo2]';
+% if (CONTROL_MODE ~= CONTROL_LANDED)
+%     i = i+1;
+% end
+% %%%%%%%%%
 
 end % end of loop
 
-%%%%%%%%%
-Data.time = TimeStamps - TimeStamps(1);
-Data.position = Positions;
-Data.orientation = Orientations;
-Data.lintwist = Lintwists;
-Data.angtwist = Angtwists;
-Data.inputs = Inputs;
-
-save ViconData Data
-%%%%%%%%%
+% %%%%%%%%%
+% Data.time = TimeStamps - TimeStamps(1);
+% Data.position = Positions;
+% Data.orientation = Orientations;
+% Data.lintwist = Lintwists;
+% Data.angtwist = Angtwists;
+% Data.inputs = Inputs;
+% 
+% save ViconData Data
+% %%%%%%%%%
 
 nav_msgs_Odometry('disconnect',pid);
 geometry_msgs_Quaternion('disconnect',iid);

@@ -65,7 +65,6 @@ public:
 		servo1 = 0;
 		servo2 = 0;
 		matlab_rawcontrol_age = 0;
-		
 	}
 	~CoaxInterface(){
 	}
@@ -104,8 +103,6 @@ public:
 		} else {
 			return 1; // not successful
 		}
-
-
 	}
 	
 	bool configureComm(int frequency, int contents)
@@ -133,7 +130,6 @@ public:
 			ROS_INFO("Failed to call service set_timeout");
 		}
 		return 0;
-
 	}
 	
 	//===================
@@ -153,12 +149,7 @@ public:
 	
 	void matlabTrimCallback(const geometry_msgs::Quaternion::ConstPtr & message)
 	{
-		float roll_trim;
-		float pitch_trim;
-		roll_trim = message->x;
-		pitch_trim = message->y;
-		
-		setTrimMode(1, roll_trim, pitch_trim);
+		setTrimMode(1, message->x, message->y);
 	}
 	
 	void matlabNavModeCallback(const std_msgs::Bool::ConstPtr & message)
@@ -189,23 +180,12 @@ public:
 	
 	void matlabRawControlCallback(const geometry_msgs::Quaternion::ConstPtr & message)
 	{
-		/*
-		coax_msgs::CoaxRawControl raw_control;
-		raw_control.motor1 = message->x;
-		raw_control.motor2 = message->y;
-		raw_control.servo1 = message->z;
-		raw_control.servo2 = message->w;
-		
-		raw_control_pub.publish(raw_control);
-		*/
-		
 		motor1 = message->x;
 		motor2 = message->y;
 		servo1 = message->z;
 		servo2 = message->w;
 		
 		matlab_rawcontrol_age = 0;
-		
 	}
 	
 	//===================
@@ -238,7 +218,6 @@ public:
 			ros::spinOnce();
 			loop_rate.sleep();
 		}
-		
 	}
 	
 	//===================
@@ -247,7 +226,6 @@ public:
 	
 	bool setControlMode(coax_interface::SetControlMode::Request &req, coax_interface::SetControlMode::Response &out)
 	{
-		
 		if (req.mode !=8) {
 			geometry_msgs::Quaternion control_mode;
 			control_mode.x = req.mode;

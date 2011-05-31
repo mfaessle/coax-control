@@ -14,7 +14,7 @@
   <depend package="geometry_msgs"/>
   <depend package="nav_msgs"/>
   <depend package="coax_msgs"/>
-
+  <depend package="coax_server"/>
 
 </package>
 

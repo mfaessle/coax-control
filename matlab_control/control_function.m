@@ -162,10 +162,10 @@ a_lo_des     = asin(-z_SP(2)/cos(b_lo_des));
 % servo2       = b_lo_des/0.26;%b_lo_des/0.26;
 
 %% Test PID
-c            = 0.3;
-a_lo_des     = -c*Rw2b(2,:)*[F_des(1) F_des(2) 0];
-b_lo_des     = c*Rw2b(1,:)*[F_des(1) F_des(2) 0];
-omega_lo_sq  = (Rw2b(3,:)*F_des + k_Tup/k_Mup*Mz_des)/(k_Tup/k_Mup*k_Mlo + k_Tlo);
+c            = 0.5;
+a_lo_des     = -c*F_des(2);
+b_lo_des     = c*F_des(1);
+omega_lo_sq  = (F_des(3) + k_Tup/k_Mup*Mz_des)/(k_Tup/k_Mup*k_Mlo + k_Tlo);
 Omega_lo_des = sqrt(omega_lo_sq);
 Omega_up_des = sqrt(1/k_Mup*(k_Mlo*omega_lo_sq - Mz_des));
 

@@ -1,14 +1,14 @@
 <launch>
-
+<!--
   <node pkg="vicon"
         name="vicon"
         type="vicon"
         output="screen">
   </node>
-
+-->
 
   <group ns="Coax56">
-
+<!--
     <node pkg="vicon_calibrate"
           name="vicon_calibrate"
           type="vicon_calibrate"
@@ -38,7 +38,7 @@
       <remap from="~topic" to="/Coax56/vicon2odometry/odom"/>
       <param name="message" value="odom56"/>
     </node>
-
+-->
     <node pkg="coax_server"
           name="coax"
           type="coax_server"

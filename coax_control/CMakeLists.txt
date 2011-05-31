@@ -16,6 +16,11 @@ set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 #set the default path for built libraries to the "lib" directory
 set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 
+set(COAXHOME $ENV{HOME}/git/CoaX/coax-software/deploy)
+set(COAXTARGET linux)
+link_directories(${COAXHOME}/${COAXTARGET}/lib)
+include_directories(${COAXHOME}/${COAXTARGET}/include)
+
 #uncomment if you have defined messages
 #rosbuild_genmsg()
 #uncomment if you have defined services
@@ -29,6 +34,5 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 #rosbuild_add_executable(example examples/example.cpp)
 #target_link_libraries(example ${PROJECT_NAME})
 
-rosbuild_add_executable(coax_control src/coax_control.cpp)
 rosbuild_add_executable(coax_keyboard_op src/coax_keyboard_op.cpp)
 rosbuild_add_executable(coax_keyboard_raw src/coax_keyboard_raw.cpp)
