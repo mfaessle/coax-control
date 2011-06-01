@@ -17,9 +17,9 @@ else
 end
 
 % Filtering
-% pqr_filter = zeros(3,2);
-% vel_filter = zeros(3,2);
-% filt_window = [0.66 0.34]';
+pqr_filter = zeros(3,2);
+vel_filter = zeros(3,2);
+filt_window = [0.66 0.34]';
 
 % General Constants
 CONTROL_LANDED = 0; % State when helicopter has landed successfully
@@ -52,8 +52,7 @@ GOTOPOS_VELOCITY = 0.2;
 run constants
 run control_constants
 CONTROL_MODE = CONTROL_LANDED;
-e_i = [0 0 0]';
-e_i_prev = [0 0 0]';
+e_i = [0 0 0 0]';
 FIRST_HOVER = 0;
 FIRST_LANDING = 0;
 FIRST_TRAJECTORY = 0;
@@ -101,6 +100,11 @@ if (~isempty(mode))
                         nav_mode.data = 1;
                         std_msgs_Bool('send',mid,nav_mode); % switch to NAV_RAW_MODE
                     end
+                    % set initial trim
+                    trim = geometry_msgs_Quaternion('empty');
+                    trim.x = 0;%-0.016;
+                    trim.y = 0;%-0.038;
+                    geometry_msgs_Quaternion('send',tid,trim);
                     % switch to start procedure
                     CONTROL_MODE = CONTROL_START;
                     FIRST_START = 1;
@@ -158,7 +162,7 @@ info = geometry_msgs_Quaternion('read',iid,1);
 if (~isempty(info)) % if empty catch it the next time
     if (((info.y + 0.17) < 11) && ~LOW_POWER_DETECTED)
         LOW_POWER_DETECTED = 1;
-        fprintf('Battery Low!!! (< 11V) Landing initialized \n');
+        fprintf('Battery Low!!! (%fV) Landing initialized \n',info.y+0.17);
     end
 %     if ((int8(info.x) ~= 7) && (CONTROL_MODE ~= CONTROL_LANDED))
 %         % Lost Zigbee connection
@@ -257,15 +261,15 @@ prev_rotmat = rotmat;
 prev_bodyrates = bodyrates;
 
 %% Filtering
-% pqr_filter = [bodyrates pqr_filter(:,1:end-1)];
-% p = pqr_filter(1,:)*filt_window;
-% q = pqr_filter(2,:)*filt_window;
-% r = pqr_filter(3,:)*filt_window;
-% 
-% vel_filter = [velocity vel_filter(:,1:end-1)];
-% xdot = vel_filter(1,:)*filt_window;
-% ydot = vel_filter(2,:)*filt_window;
-% zdot = vel_filter(3,:)*filt_window;
+pqr_filter = [bodyrates pqr_filter(:,1:end-1)];
+p = pqr_filter(1,:)*filt_window;
+q = pqr_filter(2,:)*filt_window;
+r = pqr_filter(3,:)*filt_window;
+
+vel_filter = [velocity vel_filter(:,1:end-1)];
+xdot = vel_filter(1,:)*filt_window;
+ydot = vel_filter(2,:)*filt_window;
+zdot = vel_filter(3,:)*filt_window;
 
 %% Observer
 % stabilizer bar orientation
@@ -338,7 +342,7 @@ switch CONTROL_MODE
             desPosition = START_POSITION;
             desPosition(3) = START_POSITION(3) + RISE_VELOCITY*(dt_start - IDLE_TIME);
             trajectory = [desPosition' 0 0 RISE_VELOCITY 0 0 0 START_ORIENTATION 0]';
-            [motor_up, motor_lo, servo1, servo2, e_i] = control_function(coax_state, Rb2w, trajectory, e_i_prev, dt, cont_const, contr_param);
+            [motor_up, motor_lo, servo1, servo2, e_i] = control_function(coax_state, Rb2w, trajectory, e_i, dt, cont_const, contr_param);
         else
             % Switch to CONTROL_HOVER at this position
                % implement some autonomous trimming of servos? (let integrators saturate)
@@ -346,7 +350,7 @@ switch CONTROL_MODE
             hover_position = START_POSITION + [0 0 START_HEIGHT]';
             hover_orientation = START_ORIENTATION;
             trajectory = [hover_position' 0 0 0 0 0 0 hover_orientation 0]';
-            [motor_up, motor_lo, servo1, servo2, e_i] = control_function(coax_state, Rb2w, trajectory, e_i_prev, dt, cont_const, contr_param);
+            [motor_up, motor_lo, servo1, servo2, e_i] = control_function(coax_state, Rb2w, trajectory, e_i, dt, cont_const, contr_param);
         end
         
         % send inputs
@@ -372,7 +376,7 @@ switch CONTROL_MODE
         end
 
         trajectory = [hover_position' 0 0 0 0 0 0 hover_orientation 0]';
-        [motor_up, motor_lo, servo1, servo2, e_i] = control_function(coax_state, Rb2w, trajectory, e_i_prev, dt, cont_const, contr_param);
+        [motor_up, motor_lo, servo1, servo2, e_i] = control_function(coax_state, Rb2w, trajectory, e_i, dt, cont_const, contr_param);
         
         % send inputs
         raw_control = geometry_msgs_Quaternion('empty');
@@ -403,23 +407,23 @@ switch CONTROL_MODE
         if (dt_gotopos < gotopos_duration)
             desPosition = initial_gotopos_position + GOTOPOS_VELOCITY*dt_gotopos*gotopos_direction;
             trajectory = [desPosition' GOTOPOS_VELOCITY*gotopos_direction' 0 0 0 gotopos_orientation 0]';
-            [motor_up, motor_lo, servo1, servo2, e_i] = control_function(coax_state, Rb2w, trajectory, e_i_prev, dt, cont_const, contr_param);
+            [motor_up, motor_lo, servo1, servo2, e_i] = control_function(coax_state, Rb2w, trajectory, e_i, dt, cont_const, contr_param);
         else
             if (SERVICE_LANDING)
                 CONTROL_MODE = CONTROL_LANDING;
                 desPosition = START_POSITION + [0 0 START_HEIGHT]';
                 trajectory = [desPosition' 0 0 0 0 0 0 gotopos_orientation 0]';
-                [motor_up, motor_lo, servo1, servo2, e_i] = control_function(coax_state, Rb2w, trajectory, e_i_prev, dt, cont_const, contr_param);
+                [motor_up, motor_lo, servo1, servo2, e_i] = control_function(coax_state, Rb2w, trajectory, e_i, dt, cont_const, contr_param);
             elseif (SERVICE_TRAJECTORY)
                 CONTROL_MODE = CONTROL_TRAJECTORY;
                 desPosition = coax_state(1:3);
                 trajectory = [desPosition' 0 0 0 0 0 0 gotopos_orientation 0]';
-                [motor_up, motor_lo, servo1, servo2, e_i] = control_function(coax_state, Rb2w, trajectory, e_i_prev, dt, cont_const, contr_param);
+                [motor_up, motor_lo, servo1, servo2, e_i] = control_function(coax_state, Rb2w, trajectory, e_i, dt, cont_const, contr_param);
             else
                 CONTROL_MODE = CONTROL_HOVER; % in the end
                 hover_position = gotopos_position; % manually entered goto position (if possible) #####
                 trajectory = [hover_position' 0 0 0 0 0 0 gotopos_orientation 0]';
-                [motor_up, motor_lo, servo1, servo2, e_i] = control_function(coax_state, Rb2w, trajectory, e_i_prev, dt, cont_const, contr_param);
+                [motor_up, motor_lo, servo1, servo2, e_i] = control_function(coax_state, Rb2w, trajectory, e_i, dt, cont_const, contr_param);
             end
         end
         
@@ -455,11 +459,11 @@ switch CONTROL_MODE
             end
             desPosition = coax_state(1:3);
             trajectory = [desPosition' 0 0 0 0 0 0 initial_trajectory_orientation 0]';
-            [motor_up, motor_lo, servo1, servo2, e_i] = control_function(coax_state, Rb2w, trajectory, e_i_prev, dt, cont_const, contr_param);
+            [motor_up, motor_lo, servo1, servo2, e_i] = control_function(coax_state, Rb2w, trajectory, e_i, dt, cont_const, contr_param);
         else
             dt_traj = etime(time, trajectory_time);
             trajectory = trajectory_generation(dt_traj,TRAJECTORY_TYPE);
-            [motor_up, motor_lo, servo1, servo2, e_i] = control_function(coax_state, Rb2w, trajectory, e_i_prev, dt, cont_const, contr_param);
+            [motor_up, motor_lo, servo1, servo2, e_i] = control_function(coax_state, Rb2w, trajectory, e_i, dt, cont_const, contr_param);
         end
         if (LOW_POWER_DETECTED)
             CONTROL_MODE = CONTROL_HOVER;
@@ -493,14 +497,14 @@ switch CONTROL_MODE
             end
             desPosition = coax_state(1:3);
             trajectory = [desPosition' 0 0 0 0 0 0 START_ORIENTATION 0]';
-            [motor_up, motor_lo, servo1, servo2, e_i] = control_function(coax_state, Rb2w, trajectory, e_i_prev, dt, cont_const, contr_param);
+            [motor_up, motor_lo, servo1, servo2, e_i] = control_function(coax_state, Rb2w, trajectory, e_i, dt, cont_const, contr_param);
         else
             dt_land = etime(time, landing_time);
             if (dt_land < SINK_TIME)
                 desPosition = START_POSITION + [0 0 START_HEIGHT]';
                 desPosition(3) = desPosition(3) - SINK_VELOCITY*dt_land;
                 trajectory = [desPosition' 0 0 -SINK_VELOCITY 0 0 0 START_ORIENTATION 0]';
-                [motor_up, motor_lo, servo1, servo2, e_i] = control_function(coax_state, Rb2w, trajectory, e_i_prev, dt, cont_const, contr_param);
+                [motor_up, motor_lo, servo1, servo2, e_i] = control_function(coax_state, Rb2w, trajectory, e_i, dt, cont_const, contr_param);
             elseif (dt_land < SINK_TIME + IDLE_TIME)
                 motor_up = 0.35;
                 motor_lo = 0.35;
@@ -508,7 +512,7 @@ switch CONTROL_MODE
                 servo2 = 0;
             else
                 CONTROL_MODE = CONTROL_LANDED; % in the end of maneuver
-                e_i = [0 0 0]'; % flush integrator
+                e_i = [0 0 0 0]'; % flush integrator
                 motor_up = 0;
                 motor_lo = 0;
                 servo1 = 0;

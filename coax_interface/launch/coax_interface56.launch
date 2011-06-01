@@ -1,14 +1,14 @@
 <launch>
-<!--
+
   <node pkg="vicon"
         name="vicon"
         type="vicon"
         output="screen">
   </node>
--->
+
 
   <group ns="Coax56">
-<!--
+
     <node pkg="vicon_calibrate"
           name="vicon_calibrate"
           type="vicon_calibrate"
@@ -38,7 +38,7 @@
       <remap from="~topic" to="/Coax56/vicon2odometry/odom"/>
       <param name="message" value="odom56"/>
     </node>
--->
+
     <node pkg="coax_server"
           name="coax"
           type="coax_server"
@@ -50,7 +50,6 @@
       <remap from="/coax_server/rawcontrol" to="/Coax56/rawcontrol"/>
 
       <remap from="/coax_server/reach_nav_state" to="/Coax56/reach_nav_state"/>
-      <remap from="/coax_server/set_trim_mode" to="/Coax56/set_trim_mode"/>
       <remap from="/coax_server/configure_comm" to="/Coax56/configure_comm"/>
       <remap from="/coax_server/set_timeout" to="/Coax56/set_timeout"/>
     </node>
@@ -69,7 +68,6 @@
       <remap from="/coax_interface/raw_control" to="/Coax56/matlab_raw_control"/>
 
       <remap from="/coax_interface/reach_nav_state" to="/Coax56/reach_nav_state"/>
-      <remap from="/coax_interface/set_trim_mode" to="/Coax56/set_trim_mode"/>
       <remap from="/coax_interface/configure_comm" to="/Coax56/configure_comm"/>
       <remap from="/coax_interface/set_timeout" to="/Coax56/set_timeout"/>
 

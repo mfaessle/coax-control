@@ -5,7 +5,6 @@
 
 #include <coax_interface/SetControlMode.h>
 #include <coax_msgs/CoaxConfigureComm.h>
-#include <coax_msgs/CoaxSetTrimMode.h>
 #include <coax_msgs/CoaxReachNavState.h>
 #include <coax_msgs/CoaxRawControl.h>
 #include <coax_msgs/CoaxSetTimeout.h>
@@ -18,7 +17,6 @@ class CoaxInterface
 {
 protected:
 	
-	ros::ServiceClient set_trim_mode;
 	ros::ServiceClient reach_nav_state;
 	ros::ServiceClient configure_comm;
 	ros::ServiceClient set_timeout;
@@ -34,6 +32,8 @@ protected:
 	
 	std::vector<ros::ServiceServer> set_control_mode;
 	
+	float roll_trim;
+	float pitch_trim;
 	float motor1;
 	float motor2;
 	float servo1;
@@ -45,7 +45,6 @@ public:
 	CoaxInterface(ros::NodeHandle & n)
 	{
 		reach_nav_state = n.serviceClient<coax_msgs::CoaxReachNavState>("reach_nav_state");
-		set_trim_mode = n.serviceClient<coax_msgs::CoaxSetTrimMode>("set_trim_mode");
 		configure_comm = n.serviceClient<coax_msgs::CoaxConfigureComm>("configure_comm");
 		set_timeout = n.serviceClient<coax_msgs::CoaxSetTimeout>("set_timeout");
 		
@@ -60,6 +59,8 @@ public:
 		
 		set_control_mode.push_back(n.advertiseService("set_control_mode", &CoaxInterface::setControlMode, this));
 		
+		roll_trim = 0;
+		pitch_trim = 0;
 		motor1 = 0;
 		motor2 = 0;
 		servo1 = 0;
@@ -72,21 +73,6 @@ public:
 	//===================
 	// Service Clients
 	//===================
-	
-	bool setTrimMode(int mode, float roll_trim, float pitch_trim)
-	{
-		coax_msgs::CoaxSetTrimMode srv;
-		srv.request.mode.trimMode = mode;
-		srv.request.mode.rollTrim = roll_trim;
-		srv.request.mode.pitchTrim = pitch_trim;
-		if(set_trim_mode.call(srv)){
-			ROS_INFO("Trim Mode: [%d], Roll Trim: [%f], Pitch Trim: [%f] ", mode, roll_trim, pitch_trim);
-		}else{
-			ROS_INFO("Failed to call service set_trim_mode");
-		}
-		
-		return 0;
-	}
 	
 	bool reachNavState(int des_state, float timeout)
 	{
@@ -149,7 +135,8 @@ public:
 	
 	void matlabTrimCallback(const geometry_msgs::Quaternion::ConstPtr & message)
 	{
-		setTrimMode(1, message->x, message->y);
+		roll_trim = message->x;
+		pitch_trim = message->y;
 	}
 	
 	void matlabNavModeCallback(const std_msgs::Bool::ConstPtr & message)
@@ -203,8 +190,8 @@ public:
 			if (matlab_rawcontrol_age < 20) {
 				raw_control.motor1 = motor1;
 				raw_control.motor2 = motor2;
-				raw_control.servo1 = servo1;
-				raw_control.servo2 = servo2;
+				raw_control.servo1 = servo1 + roll_trim;
+				raw_control.servo2 = servo2 + pitch_trim;
 			} else { // if matlab does not send any commands for too long send zero inputs
 				raw_control.motor1 = 0;
 				raw_control.motor2 = 0;

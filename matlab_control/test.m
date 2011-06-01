@@ -19,18 +19,18 @@ while i<1000
     
     dt = etime(clock, t0);
     if (dt < 2)
-        motor_up = 0.4;
-        motor_lo = 0.4;
+        motor_up = 0.35;
+        motor_lo = 0.35;
     else
-        motor_up = 0.4;
-        motor_lo = 0.4;
+        motor_up = 0.5;
+        motor_lo = 0.5;
     end
     
     servo1 = 0;
     
     raw_control.x = motor_up;
     raw_control.y = motor_lo;
-    raw_control.z = servo1;
+    raw_control.z = 0;
     raw_control.w = 0;
     geometry_msgs_Quaternion('send',cid,raw_control);
     
