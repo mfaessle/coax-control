@@ -39,6 +39,7 @@ protected:
 	float servo1;
 	float servo2;
 	int matlab_rawcontrol_age;
+	int desired_nav_mode;
 	
 public:
 	
@@ -66,6 +67,7 @@ public:
 		servo1 = 0;
 		servo2 = 0;
 		matlab_rawcontrol_age = 0;
+		desired_nav_mode = 0;
 	}
 	~CoaxInterface(){
 	}
@@ -130,6 +132,11 @@ public:
 		coax_info.z = 0;
 		coax_info.w = 0;
 		
+		if ((message->mode.navigation == 0) && (desired_nav_mode == 1)) {
+			ROS_INFO("Lost Zigbee connection for too long!!!");
+			desired_nav_mode = 0;
+		}
+		
 		coax_info_pub.publish(coax_info);
 	}
 	
@@ -149,7 +156,7 @@ public:
 
 		if (message->data) {
 			result = reachNavState(SB_NAV_RAW, 0.5); // Navigation raw mode
-
+			desired_nav_mode = 1;
 			if (result) {
 				// reachNavState not successful -> send error state 8 to matlab
 				geometry_msgs::Quaternion control_mode;
@@ -162,6 +169,7 @@ public:
 			
 		} else {
 			reachNavState(SB_NAV_STOP, 0.5); // Navigation stop mode
+			desired_nav_mode = 0;
 		}
 	}
 	
@@ -271,7 +279,7 @@ int main(int argc, char** argv)
 	CoaxInterface api(n);
 	
 	ros::Duration(1.5).sleep(); // make sure coax_server has enough time to boot up
-	api.configureComm(10, SBS_MODES | SBS_BATTERY); // configuration of sending back data
+	api.configureComm(10, SBS_MODES | SBS_BATTERY); // configuration of sending back data from CoaX
 	api.setTimeout(500, 5000);
 
 

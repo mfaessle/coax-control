@@ -22,8 +22,8 @@ while i<1000
         motor_up = 0.35;
         motor_lo = 0.35;
     else
-        motor_up = 0.5;
-        motor_lo = 0.5;
+        motor_up = 0.55;
+        motor_lo = 0.55;
     end
     
     servo1 = 0;

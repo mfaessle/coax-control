@@ -1,4 +1,4 @@
-function [motor_up, motor_lo, servo1, servo2, e_i] = control_function(state, Rb2w, trajectory, e_i_prev, dt, cont_const, contr_param)
+function [motor_up, motor_lo, servo1, servo2, e_i, trim_values] = control_function(state, Rb2w, trajectory, e_i_prev, dt, cont_const, contr_param)
 
 %=================================
 %%% Function inputs
@@ -165,7 +165,7 @@ Mz_des       = -K_psi*e_psi - K_psi_i*e_i(4) - K_omegaz*e_omegaz;
 % servo2       = b_lo_des/0.26;%b_lo_des/0.26;
 
 %% Test PID
-c            = 0.2;
+c            = 0.3;
 a_lo_des     = -c*Rw2b(2,:)*[F_des(1) F_des(2) 0]';
 b_lo_des     = c*Rw2b(1,:)*[F_des(1) F_des(2) 0]';
 
@@ -175,14 +175,24 @@ b_lo_des     = c*Rw2b(1,:)*[F_des(1) F_des(2) 0]';
 % motor_up     = (Omega_up_des + 21.5)/410;
 % motor_lo     = (Omega_lo_des + 21.5)/410;
 
-dmot         = 2*Mz_des;
-motor_up     = (F_des(3)+2.5)/10.7 - dmot/2;
-motor_lo     = (F_des(3)+2.5)/10.7 + dmot/2;
+d            = 2;
+dmot         = d*Mz_des;
+motor_up     = (F_des(3)+2.37)/10.3 - dmot/2;
+motor_lo     = (F_des(3)+2.37)/10.3 + dmot/2 + 0.02;
 servo1       = a_lo_des/0.26;%a_lo_des/0.26;
 servo2       = b_lo_des/0.26;%b_lo_des/0.26;
 
-%% Test LQR controller
+% Extract inputs from integrator for trimming
+F_int = -K_i*e_i(1:3,1);
+Mz_int = -K_psi_i*e_i(4);
+servo1_trim = -c*Rw2b(2,:)*[F_int(1) F_int(2) 0]'/0.26;
+servo2_trim = c*Rw2b(1,:)*[F_des(1) F_des(2) 0]'/0.26;
+motor_up_trim = (F_int(3)+2.37)/10.3 - d*Mz_int/2;
+motor_lo_trim = (F_int(3)+2.37)/10.3 + d*Mz_int/2;
 
+trim_values = [motor_up_trim motor_lo_trim servo1_trim servo2_trim]';
+
+%% Test LQR controller
 % load K_new 
 % load T_inv 
 % load W

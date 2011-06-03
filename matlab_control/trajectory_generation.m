@@ -10,11 +10,11 @@ switch TYPE
         omega      = 2*pi/10;
         vel_vert   = 0.5;
         
-        initial_pose = [radius 0 0 pi/2];
+        initial_pose = [radius 0 0.5 pi/2];
         
         x_ref      = radius*cos(omega*t);
         y_ref      = radius*sin(omega*t);
-        z_ref      = vel_vert*t;
+        z_ref      = initial_pose(3) + vel_vert*t;
         xdot_ref   = -radius*omega*sin(omega*t);
         ydot_ref   = radius*omega*cos(omega*t);
         zdot_ref   = vel_vert;
@@ -30,9 +30,9 @@ switch TYPE
         
         initial_pose = [1 1 1 0]';
         
-        x_ref      = 0;
-        y_ref      = 0;
-        z_ref      = 0;
+        x_ref      = initial_pose(1);
+        y_ref      = initial_pose(2);
+        z_ref      = initial_pose(3);
         xdot_ref   = 0;
         ydot_ref   = 0;
         zdot_ref   = 0;
@@ -42,21 +42,22 @@ switch TYPE
         psi_ref    = omega*t + initial_pose(4);
         psidot_ref = omega;
     
-    case 2 % CLIMBING
+    case 2 % Vertical Oscillation
 
-        vel_vert   = 1;
+        amplitude   = 0.5;
+        omega       = 2*pi/5;
         
-        initial_pose = [1 1 0 0]';
+        initial_pose = [0 0 1.5 0]';
         
-        x_ref      = 0;
-        y_ref      = 0;
-        z_ref      = vel_vert*t;
+        x_ref      = initial_pose(1);
+        y_ref      = initial_pose(2);
+        z_ref      = initial_pose(3) + amplitude*sin(omega*t);
         xdot_ref   = 0;
         ydot_ref   = 0;
-        zdot_ref   = vel_vert;
+        zdot_ref   = amplitude*omega*cos(omega*t);
         xddot_ref  = 0;
         yddot_ref  = 0;
-        zddot_ref  = 0;
+        zddot_ref  = -amplitude*omega^2*sin(omega*t);
         psi_ref    = initial_pose(4);
         psidot_ref = 0;
     
@@ -65,11 +66,11 @@ switch TYPE
         radius     = 1;
         omega      = 2*pi/10;
         
-        initial_pose = [radius 0 2 pi/2]';
+        initial_pose = [radius 0 1 pi/2]';
         
         x_ref      = radius*cos(omega*t);
         y_ref      = radius*sin(omega*t);
-        z_ref      = 0;
+        z_ref      = initial_pose(3);
         xdot_ref   = -radius*omega*sin(omega*t);
         ydot_ref   = radius*omega*cos(omega*t);
         zdot_ref   = 0;
@@ -84,11 +85,11 @@ switch TYPE
         radius     = 1;
         omega      = 2*pi/10;
         
-        initial_pose = [0 0 radius 0]';
+        initial_pose = [0 0 radius+0.5 0]';
         
         x_ref      = radius*sin(omega*t);
         y_ref      = 0;
-        z_ref      = radius*cos(omega*t);
+        z_ref      = initial_pose(3) + radius*cos(omega*t);
         xdot_ref   = radius*omega*cos(omega*t);
         ydot_ref   = 0*t;
         zdot_ref   = -radius*omega*sin(omega*t);
@@ -97,7 +98,26 @@ switch TYPE
         zddot_ref  = -radius*omega^2*cos(omega*t);
         psi_ref    = initial_pose(4);
         psidot_ref = 0;
-
+    
+    case 5 % Yaw Oscillations
+        
+        amplitude  = pi/6;
+        omega      = 2*pi/5;
+        
+        initial_pose = [0 0 1.5 0]';
+        
+        x_ref      = initial_pose(1);
+        y_ref      = initial_pose(2);
+        z_ref      = initial_pose(3);
+        xdot_ref   = 0;
+        ydot_ref   = 0;
+        zdot_ref   = 0;
+        xddot_ref  = 0;
+        yddot_ref  = 0;
+        zddot_ref  = 0;
+        psi_ref    = initial_pose(4) + amplitude*sin(omega*t);
+        psidot_ref = amplitude*omega*cos(omega*t);
+            
 end
 
 trajectory = [x_ref y_ref z_ref xdot_ref ydot_ref zdot_ref ...
