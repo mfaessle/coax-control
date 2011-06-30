@@ -1,0 +1,37 @@
+===================
+CoaX Specifications
+===================
+
+Mass: 0.301 kg
+
+Rotor Diameter: 0.342 m
+
+Gear Ratio: 2/9
+
+Motor Type: ROXXY BL-Outrunner 1820/16
+
+Motor Speeds (with Load):
+  Hover:
+    upper rotor: 9090 rpm
+    lower rotor: 9900 rpm
+  Maximum: 13770 rpm
+
+Rotor Speeds:
+  Hover:
+    upper rotor: 2020 rpm
+    lower rotor: 2200 rpm
+  Maximum: 3150 rpm
+
+Currents (in Hover):
+  Motors (both): 2.95 A
+  Total: 3.11 A
+
+Power Consumption (in Hover):
+  Motors (both): 36.31 W
+  Total: 38.22 W 
+
+Rotor Tip Speeds:
+  Nominal: 37.8 m/s
+  Maximal: 56.4 m/s
+
+Max time in hover: ca. 17 min
