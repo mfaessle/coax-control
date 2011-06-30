@@ -16,7 +16,7 @@
           clear_params="true">
       <remap from="~values" to="/vicon/values"/>
       <remap from="~names" to="/vicon/names"/>
-      <param name="calibration" value="$(find vicon_vsk)/calibration/Coax56_calib.xml"/>
+      <param name="calibration" value="$(find vicon_vsk)/calibration/Coax56.xml"/>
     </node>
 
     <node pkg="vicon2odometry"

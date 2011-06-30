@@ -87,7 +87,8 @@ Inputs = [];
 Trims = [];
 servo1 = 0;
 servo2 = 0;
-volt_comp = 1;
+volt_compUp = 0;
+volt_compLo = 0;
 
 while (1)
     
@@ -105,7 +106,7 @@ if (~isempty(mode))
                     info = geometry_msgs_Quaternion('read',iid,1);
                 end
                 
-                if ((0.99*info.y + 0.33) > 11)
+                if ((0.89*info.y + 1.39) > 11)
                     if (info.x < 5)
                         nav_mode = std_msgs_Bool('empty');
                         nav_mode.data = 1;
@@ -126,7 +127,7 @@ if (~isempty(mode))
                     FIRST_START = 1;
                 else
                     if (~LOW_POWER_DETECTED)
-                        fprintf('Battery Low!!! (< 11V) Start denied \n');
+                        fprintf('Battery Low!!! (%f V) Start denied \n',(0.89*info.y + 1.39));
                     end
                     LOW_POWER_DETECTED = 1;
                 end
@@ -150,12 +151,15 @@ if (~isempty(mode))
                 CONTROL_MODE = CONTROL_LANDING;
                 FIRST_LANDING = 1;
             end
+        case 7 % Lost Zigbee connection
+            fprintf('Lost Zigbee connection for more than 0.5s \n'); 
         case 8 % failed to call reach_nav_state
             if (CONTROL_MODE == CONTROL_START)
                 CONTROL_MODE = CONTROL_LANDED;
                 FIRST_START = 0;
                 fprintf('Not possible to switch to NAV_RAW_MODE \n');
                 fprintf('Set RC to "autonomous" and Kill Switch to off \n');
+                fprintf('Check if Zigbee connection is working \n');
             end
         case 9 % quit
             %if (CONTROL_MODE == CONTROL_LANDED)
@@ -176,9 +180,9 @@ end
 %% Low power and Communication loss detection
 info = geometry_msgs_Quaternion('read',iid,1);
 if (~isempty(info)) % if empty catch it the next time
-    if (((0.99*info.y + 0.33) < 11) && ~LOW_POWER_DETECTED)
+    if (((0.89*info.y + 1.39) < 11) && ~LOW_POWER_DETECTED)
         LOW_POWER_DETECTED = 1;
-        fprintf('Battery Low!!! (%fV) Landing initialized \n',0.99*info.y+0.33);
+        fprintf('Battery Low!!! (%fV) Landing initialized \n',0.89*info.y + 1.39);
     end
 %     if ((int8(info.x) ~= 7) && (CONTROL_MODE ~= CONTROL_LANDED))
 %         % Lost Zigbee connection
@@ -550,10 +554,11 @@ end
 % Voltage compensation
 if (~isempty(info))
     v_bat = round(100*info.y)/100;
-    volt_comp = 12.54/(0.99*v_bat + 0.33); % measured voltage does not correspond to true voltage
+    volt_compUp = (12.22 - v_bat)*0.0279;
+    volt_compLo = (12.22 - v_bat)*0.0287;
 end;
-motor_up = motor_up*volt_comp;
-motor_lo = motor_lo*volt_comp;
+motor_up = motor_up + volt_compUp;
+motor_lo = motor_lo + volt_compLo;
 
 % send inputs
 raw_control = geometry_msgs_Quaternion('empty');
@@ -565,41 +570,41 @@ geometry_msgs_Quaternion('send',cid,raw_control);
 
 prev_time = time;
 
-% %%%%%%%%%
-% if (CONTROL_MODE == CONTROL_HOVER)
-%     pos = [A.pose.pose.position.x A.pose.pose.position.y A.pose.pose.position.z]';
-%     ori = [A.pose.pose.orientation.x A.pose.pose.orientation.y A.pose.pose.orientation.z A.pose.pose.orientation.w]';
-%     lintwist = [A.twist.twist.linear.x A.twist.twist.linear.y A.twist.twist.linear.z]';
-%     angtwist = [A.twist.twist.angular.x A.twist.twist.angular.y A.twist.twist.angular.z]';
-% 
-%     TimeStamps(i) = A.header.stamp;
-%     Positions(:,i) = pos;
-%     Orientations(:,i) = ori;
-%     Lintwists(:,i) = lintwist;
-%     Angtwists(:,i) = angtwist;
-%     Inputs(:,i) = [motor_up motor_lo servo1 servo2]';
-% %     if (CONTROL_MODE == CONTROL_HOVER)
-% %         Trims(:,i) = trim_values;
-% %     else
-% %         Trims(:,i) = [0 0 0 0]';
-% %     end
-%     i = i+1;
-% end
-% %%%%%%%%%
+%%%%%%%%%
+if (CONTROL_MODE == CONTROL_HOVER)
+    pos = [A.pose.pose.position.x A.pose.pose.position.y A.pose.pose.position.z]';
+    ori = [A.pose.pose.orientation.x A.pose.pose.orientation.y A.pose.pose.orientation.z A.pose.pose.orientation.w]';
+    lintwist = [A.twist.twist.linear.x A.twist.twist.linear.y A.twist.twist.linear.z]';
+    angtwist = [A.twist.twist.angular.x A.twist.twist.angular.y A.twist.twist.angular.z]';
+
+    TimeStamps(i) = A.header.stamp;
+    Positions(:,i) = pos;
+    Orientations(:,i) = ori;
+    Lintwists(:,i) = lintwist;
+    Angtwists(:,i) = angtwist;
+    Inputs(:,i) = [motor_up-volt_compUp motor_lo-volt_compLo servo1 servo2]';
+%     if (CONTROL_MODE == CONTROL_HOVER)
+%         Trims(:,i) = trim_values;
+%     else
+%         Trims(:,i) = [0 0 0 0]';
+%     end
+    i = i+1;
+end
+%%%%%%%%%
 % fprintf('CONTROL_MODE: %d \n',CONTROL_MODE);
 end % end of loop
 
-% %%%%%%%%%
-% Data.time = TimeStamps - TimeStamps(1);
-% Data.position = Positions;
-% Data.orientation = Orientations;
-% Data.lintwist = Lintwists;
-% Data.angtwist = Angtwists;
-% Data.inputs = Inputs;
-% % Data.trim = Trims;
-% 
-% save ViconData Data
-% %%%%%%%%%
+%%%%%%%%%
+Data.time = TimeStamps - TimeStamps(1);
+Data.position = Positions;
+Data.orientation = Orientations;
+Data.lintwist = Lintwists;
+Data.angtwist = Angtwists;
+Data.inputs = Inputs;
+% Data.trim = Trims;
+
+save ViconData Data
+%%%%%%%%%
 
 nav_msgs_Odometry('disconnect',pid);
 geometry_msgs_Quaternion('disconnect',iid);

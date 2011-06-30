@@ -38,8 +38,8 @@ Getting Started:
 Run coax_server: (On Mac)
 ================
 
-rosrun coax_server coax_server /dev/tty.usbserial-A700eExt:1    (for Coax57)
 rosrun coax_server coax_server /dev/tty.usbserial-A700eEDO:1    (for Coax56)
+rosrun coax_server coax_server /dev/tty.usbserial-A700eExt:1    (for Coax57)
 
 
 ================
@@ -47,10 +47,11 @@ Run Experiment:
 ================
 
 1. Requirements
-	1.1 Vicon running and tracking CoaX
-	1.2 Running roscore
-	1.3 Running central
-	1.4 Zigbee module plugged into computer
+	1.1 Make sure vicon_calibrate and vicon2odometry are pointing to the correct xml and vsk files respectively (in coax_interface56.launch)
+	1.2 Vicon running and tracking CoaX
+	1.3 Running roscore
+	1.4 Running central
+	1.5 Zigbee module plugged into computer
 
 2. Start CoaX
 	2.1 Switch RC on

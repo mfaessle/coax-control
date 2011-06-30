@@ -159,8 +159,8 @@ Mz_des       = -K_psi*e_psi - K_psi_i*e_i(4) - K_omegaz*e_omegaz;
 % a_lo_des     = asin(-z_SP(2)/cos(b_lo_des));
 
 % implement the conversion from physical to actual input values !!!
-% motor_up     = (Omega_up_des + 21.5)/430;
-% motor_lo     = (Omega_lo_des + 21.5)/430;
+% motor_up     = Omega_up_des*0.002369883069058 + 0.001408825580969;
+% motor_lo     = Omega_lo_des*0.002278342819983 + 0.008205565116347;
 % servo1       = a_lo_des/0.26;%a_lo_des/0.26;
 % servo2       = b_lo_des/0.26;%b_lo_des/0.26;
 
@@ -169,16 +169,10 @@ c            = 0.3;
 a_lo_des     = -c*Rw2b(2,:)*[F_des(1) F_des(2) 0]';
 b_lo_des     = c*Rw2b(1,:)*[F_des(1) F_des(2) 0]';
 
-% omega_lo_sq  = (F_des(3) + k_Tup/k_Mup*Mz_des)/(k_Tup/k_Mup*k_Mlo + k_Tlo);
-% Omega_lo_des = sqrt(omega_lo_sq);
-% Omega_up_des = sqrt(1/k_Mup*(k_Mlo*omega_lo_sq - Mz_des));
-% motor_up     = (Omega_up_des + 21.5)/410;
-% motor_lo     = (Omega_lo_des + 21.5)/410;
-
 d            = 2;
 dmot         = d*Mz_des;
 motor_up     = (F_des(3)+2.37)/10.3 - dmot/2;
-motor_lo     = (F_des(3)+2.37)/10.3 + dmot/2 + 0.02;
+motor_lo     = (F_des(3)+2.37)/10.3 + dmot/2 + 0.03;
 servo1       = a_lo_des/0.26;%a_lo_des/0.26;
 servo2       = b_lo_des/0.26;%b_lo_des/0.26;
 
@@ -191,17 +185,6 @@ motor_up_trim = (F_int(3)+2.37)/10.3 - d*Mz_int/2;
 motor_lo_trim = (F_int(3)+2.37)/10.3 + d*Mz_int/2;
 
 trim_values = [motor_up_trim motor_lo_trim servo1_trim servo2_trim]';
-
-%% Test LQR controller
-% load K_new 
-% load T_inv 
-% load W
-% state = T_inv(1:14,1:14)*[x-x_T y-y_T z-z_T xdot-xdot_T ydot-ydot_T zdot-zdot_T roll pitch yaw-psi_T p q r-psidot_T Omega_up Omega_lo]';
-% out = -W*K_new*state;
-% motor_up = (out(1) + sqrt(m*g/(2*k_Tup)) + 21.5)/430;
-% motor_lo = (out(2) + sqrt(m*g/(2*k_Tlo)) + 21.5)/430;
-% servo1 = out(3)/0.1;
-% servo2 = out(4)/0.1;
 
 
 end

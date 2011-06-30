@@ -39,6 +39,7 @@ protected:
 	float servo1;
 	float servo2;
 	int matlab_rawcontrol_age;
+	int coax_state_age;
 	int desired_nav_mode;
 	
 public:
@@ -67,6 +68,7 @@ public:
 		servo1 = 0;
 		servo2 = 0;
 		matlab_rawcontrol_age = 0;
+		coax_state_age = 0;
 		desired_nav_mode = 0;
 	}
 	~CoaxInterface(){
@@ -132,10 +134,12 @@ public:
 		coax_info.z = 0;
 		coax_info.w = 0;
 		
-		if ((message->mode.navigation == 0) && (desired_nav_mode == 1)) {
-			ROS_INFO("Lost Zigbee connection for too long!!!");
-			desired_nav_mode = 0;
-		}
+		//if ((message->mode.navigation == 0) && (desired_nav_mode == 1)) {
+		//	ROS_INFO("Lost Zigbee connection for too long!!!");
+		//	desired_nav_mode = 0;
+		//}
+		
+		coax_state_age = 0;
 		
 		coax_info_pub.publish(coax_info);
 	}
@@ -207,8 +211,19 @@ public:
 				raw_control.servo2 = 0;
 			}
 			
+			if ((coax_state_age > 0.5*rate) && (coax_state_age <= 0.5*rate + 1)) {
+				ROS_INFO("Lost Zigbee connection for too long (>0.5s)!!!");
+				geometry_msgs::Quaternion control_mode;
+				control_mode.x = 7;
+				control_mode.y = 0;
+				control_mode.z = 0;
+				control_mode.w = 0;
+				control_mode_pub.publish(control_mode);
+			}
+			
 			raw_control_pub.publish(raw_control);
 			matlab_rawcontrol_age += 1;
+			coax_state_age += 1;
 			
 			ros::spinOnce();
 			loop_rate.sleep();
@@ -231,6 +246,7 @@ public:
 			
 			if (req.mode == 9) {
 				reachNavState(SB_NAV_STOP,0.5);
+				desired_nav_mode = 0;
 			}
 		}else {
 			ROS_INFO("Cannot manually call control mode 8");
@@ -281,9 +297,15 @@ int main(int argc, char** argv)
 	ros::Duration(1.5).sleep(); // make sure coax_server has enough time to boot up
 	api.configureComm(10, SBS_MODES | SBS_BATTERY); // configuration of sending back data from CoaX
 	api.setTimeout(500, 5000);
+	
+	int frequency = 30;
+	//if (!n.getParam("frequency", frequency))
+    //{
+	//	ROS_INFO("Set Frequency to Default Value 50Hz");
+	//	frequency = 50;
+    //}
 
-
-	api.rawControlPublisher(100);
+	api.rawControlPublisher(frequency);
 	
 	return(0);
 }

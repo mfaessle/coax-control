@@ -1,9 +1,9 @@
 .DS_Store
 *~
-*.mat
 *.asv
 _*.py
 *.pyc
+matlab_control/*.mat
 
 build
 bin
