@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
+<KinematicModel VERSION="2.3">
+
+  <Parameters>
+    <Parameter HIDDEN="1" NAME="CoaxBody_Length" PRIOR="67.2267837524414" SD="1.00000002004088e+020" VALUE="67.2267837524414"/>
+    <Parameter HIDDEN="1" NAME="CoaxBody_Unlabeled37_y" PRIOR="121.221374511719" SD="1.00000002004088e+020" VALUE="121.221374511719"/>
+    <Parameter HIDDEN="1" NAME="CoaxBody_Unlabeled37_z" PRIOR="-64.937141418457" SD="1.00000002004088e+020" VALUE="-64.937141418457"/>
+    <Parameter HIDDEN="1" NAME="CoaxBody_Unlabeled44_x" PRIOR="78.6832122802734" SD="1.00000002004088e+020" VALUE="78.6832122802734"/>
+    <Parameter HIDDEN="1" NAME="CoaxBody_Unlabeled44_y" PRIOR="79.6637573242188" SD="1.00000002004088e+020" VALUE="79.6637573242188"/>
+    <Parameter HIDDEN="1" NAME="CoaxBody_Unlabeled44_z" PRIOR="-11.3423728942871" SD="1.00000002004088e+020" VALUE="-11.3423728942871"/>
+    <Parameter HIDDEN="1" NAME="CoaxBody_Unlabeled45_x" PRIOR="78.5626373291016" SD="1.00000002004088e+020" VALUE="78.5626373291016"/>
+    <Parameter HIDDEN="1" NAME="CoaxBody_Unlabeled45_y" PRIOR="42.6013412475586" SD="1.00000002004088e+020" VALUE="42.6013412475586"/>
+    <Parameter HIDDEN="1" NAME="CoaxBody_Unlabeled45_z" PRIOR="-57.5652542114258" SD="1.00000002004088e+020" VALUE="-57.5652542114258"/>
+  </Parameters>
+
+  <Skeleton>
+    <Segment BOUNDS="-6.72268 -6.72268 -'CoaxBody_Length' 6.72268 6.72268 0" CONTEXT="General" INERTIA="0 0 0" MASS="0" MASS-CENTRE="0 0 0" NAME="CoaxBody" RGB="255 164 0">
+      <JointFree BOUNDS="0 0 0 0 0 0 0 0 0 0 0 0" COVARIANCE="2.46490001678467 0 0 0 0 0  0 2.46490001678467 0 0 0 0  0 0 246.490005493164 0 0 0  0 0 0 1000000 0 0  0 0 0 0 1000000 0  0 0 0 0 0 1000000  " MEAN="0 0 0 0 0 0" NAME="World_CoaxBody" POST-ORIENTATION="0 0 0" POST-POSITION="0 0 0" PRE-ORIENTATION="0 0 0" PRE-POSITION="0 0 0" SIGNS="+ + + + + + " T="* * * * * * ">
+        <JointTemplate COVARIANCE="2.46490001678467 0 0 0 0 0  0 2.46490001678467 0 0 0 0  0 0 246.490005493164 0 0 0  0 0 0 1000000 0 0  0 0 0 0 1000000 0  0 0 0 0 0 1000000  " MEAN="0 0 0 0 0 0" POST-ORIENTATION="0 0 0" POST-POSITION="0 0 0" PRE-ORIENTATION="0 0 0" PRE-POSITION="0 0 0" TPOSE-COVARIANCE="0 0 0 0 0 0  0 0 0 0 0 0  0 0 0 0 0 0  0 0 0 0 0 0  0 0 0 0 0 0  0 0 0 0 0 0  " TPOSE-MEAN="0 0 0 0 0 0"/>
+      </JointFree>
+    </Segment>
+  </Skeleton>
+
+  <MarkerSet>
+    <Markers>
+      <Marker COVARIANCE="1 0 0 0 1 0 0 0 1 " NAME="body1" POSITION="0 0 0" RADIUS="12.5" RGB="255 164 0" SEGMENT="CoaxBody" STATUS="required">
+        <MarkerTemplate COVARIANCE="1 0 0 0 1 0 0 0 1 " PLACEMENT-COVARIANCE="1 0 0 0 1 0 0 0 1 " POSITION="0 0 0"/>
+      </Marker>
+      <Marker COVARIANCE="1 0 0 0 1 0 0 0 1 " NAME="body2" POSITION="1.11022e-016 5.05238e-016 -67.2268" RADIUS="12.5" RGB="255 164 0" SEGMENT="CoaxBody" STATUS="required">
+        <MarkerTemplate COVARIANCE="1 0 0 0 1 0 0 0 1 " PLACEMENT-COVARIANCE="1 0 0 0 1 0 0 0 1 " POSITION="0 0 -'CoaxBody_Length'"/>
+      </Marker>
+      <Marker COVARIANCE="1 0 0 0 1 0 0 0 1 " NAME="body3" POSITION="0 121.221 -64.9371" RADIUS="12.5" RGB="255 164 0" SEGMENT="CoaxBody" STATUS="required">
+        <MarkerTemplate COVARIANCE="1 0 0 0 1 0 0 0 1 " PLACEMENT-COVARIANCE="1 0 0 0 1 0 0 0 1 " POSITION="0 'CoaxBody_Unlabeled37_y' 'CoaxBody_Unlabeled37_z'"/>
+      </Marker>
+      <Marker COVARIANCE="1 0 0 0 1 0 0 0 1 " NAME="body4" POSITION="78.6832 79.6638 -11.3424" RADIUS="12.5" RGB="255 164 0" SEGMENT="CoaxBody" STATUS="optional">
+        <MarkerTemplate COVARIANCE="1 0 0 0 1 0 0 0 1 " PLACEMENT-COVARIANCE="1 0 0 0 1 0 0 0 1 " POSITION="'CoaxBody_Unlabeled44_x' 'CoaxBody_Unlabeled44_y' 'CoaxBody_Unlabeled44_z'"/>
+      </Marker>
+      <Marker COVARIANCE="1 0 0 0 1 0 0 0 1 " NAME="body5" POSITION="78.5626 42.6013 -57.5653" RADIUS="12.5" RGB="255 164 0" SEGMENT="CoaxBody" STATUS="optional">
+        <MarkerTemplate COVARIANCE="1 0 0 0 1 0 0 0 1 " PLACEMENT-COVARIANCE="1 0 0 0 1 0 0 0 1 " POSITION="'CoaxBody_Unlabeled45_x' 'CoaxBody_Unlabeled45_y' 'CoaxBody_Unlabeled45_z'"/>
+      </Marker>
+    </Markers>
+    <Sticks>
+      <Stick MARKER1="body1" MARKER2="body2" RGB="255 164 0"/>
+      <Stick MARKER1="body1" MARKER2="body3" RGB="255 164 0"/>
+      <Stick MARKER1="body1" MARKER2="body4" RGB="255 164 0"/>
+      <Stick MARKER1="body1" MARKER2="body5" RGB="255 164 0"/>
+      <Stick MARKER1="body2" MARKER2="body3" RGB="255 164 0"/>
+      <Stick MARKER1="body2" MARKER2="body4" RGB="255 164 0"/>
+      <Stick MARKER1="body2" MARKER2="body5" RGB="255 164 0"/>
+      <Stick MARKER1="body3" MARKER2="body4" RGB="255 164 0"/>
+      <Stick MARKER1="body3" MARKER2="body5" RGB="255 164 0"/>
+      <Stick MARKER1="body4" MARKER2="body5" RGB="255 164 0"/>
+    </Sticks>
+  </MarkerSet>
+
+  <Alignment/>
+
+</KinematicModel>

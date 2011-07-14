@@ -1,0 +1,13 @@
+<calibration>
+	<position>
+		<x>0.</x>
+		<y>-0.</y>
+		<z>0.</z>
+	</position>
+	<orientation>
+		<x>-0.</x>
+		<y>0.</y>
+		<z>-0.</z>
+		<w>1.0</w>
+	</orientation>
+</calibration>

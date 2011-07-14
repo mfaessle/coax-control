@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
+<KinematicModel VERSION="2.4">
+
+  <Parameters>
+    <Parameter HIDDEN="1" NAME="CoaxCalib_Unlabeled67007_x" PRIOR="-339.925323486328" SD="1.00000002004088e+020" VALUE="-339.925323486328"/>
+    <Parameter HIDDEN="1" NAME="CoaxCalib_Unlabeled67007_y" PRIOR="-183.69660949707" SD="1.00000002004088e+020" VALUE="-183.69660949707"/>
+    <Parameter HIDDEN="1" NAME="CoaxCalib_Unlabeled67007_z" PRIOR="2.56539535522461" SD="1.00000002004088e+020" VALUE="2.56539535522461"/>
+    <Parameter HIDDEN="1" NAME="CoaxCalib_Unlabeled67012_x" PRIOR="-205.75944519043" SD="1.00000002004088e+020" VALUE="-205.75944519043"/>
+    <Parameter HIDDEN="1" NAME="CoaxCalib_Unlabeled67012_y" PRIOR="-213.615173339844" SD="1.00000002004088e+020" VALUE="-213.615173339844"/>
+    <Parameter HIDDEN="1" NAME="CoaxCalib_Unlabeled67012_z" PRIOR="1.90081608295441" SD="1.00000002004088e+020" VALUE="1.90081608295441"/>
+    <Parameter HIDDEN="1" NAME="CoaxCalib_Unlabeled67003_x" PRIOR="213.60009765625" SD="1.00000002004088e+020" VALUE="213.60009765625"/>
+    <Parameter HIDDEN="1" NAME="CoaxCalib_Unlabeled67003_y" PRIOR="-208.376068115234" SD="1.00000002004088e+020" VALUE="-208.376068115234"/>
+    <Parameter HIDDEN="1" NAME="CoaxCalib_Unlabeled67003_z" PRIOR="1.88165295124054" SD="1.00000002004088e+020" VALUE="1.88165295124054"/>
+    <Parameter HIDDEN="1" NAME="CoaxCalib_Unlabeled67009_x" PRIOR="349.317535400391" SD="1.00000002004088e+020" VALUE="349.317535400391"/>
+    <Parameter HIDDEN="1" NAME="CoaxCalib_Unlabeled67009_y" PRIOR="-188.295211791992" SD="1.00000002004088e+020" VALUE="-188.295211791992"/>
+    <Parameter HIDDEN="1" NAME="CoaxCalib_Unlabeled67009_z" PRIOR="1.33471882343292" SD="1.00000002004088e+020" VALUE="1.33471882343292"/>
+    <Parameter HIDDEN="1" NAME="CoaxCalib_Unlabeled67005_x" PRIOR="284.914215087891" SD="1.00000002004088e+020" VALUE="284.914215087891"/>
+    <Parameter HIDDEN="1" NAME="CoaxCalib_Unlabeled67005_y" PRIOR="85.1560211181641" SD="1.00000002004088e+020" VALUE="85.1560211181641"/>
+    <Parameter HIDDEN="1" NAME="CoaxCalib_Unlabeled67005_z" PRIOR="-1.77064692974091" SD="1.00000002004088e+020" VALUE="-1.77064692974091"/>
+    <Parameter HIDDEN="1" NAME="CoaxCalib_Unlabeled67006_x" PRIOR="344.943054199219" SD="1.00000002004088e+020" VALUE="344.943054199219"/>
+    <Parameter HIDDEN="1" NAME="CoaxCalib_Unlabeled67006_y" PRIOR="159.972030639648" SD="1.00000002004088e+020" VALUE="159.972030639648"/>
+    <Parameter HIDDEN="1" NAME="CoaxCalib_Unlabeled67006_z" PRIOR="-2.69162940979004" SD="1.00000002004088e+020" VALUE="-2.69162940979004"/>
+    <Parameter HIDDEN="1" NAME="CoaxCalib_Unlabeled67010_x" PRIOR="234.057861328125" SD="1.00000002004088e+020" VALUE="234.057861328125"/>
+    <Parameter HIDDEN="1" NAME="CoaxCalib_Unlabeled67010_y" PRIOR="182.012008666992" SD="1.00000002004088e+020" VALUE="182.012008666992"/>
+    <Parameter HIDDEN="1" NAME="CoaxCalib_Unlabeled67010_z" PRIOR="-2.41577339172363" SD="1.00000002004088e+020" VALUE="-2.41577339172363"/>
+    <Parameter HIDDEN="1" NAME="CoaxCalib_Unlabeled67011_x" PRIOR="-187.855819702148" SD="1.00000002004088e+020" VALUE="-187.855819702148"/>
+    <Parameter HIDDEN="1" NAME="CoaxCalib_Unlabeled67011_y" PRIOR="141.651107788086" SD="1.00000002004088e+020" VALUE="141.651107788086"/>
+    <Parameter HIDDEN="1" NAME="CoaxCalib_Unlabeled67011_z" PRIOR="-0.782406687736511" SD="1.00000002004088e+020" VALUE="-0.782406687736511"/>
+    <Parameter HIDDEN="1" NAME="CoaxCalib_Unlabeled67008_x" PRIOR="-325.760345458984" SD="1.00000002004088e+020" VALUE="-325.760345458984"/>
+    <Parameter HIDDEN="1" NAME="CoaxCalib_Unlabeled67008_y" PRIOR="161.026870727539" SD="1.00000002004088e+020" VALUE="161.026870727539"/>
+    <Parameter HIDDEN="1" NAME="CoaxCalib_Unlabeled67008_z" PRIOR="-0.501630663871765" SD="1.00000002004088e+020" VALUE="-0.501630663871765"/>
+    <Parameter HIDDEN="1" NAME="CoaxCalib_Unlabeled67004_x" PRIOR="-367.531768798828" SD="1.00000002004088e+020" VALUE="-367.531768798828"/>
+    <Parameter HIDDEN="1" NAME="CoaxCalib_Unlabeled67004_y" PRIOR="64.1650238037109" SD="1.00000002004088e+020" VALUE="64.1650238037109"/>
+    <Parameter HIDDEN="1" NAME="CoaxCalib_Unlabeled67004_z" PRIOR="0.479503720998764" SD="1.00000002004088e+020" VALUE="0.479503720998764"/>
+  </Parameters>
+
+  <Skeleton>
+    <Segment BOUNDS="-50 -50 -50 50 50 50" CONTEXT="General" INERTIA="0 0 0" MASS="0" MASS-CENTRE="0 0 0" NAME="CoaxCalib" RGB="255 164 0">
+      <JointFree BOUNDS="0 0 0 0 0 0 0 0 0 0 0 0" COVARIANCE="2.46490001678467 0 0 0 0 0  0 2.46490001678467 0 0 0 0  0 0 246.490005493164 0 0 0  0 0 0 1000000 0 0  0 0 0 0 1000000 0  0 0 0 0 0 1000000  " MEAN="0 0 0 0 0 0" NAME="World_CoaxCalib" POST-ORIENTATION="0 0 0" POST-POSITION="0 0 0" PRE-ORIENTATION="0 0 0" PRE-POSITION="0 0 0" SIGNS="+ + + + + + " T="* * * * * * ">
+        <JointTemplate COVARIANCE="2.46490001678467 0 0 0 0 0  0 2.46490001678467 0 0 0 0  0 0 246.490005493164 0 0 0  0 0 0 1000000 0 0  0 0 0 0 1000000 0  0 0 0 0 0 1000000  " MEAN="0 0 0 0 0 0" POST-ORIENTATION="0 0 0" POST-POSITION="0 0 0" PRE-ORIENTATION="0 0 0" PRE-POSITION="0 0 0" TPOSE-COVARIANCE="0 0 0 0 0 0  0 0 0 0 0 0  0 0 0 0 0 0  0 0 0 0 0 0  0 0 0 0 0 0  0 0 0 0 0 0  " TPOSE-MEAN="0 0 0 0 0 0"/>
+      </JointFree>
+    </Segment>
+  </Skeleton>
+
+  <MarkerSet>
+    <Markers>
+      <Marker COVARIANCE="1 0 0 0 1 0 0 0 1 " NAME="Unlabeled67007" POSITION="-339.925 -183.697 2.5654" RADIUS="3.29999995231628" RGB="255 164 0" SEGMENT="CoaxCalib" STATUS="required">
+        <MarkerTemplate COVARIANCE="1 0 0 0 1 0 0 0 1 " PLACEMENT-COVARIANCE="1 0 0 0 1 0 0 0 1 " POSITION="'CoaxCalib_Unlabeled67007_x' 'CoaxCalib_Unlabeled67007_y' 'CoaxCalib_Unlabeled67007_z'"/>
+      </Marker>
+      <Marker COVARIANCE="1 0 0 0 1 0 0 0 1 " NAME="Unlabeled67012" POSITION="-205.759 -213.615 1.90082" RADIUS="3.29999995231628" RGB="255 164 0" SEGMENT="CoaxCalib" STATUS="optional">
+        <MarkerTemplate COVARIANCE="1 0 0 0 1 0 0 0 1 " PLACEMENT-COVARIANCE="1 0 0 0 1 0 0 0 1 " POSITION="'CoaxCalib_Unlabeled67012_x' 'CoaxCalib_Unlabeled67012_y' 'CoaxCalib_Unlabeled67012_z'"/>
+      </Marker>
+      <Marker COVARIANCE="1 0 0 0 1 0 0 0 1 " NAME="Unlabeled67003" POSITION="213.6 -208.376 1.88165" RADIUS="3.29999995231628" RGB="255 164 0" SEGMENT="CoaxCalib" STATUS="optional">
+        <MarkerTemplate COVARIANCE="1 0 0 0 1 0 0 0 1 " PLACEMENT-COVARIANCE="1 0 0 0 1 0 0 0 1 " POSITION="'CoaxCalib_Unlabeled67003_x' 'CoaxCalib_Unlabeled67003_y' 'CoaxCalib_Unlabeled67003_z'"/>
+      </Marker>
+      <Marker COVARIANCE="1 0 0 0 1 0 0 0 1 " NAME="Unlabeled67009" POSITION="349.318 -188.295 1.33472" RADIUS="3.29999995231628" RGB="255 164 0" SEGMENT="CoaxCalib" STATUS="optional">
+        <MarkerTemplate COVARIANCE="1 0 0 0 1 0 0 0 1 " PLACEMENT-COVARIANCE="1 0 0 0 1 0 0 0 1 " POSITION="'CoaxCalib_Unlabeled67009_x' 'CoaxCalib_Unlabeled67009_y' 'CoaxCalib_Unlabeled67009_z'"/>
+      </Marker>
+      <Marker COVARIANCE="1 0 0 0 1 0 0 0 1 " NAME="Unlabeled67005" POSITION="284.914 85.156 -1.77065" RADIUS="3.29999995231628" RGB="255 164 0" SEGMENT="CoaxCalib" STATUS="optional">
+        <MarkerTemplate COVARIANCE="1 0 0 0 1 0 0 0 1 " PLACEMENT-COVARIANCE="1 0 0 0 1 0 0 0 1 " POSITION="'CoaxCalib_Unlabeled67005_x' 'CoaxCalib_Unlabeled67005_y' 'CoaxCalib_Unlabeled67005_z'"/>
+      </Marker>
+      <Marker COVARIANCE="1 0 0 0 1 0 0 0 1 " NAME="Unlabeled67006" POSITION="344.943 159.972 -2.69163" RADIUS="3.29999995231628" RGB="255 164 0" SEGMENT="CoaxCalib" STATUS="optional">
+        <MarkerTemplate COVARIANCE="1 0 0 0 1 0 0 0 1 " PLACEMENT-COVARIANCE="1 0 0 0 1 0 0 0 1 " POSITION="'CoaxCalib_Unlabeled67006_x' 'CoaxCalib_Unlabeled67006_y' 'CoaxCalib_Unlabeled67006_z'"/>
+      </Marker>
+      <Marker COVARIANCE="1 0 0 0 1 0 0 0 1 " NAME="Unlabeled67010" POSITION="234.058 182.012 -2.41577" RADIUS="3.29999995231628" RGB="255 164 0" SEGMENT="CoaxCalib" STATUS="optional">
+        <MarkerTemplate COVARIANCE="1 0 0 0 1 0 0 0 1 " PLACEMENT-COVARIANCE="1 0 0 0 1 0 0 0 1 " POSITION="'CoaxCalib_Unlabeled67010_x' 'CoaxCalib_Unlabeled67010_y' 'CoaxCalib_Unlabeled67010_z'"/>
+      </Marker>
+      <Marker COVARIANCE="1 0 0 0 1 0 0 0 1 " NAME="Unlabeled67011" POSITION="-187.856 141.651 -0.782407" RADIUS="3.29999995231628" RGB="255 164 0" SEGMENT="CoaxCalib" STATUS="optional">
+        <MarkerTemplate COVARIANCE="1 0 0 0 1 0 0 0 1 " PLACEMENT-COVARIANCE="1 0 0 0 1 0 0 0 1 " POSITION="'CoaxCalib_Unlabeled67011_x' 'CoaxCalib_Unlabeled67011_y' 'CoaxCalib_Unlabeled67011_z'"/>
+      </Marker>
+      <Marker COVARIANCE="1 0 0 0 1 0 0 0 1 " NAME="Unlabeled67008" POSITION="-325.76 161.027 -0.501631" RADIUS="3.29999995231628" RGB="255 164 0" SEGMENT="CoaxCalib" STATUS="optional">
+        <MarkerTemplate COVARIANCE="1 0 0 0 1 0 0 0 1 " PLACEMENT-COVARIANCE="1 0 0 0 1 0 0 0 1 " POSITION="'CoaxCalib_Unlabeled67008_x' 'CoaxCalib_Unlabeled67008_y' 'CoaxCalib_Unlabeled67008_z'"/>
+      </Marker>
+      <Marker COVARIANCE="1 0 0 0 1 0 0 0 1 " NAME="Unlabeled67004" POSITION="-367.532 64.165 0.479504" RADIUS="3.29999995231628" RGB="255 164 0" SEGMENT="CoaxCalib" STATUS="optional">
+        <MarkerTemplate COVARIANCE="1 0 0 0 1 0 0 0 1 " PLACEMENT-COVARIANCE="1 0 0 0 1 0 0 0 1 " POSITION="'CoaxCalib_Unlabeled67004_x' 'CoaxCalib_Unlabeled67004_y' 'CoaxCalib_Unlabeled67004_z'"/>
+      </Marker>
+    </Markers>
+    <Sticks>
+      <Stick MARKER1="Unlabeled67007" MARKER2="Unlabeled67012" RGB="255 164 0"/>
+      <Stick MARKER1="Unlabeled67007" MARKER2="Unlabeled67003" RGB="255 164 0"/>
+      <Stick MARKER1="Unlabeled67007" MARKER2="Unlabeled67009" RGB="255 164 0"/>
+      <Stick MARKER1="Unlabeled67007" MARKER2="Unlabeled67005" RGB="255 164 0"/>
+      <Stick MARKER1="Unlabeled67007" MARKER2="Unlabeled67006" RGB="255 164 0"/>
+      <Stick MARKER1="Unlabeled67007" MARKER2="Unlabeled67010" RGB="255 164 0"/>
+      <Stick MARKER1="Unlabeled67007" MARKER2="Unlabeled67011" RGB="255 164 0"/>
+      <Stick MARKER1="Unlabeled67007" MARKER2="Unlabeled67008" RGB="255 164 0"/>
+      <Stick MARKER1="Unlabeled67007" MARKER2="Unlabeled67004" RGB="255 164 0"/>
+      <Stick MARKER1="Unlabeled67012" MARKER2="Unlabeled67003" RGB="255 164 0"/>
+      <Stick MARKER1="Unlabeled67012" MARKER2="Unlabeled67009" RGB="255 164 0"/>
+      <Stick MARKER1="Unlabeled67012" MARKER2="Unlabeled67005" RGB="255 164 0"/>
+      <Stick MARKER1="Unlabeled67012" MARKER2="Unlabeled67006" RGB="255 164 0"/>
+      <Stick MARKER1="Unlabeled67012" MARKER2="Unlabeled67010" RGB="255 164 0"/>
+      <Stick MARKER1="Unlabeled67012" MARKER2="Unlabeled67011" RGB="255 164 0"/>
+      <Stick MARKER1="Unlabeled67012" MARKER2="Unlabeled67008" RGB="255 164 0"/>
+      <Stick MARKER1="Unlabeled67012" MARKER2="Unlabeled67004" RGB="255 164 0"/>
+      <Stick MARKER1="Unlabeled67003" MARKER2="Unlabeled67009" RGB="255 164 0"/>
+      <Stick MARKER1="Unlabeled67003" MARKER2="Unlabeled67005" RGB="255 164 0"/>
+      <Stick MARKER1="Unlabeled67003" MARKER2="Unlabeled67006" RGB="255 164 0"/>
+      <Stick MARKER1="Unlabeled67003" MARKER2="Unlabeled67010" RGB="255 164 0"/>
+      <Stick MARKER1="Unlabeled67003" MARKER2="Unlabeled67011" RGB="255 164 0"/>
+      <Stick MARKER1="Unlabeled67003" MARKER2="Unlabeled67008" RGB="255 164 0"/>
+      <Stick MARKER1="Unlabeled67003" MARKER2="Unlabeled67004" RGB="255 164 0"/>
+      <Stick MARKER1="Unlabeled67009" MARKER2="Unlabeled67005" RGB="255 164 0"/>
+      <Stick MARKER1="Unlabeled67009" MARKER2="Unlabeled67006" RGB="255 164 0"/>
+      <Stick MARKER1="Unlabeled67009" MARKER2="Unlabeled67010" RGB="255 164 0"/>
+      <Stick MARKER1="Unlabeled67009" MARKER2="Unlabeled67011" RGB="255 164 0"/>
+      <Stick MARKER1="Unlabeled67009" MARKER2="Unlabeled67008" RGB="255 164 0"/>
+      <Stick MARKER1="Unlabeled67009" MARKER2="Unlabeled67004" RGB="255 164 0"/>
+      <Stick MARKER1="Unlabeled67005" MARKER2="Unlabeled67006" RGB="255 164 0"/>
+      <Stick MARKER1="Unlabeled67005" MARKER2="Unlabeled67010" RGB="255 164 0"/>
+      <Stick MARKER1="Unlabeled67005" MARKER2="Unlabeled67011" RGB="255 164 0"/>
+      <Stick MARKER1="Unlabeled67005" MARKER2="Unlabeled67008" RGB="255 164 0"/>
+      <Stick MARKER1="Unlabeled67005" MARKER2="Unlabeled67004" RGB="255 164 0"/>
+      <Stick MARKER1="Unlabeled67006" MARKER2="Unlabeled67010" RGB="255 164 0"/>
+      <Stick MARKER1="Unlabeled67006" MARKER2="Unlabeled67011" RGB="255 164 0"/>
+      <Stick MARKER1="Unlabeled67006" MARKER2="Unlabeled67008" RGB="255 164 0"/>
+      <Stick MARKER1="Unlabeled67006" MARKER2="Unlabeled67004" RGB="255 164 0"/>
+      <Stick MARKER1="Unlabeled67010" MARKER2="Unlabeled67011" RGB="255 164 0"/>
+      <Stick MARKER1="Unlabeled67010" MARKER2="Unlabeled67008" RGB="255 164 0"/>
+      <Stick MARKER1="Unlabeled67010" MARKER2="Unlabeled67004" RGB="255 164 0"/>
+      <Stick MARKER1="Unlabeled67011" MARKER2="Unlabeled67008" RGB="255 164 0"/>
+      <Stick MARKER1="Unlabeled67011" MARKER2="Unlabeled67004" RGB="255 164 0"/>
+      <Stick MARKER1="Unlabeled67008" MARKER2="Unlabeled67004" RGB="255 164 0"/>
+    </Sticks>
+  </MarkerSet>
+
+  <Alignment/>
+
+</KinematicModel>
