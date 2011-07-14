@@ -9,6 +9,8 @@ cmd = 'o0w1';
 % lf = char(10);
 % crlf = strcat(cr,lf);
 % cmd = strcat(cmd,crlf);
+a = 0.004434551453279;
+b = -17.100811494816192;
 
 %% Calibrate
 
@@ -41,7 +43,7 @@ b = mean(data);
 
 %% Read
 
-N = 2000;
+N = 1000;
 force = zeros(N,1);
 for i=1 : N
     fprintf(s1, cmd);

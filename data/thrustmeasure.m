@@ -1,9 +1,19 @@
-%pid = nav_msgs_Odometry('connect','subscriber','odom56','odom56');
-iid = geometry_msgs_Quaternion('connect','subscriber','coax_info56','coax_info56');
-tid = geometry_msgs_Quaternion('connect','publisher','trim56','trim56');
-mid = std_msgs_Bool('connect','publisher','nav_mode56','nav_mode56');
-cid = geometry_msgs_Quaternion('connect','publisher','raw_control56','raw_control56');
-cmid = geometry_msgs_Quaternion('connect','subscriber','control_mode56','control_mode56');
+COAX56 = 1;
+if (COAX56)
+    %pid = nav_msgs_Odometry('connect','subscriber','odom56','odom56');
+    iid = geometry_msgs_Quaternion('connect','subscriber','coax_info56','coax_info56');
+    tid = geometry_msgs_Quaternion('connect','publisher','trim56','trim56');
+    mid = std_msgs_Bool('connect','publisher','nav_mode56','nav_mode56');
+    cid = geometry_msgs_Quaternion('connect','publisher','raw_control56','raw_control56');
+    cmid = geometry_msgs_Quaternion('connect','subscriber','control_mode56','control_mode56');
+else
+    %pid = nav_msgs_Odometry('connect','subscriber','odom57','odom57');
+    iid = geometry_msgs_Quaternion('connect','subscriber','coax_info57','coax_info57');
+    tid = geometry_msgs_Quaternion('connect','publisher','trim57','trim57');
+    mid = std_msgs_Bool('connect','publisher','nav_mode57','nav_mode57');
+    cid = geometry_msgs_Quaternion('connect','publisher','raw_control57','raw_control57');
+    cmid = geometry_msgs_Quaternion('connect','subscriber','control_mode57','control_mode57');
+end
 
 % if (isempty(s1))
 %     instrreset;
@@ -68,6 +78,7 @@ while 1
         force(i) = -((fscanf(s1,'%d'))*a + b);
         time(i) = toc;
         fread(s1,1,'char');
+        %pause(0.005)
     else
         pause(0.009);
     end

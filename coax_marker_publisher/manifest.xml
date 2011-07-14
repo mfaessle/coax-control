@@ -1,0 +1,21 @@
+<package>
+  <description brief="coax_marker_publisher">
+
+     coax_marker_publisher
+
+  </description>
+  <author>Matthias Faessler</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/coax_marker_publisher</url>
+  <depend package="rospy"/>
+  <depend package="roscpp"/>
+  <depend package="geometry_msgs"/>
+  <depend package="coax_msgs"/>
+  <depend package="coax_server"/>
+  <depend package="vicon"/>
+  <depend package="XMLConfig"/>
+
+</package>
+
+

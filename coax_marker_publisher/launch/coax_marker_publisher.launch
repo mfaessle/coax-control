@@ -1,0 +1,82 @@
+<launch>
+
+  <node pkg="vicon"
+        name="vicon"
+        type="vicon"
+        output="screen">
+  </node>
+
+
+  <group ns="Coax56">
+
+    <node pkg="coax_marker_publisher"
+          name="coax_marker_publisher"
+          type="coax_marker_publisher"       
+          output="screen">
+      <remap from="/coax_marker_publisher/names" to="/vicon/names"/>
+      <remap from="/coax_marker_publisher/values" to="/vicon/values"/>
+
+      <remap from="/coax_marker_publisher/marker1" to="/Coax56/marker1"/>
+      <remap from="/coax_marker_publisher/marker2" to="/Coax56/marker2"/>
+      <remap from="/coax_marker_publisher/marker3" to="/Coax56/marker3"/>
+      <remap from="/coax_marker_publisher/marker4" to="/Coax56/marker4"/>
+      <remap from="/coax_marker_publisher/marker5" to="/Coax56/marker5"/>
+      <remap from="/coax_marker_publisher/stabbar" to="/Coax56/stabbar"/>
+
+      <param name="vsk" value="$(find coax_vsk)/vsk/Coax56SB.vsk"/>
+
+    </node>
+
+    <node pkg="ipc_geometry_msgs"
+          name="Quaternion_marker1_publisher"
+          type="geometry_msgs_Quaternion_publisher"
+          output="screen">
+      <remap from="~topic" to="/Coax56/marker1"/>
+      <param name="message" value="marker1"/>
+    </node>
+
+    <node pkg="ipc_geometry_msgs"
+          name="Quaternion_marker2_publisher"
+          type="geometry_msgs_Quaternion_publisher"
+          output="screen">
+      <remap from="~topic" to="/Coax56/marker2"/>
+      <param name="message" value="marker2"/>
+    </node>
+
+    <node pkg="ipc_geometry_msgs"
+          name="Quaternion_marker3_publisher"
+          type="geometry_msgs_Quaternion_publisher"
+          output="screen">
+      <remap from="~topic" to="/Coax56/marker3"/>
+      <param name="message" value="marker3"/>
+    </node>
+
+    <node pkg="ipc_geometry_msgs"
+          name="Quaternion_marker4_publisher"
+          type="geometry_msgs_Quaternion_publisher"
+          output="screen">
+      <remap from="~topic" to="/Coax56/marker4"/>
+      <param name="message" value="marker4"/>
+    </node>
+
+    <node pkg="ipc_geometry_msgs"
+          name="Quaternion_marker5_publisher"
+          type="geometry_msgs_Quaternion_publisher"
+          output="screen">
+      <remap from="~topic" to="/Coax56/marker5"/>
+      <param name="message" value="marker5"/>
+    </node>
+
+    <node pkg="ipc_geometry_msgs"
+          name="Quaternion_stabbar_publisher"
+          type="geometry_msgs_Quaternion_publisher"
+          output="screen">
+      <remap from="~topic" to="/Coax56/stabbar"/>
+      <param name="message" value="stabbar"/>
+    </node>
+
+
+  </group>
+
+
+</launch>

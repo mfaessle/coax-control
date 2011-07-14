@@ -16,7 +16,7 @@
           clear_params="true">
       <remap from="~values" to="/vicon/values"/>
       <remap from="~names" to="/vicon/names"/>
-      <param name="calibration" value="$(find vicon_vsk)/calibration/Coax56.xml"/>
+      <param name="calibration" value="$(find coax_vsk)/calibration/Coax56.xml"/>
     </node>
 
     <node pkg="vicon2odometry"
@@ -27,7 +27,7 @@
       <remap from="~values" to="/vicon/values"/>
       <remap from="~pose" to="/Coax56/vicon_calibrate/pose"/>
       <remap from="~odom" to="/Coax56/vicon2odometry/odom"/>
-      <param name="vsk" value="$(find vicon_vsk)/vsk/Coax56.vsk"/>
+      <param name="vsk" value="$(find coax_vsk)/vsk/Coax56Nexus.vsk"/>
 
     </node>
 
@@ -38,7 +38,7 @@
       <remap from="~topic" to="/Coax56/vicon2odometry/odom"/>
       <param name="message" value="odom56"/>
     </node>
-
+<!--
     <node pkg="coax_server"
           name="coax"
           type="coax_server"
@@ -113,7 +113,7 @@
       <remap from="~topic" to="/Coax56/control_mode"/>
       <param name="message" value="control_mode56"/>
     </node>
-
+-->
   </group>
 
 

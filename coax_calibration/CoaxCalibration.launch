@@ -14,11 +14,11 @@
     <remap from="~values" to="/vicon/values"/>
     <remap from="~names" to="/vicon/names"/>
     <param name="calibration" 
-           value="$(find vicon_vsk)/calibration/Coax56.xml"/>
+           value="$(find coax_vsk)/calibration/Coax56.xml"/>
     <param name="vsk" 
-           value="$(find vicon_vsk)/vsk/Coax56.vsk"/>
+           value="$(find coax_vsk)/vsk/Coax56.vsk"/>
     <param name="reference"
-           value="$(find vicon_vsk)/reference/CoaxCalib.xml"/>
+           value="$(find coax_vsk)/reference/CoaxCalib.xml"/>
   </node>
 
 <!-- CoaX 57 -->
@@ -30,11 +30,11 @@
     <remap from="~values" to="/vicon/values"/>
     <remap from="~names" to="/vicon/names"/>
     <param name="calibration"
-           value="$(find vicon_vsk)/calibration/Coax57.xml"/>
+           value="$(find coax_vsk)/calibration/Coax57.xml"/>
     <param name="vsk"
-           value="$(find vicon_vsk)/vsk/Coax57.vsk"/>
+           value="$(find coax_vsk)/vsk/Coax57.vsk"/>
     <param name="reference"
-           value="$(find vicon_vsk)/reference/CoaxCalib.xml"/>
+           value="$(find coax_vsk)/reference/CoaxCalib.xml"/>
   </node>
 -->
 
