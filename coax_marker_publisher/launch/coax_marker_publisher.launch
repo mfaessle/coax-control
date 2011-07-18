@@ -1,11 +1,11 @@
 <launch>
-
+<!--
   <node pkg="vicon"
         name="vicon"
         type="vicon"
         output="screen">
   </node>
-
+-->
 
   <group ns="Coax56">
 

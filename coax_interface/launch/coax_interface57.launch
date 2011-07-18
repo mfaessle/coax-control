@@ -72,6 +72,8 @@
       <remap from="/coax_interface/set_timeout" to="/Coax57/set_timeout"/>
 
       <remap from="/coax_interface/set_control_mode" to="/Coax57/set_control_mode"/>
+
+      <param name="frequency" value="100"/>
     </node>
 
     <node pkg="ipc_geometry_msgs"

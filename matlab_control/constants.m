@@ -16,43 +16,43 @@ global CONTROL GYRO_MOMENTS DRAG
 %=================================
 
 g             = 9.81;            % gravitational acceleration [m/s]
-m             = 0.302;           % helicopter mass [kg]
-Ixx           = 1.837e-3;        % x-axis moment of inertia [kg*m^2]
-Iyy           = 1.87e-3;         % y-axis moment of inertia [kg*m^2]
-Izz           = 2.7786e-4;       % z-axis moment of inertia [kg*m^2]
+m             = 0.302;           % helicopter mass [kg] (measured)
+Ixx           = 1.837e-3;        % x-axis moment of inertia [kg*m^2] (Skybotix)
+Iyy           = 1.87e-3;         % y-axis moment of inertia [kg*m^2] (Skybotix)
+Izz           = 2.7786e-4;       % z-axis moment of inertia [kg*m^2] (Skybotix)
 I_up          = 1e-4;            % upper rotor roll pitch inertia [kg*m^2]
 I_lo          = 1e-4;            % lower rotor roll pitch inertia [kg*m^2]
 
 J_dtup        = 1.474e-4;        % upper drivetrain inertia [kg*m^2]
 J_dtlo        = 7.593e-5;        % lower drivetrain inertia [kg*m^2]
 
-d_up          = 0.172;           % distance from CoG to upper rotor hub [m]
-d_lo          = 0.107;           % distance from CoG to upper rotor hub [m]
+d_up          = 0.165;           % distance from CoG to upper rotor hub [m] (measured)
+d_lo          = 0.103;           % distance from CoG to upper rotor hub [m] (measured)
 Cd            = 1.05;            % drag coefficient [-]
 rho           = 1.23;            % air density [kg/m^3]
 Ax            = 0.02;            % area in x-direction [m^2]
 Ay            = 0.02;            % area in y-direction [m^2]
 Az            = 0.019;           % area in z-direction [m^2]
 
-Tf_up         = 1.5;             % upper rotor following time [s]
-Tf_lo         = 0.01;            % lower rotor following time [s]
-l_up          = 0.5;             % upper rotor linkage factor [-]
-l_lo          = 0.4;             % lower rotor linkage factor [-]
-k_springup    = 0.2;             % spring constant upper rotor [Nm/rad]
-k_springlo    = 0.2;             % spring constant lower rotor [Nm/rad]
+Tf_up         = 1.6;             % upper rotor following time [s] (Skybotix)
+Tf_lo         = 0.08;            % lower rotor following time [s] (Skybotix)
+l_up          = 0.613;           % upper rotor linkage factor [-]
+l_lo          = 0.3;             % lower rotor linkage factor [-]
+k_springup    = 0.1084;          % spring constant upper rotor [Nm/rad] (Skybotix)
+k_springlo    = 0.4278;          % spring constant lower rotor [Nm/rad] (Skybotix)
 
 k_Tup         = 3.8e-5;          % thrust factor upper rotor [Ns^2/rad^2]
 k_Tlo         = 3.8e-5;          % thrust factor lower rotor [Ns^2/rad^2]
 k_Mup         = 2e-6;            % moment factor upper rotor [Nms^2/rad^2]
 k_Mlo         = 2e-6;            % moment factor lower rotor [Nms^2/rad^2]
 
-Tf_motup      = 0.15;            % following time upper motor [s]
-Tf_motlo      = 0.1;             % following time lower motor [s]
+Tf_motup      = 0.185;           % following time upper motor [s] (Skybotix)
+Tf_motlo      = 0.115;           % following time lower motor [s] (Skybotix)
 
-zeta_mup      = 0;%0.009;           % slope of phase lag function upper rotor [s]
-zeta_bup      = 0;%-2.1835;         % offset of phase lag function upper rotor [rad]
-zeta_mlo      = 0;%0.009;           % slope of phase lag function lower rotor [s]
-zeta_blo      = 0;%-2.1835;         % offset of phase lag function lower rotor [rad]
+zeta_mup      = -0.001282;       % slope of phase lag function upper rotor [s] (Skybotix)
+zeta_bup      = 0.1789;          % offset of phase lag function upper rotor [rad] (Skybotix)
+zeta_mlo      = -0.001282;       % slope of phase lag function lower rotor [s] (Skybotix)
+zeta_blo      = 0.0094;          % offset of phase lag function lower rotor [rad] (Skybotix)
 
 Omega_max     = 320;             % maximum rotor speed [rad/s]
 max_SBangle   = 15/360*2*pi;     % maximum stabilizer bar tilt angle [rad]

@@ -38,8 +38,8 @@ public:
 	CoaxMarkerPublisher(ros::NodeHandle & n)
 	{
 		
-		//n.param("/coax_marker_publisher/vsk", vsk_file, string("file.vsk"));
-		vsk_file = string("/Users/mfaess/git/ros-pkg/drivers/tracking/vicon_vsk/vsk/Coax56Nexus.vsk");
+		//n.param("vsk", vsk_file, string("file.vsk"));
+		vsk_file = string("/Users/mfaess/git/CoaX/coax_vsk/vsk/Coax56SB.vsk");
 		
 		if (ParseVSK(vsk_file, model, vsk_names, vsk_values) != 0)
 		{

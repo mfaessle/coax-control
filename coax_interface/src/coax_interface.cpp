@@ -298,12 +298,8 @@ int main(int argc, char** argv)
 	api.configureComm(10, SBS_MODES | SBS_BATTERY); // configuration of sending back data from CoaX
 	api.setTimeout(500, 5000);
 	
-	int frequency = 30;
-	//if (!n.getParam("frequency", frequency))
-    //{
-	//	ROS_INFO("Set Frequency to Default Value 50Hz");
-	//	frequency = 50;
-    //}
+	int frequency;
+	n.param("frequency", frequency, 100);
 
 	api.rawControlPublisher(frequency);
 	
