@@ -11,17 +11,6 @@
       <param name="message" value="raw_control56"/>
     </node>
 
-    <!-- coax interface -->
-    <node pkg="coax_interface"
-          name="coax_interface"
-          type="coax_interface"
-	  output="screen">
-      <remap from="/coax_interface/rawcontrol" to="/Coax56/rawcontrol"/>
-      <remap from="/coax_interface/raw_control" to="/Coax56/matlab_raw_control"/>
-
-      <param name="frequency" value="100"/>
-    </node>
-    
     <!-- publish coax state to ipc bridge/matlab -->
     <node pkg="ipc_nav_msgs"
           name="nav_msgs_Odometry_publisher"

@@ -24,8 +24,9 @@ U = [];
 
 FIRST_RUN = 1;
 VEL = 0.05;
+% set desired position and orientation
 end_position = [0.1 0 0.3]';
-end_orientation = 0;
+end_orientation = 0.2; % yaw
 
 t = t0;
 x = x0;
@@ -97,7 +98,7 @@ figure(2)
 subplot(2,1,1)
 plot(T,U(:,1:2))
 grid on;
-legend('u_{mot1}','u_{mot2}')
+legend('u_{mot,up}','u_{mot,lo}')
 title('Motor Inputs')
 
 subplot(2,1,2)
