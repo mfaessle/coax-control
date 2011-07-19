@@ -1,0 +1,12 @@
+<launch>
+  <node pkg="coax_simulator"
+        name="simulator"
+        type="coax_simulator"
+        output="screen">
+    <param name="init/x" value="0.0"/>
+    <param name="init/y" value="0.0"/>
+    <param name="init/z" value="2.0"/>
+    <param name="rates/odometry" value="20.0"/>
+    <rosparam file="$(find coax_simulator)/config/coax_parameters.yaml"/>
+  </node>
+</launch>
