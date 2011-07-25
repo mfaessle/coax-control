@@ -1,16 +1,17 @@
 pid = nav_msgs_Odometry('connect','subscriber','odom56','odom56');
-aid = geometry_msgs_Quaternion('connect','subscriber','add_state56','add_state56');
+% aid = geometry_msgs_Quaternion('connect','subscriber','add_state56','add_state56');
 cid = geometry_msgs_Quaternion('connect','publisher','raw_control56','raw_control56');
 
 run parameter
-run normalize_linearize
+%run normalize_linearize
 raw_control = geometry_msgs_Quaternion('empty');
+odom = nav_msgs_Odometry('read',pid,1);
 
 FIRST_RUN = 1;
 VEL = 0.05;
 % set desired position and orientation
-end_position = [0.1 0 0.3]';
-end_orientation = 0.2;
+end_position = [0 0 1.5]';
+end_orientation = 0;
 
 while (1)
 
@@ -19,10 +20,10 @@ while (1)
     while (isempty(odom))
         odom = nav_msgs_Odometry('read',pid,1);
     end
-    add_state = geometry_msgs_Quaternion('read',aid,1);
-    while (isempty(add_state))
-        add_state = geometry_msgs_Quaternion('read',aid,1);
-    end
+%     add_state = geometry_msgs_Quaternion('read',aid,1);
+%     while (isempty(add_state))
+%         add_state = geometry_msgs_Quaternion('read',aid,1);
+%     end
     
     % get current time
     time = clock;
@@ -41,17 +42,18 @@ while (1)
     p        = odom.twist.twist.angular.x;
     q        = odom.twist.twist.angular.y;
     r        = odom.twist.twist.angular.z;
-    Omega_up = add_state.x;
-    Omega_lo = add_state.y;
-    a_up     = add_state.z;
-    b_up     = add_state.w;
-
+%     Omega_up = add_state.x;
+%     Omega_lo = add_state.y;
+%     a_up     = add_state.z;
+%     b_up     = add_state.w;
+    [x y z]
     roll = atan2(2*(qw*qx+qy*qz),1-2*(qx^2+qy^2));
     pitch = asin(2*(qw*qy-qz*qx));
     yaw = atan2(2*(qw*qz+qx*qy),1-2*(qy^2+qz^2));
     
     % coax state
-    state = [x y z xdot ydot zdot roll pitch yaw p q r Omega_up Omega_lo a_up b_up]';
+    % state = [x y z xdot ydot zdot roll pitch yaw p q r Omega_up Omega_lo a_up b_up]';
+    state = [x y z xdot ydot zdot roll pitch yaw p q r 0 0 0 0]';
     
     if (FIRST_RUN)
         start_position = state(1:3);
@@ -85,5 +87,5 @@ while (1)
 end
 
 nav_msgs_Odometry('disconnect',pid);
-geometry_msgs_Quaternion('disconnect',aid);
+% geometry_msgs_Quaternion('disconnect',aid);
 geometry_msgs_Quaternion('disconnect',cid);

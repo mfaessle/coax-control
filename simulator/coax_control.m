@@ -74,6 +74,7 @@ Omega_lo0 = sqrt(m*g/(k_Tup*k_Mlo/k_Mup + k_Tlo));
 Omega_up0 = sqrt(k_Mlo/k_Mup*Omega_lo0^2);
 
 error = T_inv*(state - [x_T y_T z_T xdot_T ydot_T zdot_T 0 0 psi_T 0 0 psidot_T Omega_up0 Omega_lo0 0 0]');
+% error = T_inv*(state - [x_T y_T z_T xdot_T ydot_T zdot_T 0 0 psi_T 0 0 psidot_T 0 0 0 0]');
 inputs = -W*K_lqr*error;
 
 Omega_lo0 = sqrt(m*g/(k_Tup*k_Mlo/k_Mup + k_Tlo));

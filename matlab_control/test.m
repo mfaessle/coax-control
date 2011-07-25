@@ -1,4 +1,4 @@
-COAX56 = 0;
+COAX56 = 1;
 if (COAX56)
     %pid = nav_msgs_Odometry('connect','subscriber','odom56','odom56');
     iid = geometry_msgs_Quaternion('connect','subscriber','coax_info56','coax_info56');
@@ -27,7 +27,7 @@ omega = pi/2;
 t0 = clock;
 i = 0;
 tic
-while i<500
+while 1%i<500
     
     dt = etime(clock, t0);
     if (dt < 2)

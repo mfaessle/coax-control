@@ -60,6 +60,7 @@ filt_window = 1/4*ones(4,1);
 % Initial Values
 run constants
 run control_constants
+run normalize_linearize
 CONTROL_MODE = CONTROL_LANDED;
 e_i = [0 0 0 0]';
 FIRST_HOVER = 0;
@@ -89,6 +90,8 @@ servo1 = 0;
 servo2 = 0;
 volt_compUp = 0;
 volt_compLo = 0;
+
+fprintf('Ready to Rock \n');
 
 while (1)
     
@@ -194,23 +197,23 @@ end
 
 %% Reading Vicon data and calculating state
 % Read Vicon data
-A = nav_msgs_Odometry('read',pid,1);
-while (isempty(A))
-    A = nav_msgs_Odometry('read',pid,1);
+odom = nav_msgs_Odometry('read',pid,1);
+while (isempty(odom))
+    odom = nav_msgs_Odometry('read',pid,1);
 end
-x        = A.pose.pose.position.x;
-y        = A.pose.pose.position.y;
-z        = A.pose.pose.position.z;
-xdot     = A.twist.twist.linear.x;
-ydot     = A.twist.twist.linear.y;
-zdot     = A.twist.twist.linear.z;
-p        = A.twist.twist.angular.x;
-q        = A.twist.twist.angular.y;
-r        = A.twist.twist.angular.z;
-qx       = A.pose.pose.orientation.x;
-qy       = A.pose.pose.orientation.y;
-qz       = A.pose.pose.orientation.z;
-qw       = A.pose.pose.orientation.w;
+x        = odom.pose.pose.position.x;
+y        = odom.pose.pose.position.y;
+z        = odom.pose.pose.position.z;
+xdot     = odom.twist.twist.linear.x;
+ydot     = odom.twist.twist.linear.y;
+zdot     = odom.twist.twist.linear.z;
+p        = odom.twist.twist.angular.x;
+q        = odom.twist.twist.angular.y;
+r        = odom.twist.twist.angular.z;
+qx       = odom.pose.pose.orientation.x;
+qy       = odom.pose.pose.orientation.y;
+qz       = odom.pose.pose.orientation.z;
+qw       = odom.pose.pose.orientation.w;
 Rb2w     = [1-2*qy^2-2*qz^2 2*qx*qy-2*qz*qw 2*qx*qz+2*qy*qw; ...
             2*qx*qy+2*qz*qw 1-2*qx^2-2*qz^2 2*qy*qz-2*qx*qw; ...
             2*qx*qz-2*qy*qw 2*qy*qz+2*qx*qw 1-2*qx^2-2*qy^2];
@@ -325,7 +328,7 @@ prev_Omega_lo = Omega_lo;
 roll = atan2(2*(qw*qx+qy*qz),1-2*(qx^2+qy^2));
 pitch = asin(2*(qw*qy-qz*qx));
 yaw = atan2(2*(qw*qz+qx*qy),1-2*(qy^2+qz^2));
-coax_state = [x y z  xdot ydot zdot  p q r  Omega_up Omega_lo  z_bar' roll pitch yaw]';
+coax_state = [x y z  xdot ydot zdot  roll pitch yaw  p q r  Omega_up Omega_lo  z_bar']';
 
 
 %% Control According to Control Mode
@@ -360,7 +363,7 @@ switch CONTROL_MODE
             desPosition = START_POSITION;
             desPosition(3) = START_POSITION(3) + RISE_VELOCITY*(dt_start - IDLE_TIME);
             trajectory = [desPosition' 0 0 RISE_VELOCITY 0 0 0 START_ORIENTATION 0]';
-            [motor_up, motor_lo, servo1, servo2, e_i, trim_values] = control_function(coax_state, Rb2w, trajectory, e_i, dt, cont_const, contr_param);
+            [motor_up, motor_lo, servo1, servo2, e_i, trim_values] = control_function(coax_state, Rb2w, trajectory, e_i, dt, param, contr_param);
         else
             if (AUTO_TRIM)
                 CONTROL_MODE = CONTROL_TRIM;
@@ -372,7 +375,7 @@ switch CONTROL_MODE
             hover_position = START_POSITION + [0 0 START_HEIGHT]';
             hover_orientation = START_ORIENTATION;
             trajectory = [hover_position' 0 0 0 0 0 0 hover_orientation 0]';
-            [motor_up, motor_lo, servo1, servo2, e_i, trim_values] = control_function(coax_state, Rb2w, trajectory, e_i, dt, cont_const, contr_param);
+            [motor_up, motor_lo, servo1, servo2, e_i, trim_values] = control_function(coax_state, Rb2w, trajectory, e_i, dt, param, contr_param);
         end
     
     case CONTROL_TRIM
@@ -398,7 +401,7 @@ switch CONTROL_MODE
         end
         % hover position/orientation from control_start mode
         trajectory = [hover_position' 0 0 0 0 0 0 hover_orientation 0]';
-        [motor_up, motor_lo, servo1, servo2, e_i, trim_values] = control_function(coax_state, Rb2w, trajectory, e_i, dt, cont_const, contr_param);
+        [motor_up, motor_lo, servo1, servo2, e_i, trim_values] = control_function(coax_state, Rb2w, trajectory, e_i, dt, param, contr_param);
 
     case CONTROL_HOVER
         % Take current position from vicon and set it as hover position
@@ -415,7 +418,7 @@ switch CONTROL_MODE
         end
 
         trajectory = [hover_position' 0 0 0 0 0 0 hover_orientation 0]';
-        [motor_up, motor_lo, servo1, servo2, e_i, trim_values] = control_function(coax_state, Rb2w, trajectory, e_i, dt, cont_const, contr_param);
+        [motor_up, motor_lo, servo1, servo2, e_i, trim_values] = control_function(coax_state, Rb2w, trajectory, e_i, dt, param, contr_param);
 
     case CONTROL_GOTOPOS
         % take a desired position and orientation as input
@@ -438,23 +441,23 @@ switch CONTROL_MODE
         if (dt_gotopos < gotopos_duration)
             desPosition = initial_gotopos_position + GOTOPOS_VELOCITY*dt_gotopos*gotopos_direction;
             trajectory = [desPosition' GOTOPOS_VELOCITY*gotopos_direction' 0 0 0 gotopos_orientation 0]';
-            [motor_up, motor_lo, servo1, servo2, e_i, trim_values] = control_function(coax_state, Rb2w, trajectory, e_i, dt, cont_const, contr_param);
+            [motor_up, motor_lo, servo1, servo2, e_i, trim_values] = control_function(coax_state, Rb2w, trajectory, e_i, dt, param, contr_param);
         else
             if (SERVICE_LANDING)
                 CONTROL_MODE = CONTROL_LANDING;
                 desPosition = START_POSITION + [0 0 START_HEIGHT]';
                 trajectory = [desPosition' 0 0 0 0 0 0 gotopos_orientation 0]';
-                [motor_up, motor_lo, servo1, servo2, e_i, trim_values] = control_function(coax_state, Rb2w, trajectory, e_i, dt, cont_const, contr_param);
+                [motor_up, motor_lo, servo1, servo2, e_i, trim_values] = control_function(coax_state, Rb2w, trajectory, e_i, dt, param, contr_param);
             elseif (SERVICE_TRAJECTORY)
                 CONTROL_MODE = CONTROL_TRAJECTORY;
                 desPosition = coax_state(1:3);
                 trajectory = [desPosition' 0 0 0 0 0 0 gotopos_orientation 0]';
-                [motor_up, motor_lo, servo1, servo2, e_i, trim_values] = control_function(coax_state, Rb2w, trajectory, e_i, dt, cont_const, contr_param);
+                [motor_up, motor_lo, servo1, servo2, e_i, trim_values] = control_function(coax_state, Rb2w, trajectory, e_i, dt, param, contr_param);
             else
                 CONTROL_MODE = CONTROL_HOVER; % in the end
                 hover_position = gotopos_position; % manually entered goto position (if possible) #####
                 trajectory = [hover_position' 0 0 0 0 0 0 gotopos_orientation 0]';
-                [motor_up, motor_lo, servo1, servo2, e_i, trim_values] = control_function(coax_state, Rb2w, trajectory, e_i, dt, cont_const, contr_param);
+                [motor_up, motor_lo, servo1, servo2, e_i, trim_values] = control_function(coax_state, Rb2w, trajectory, e_i, dt, param, contr_param);
             end
         end
         
@@ -482,11 +485,11 @@ switch CONTROL_MODE
             end
             desPosition = coax_state(1:3);
             trajectory = [desPosition' 0 0 0 0 0 0 initial_trajectory_orientation 0]';
-            [motor_up, motor_lo, servo1, servo2, e_i, trim_values] = control_function(coax_state, Rb2w, trajectory, e_i, dt, cont_const, contr_param);
+            [motor_up, motor_lo, servo1, servo2, e_i, trim_values] = control_function(coax_state, Rb2w, trajectory, e_i, dt, param, contr_param);
         else
             dt_traj = etime(time, trajectory_time);
             trajectory = trajectory_generation(dt_traj,TRAJECTORY_TYPE);
-            [motor_up, motor_lo, servo1, servo2, e_i, trim_values] = control_function(coax_state, Rb2w, trajectory, e_i, dt, cont_const, contr_param);
+            [motor_up, motor_lo, servo1, servo2, e_i, trim_values] = control_function(coax_state, Rb2w, trajectory, e_i, dt, param, contr_param);
 %             if (dt_traj > 60)
 %                 CONTROL_MODE = CONTROL_LANDING;
 %                 FIRST_LANDING = 1;
@@ -517,14 +520,14 @@ switch CONTROL_MODE
             end
             desPosition = coax_state(1:3);
             trajectory = [desPosition' 0 0 0 0 0 0 START_ORIENTATION 0]';
-            [motor_up, motor_lo, servo1, servo2, e_i, trim_values] = control_function(coax_state, Rb2w, trajectory, e_i, dt, cont_const, contr_param);
+            [motor_up, motor_lo, servo1, servo2, e_i, trim_values] = control_function(coax_state, Rb2w, trajectory, e_i, dt, param, contr_param);
         else
             dt_land = etime(time, landing_time);
             if (dt_land < SINK_TIME)
                 desPosition = START_POSITION + [0 0 START_HEIGHT]';
                 desPosition(3) = desPosition(3) - SINK_VELOCITY*dt_land;
                 trajectory = [desPosition' 0 0 -SINK_VELOCITY 0 0 0 START_ORIENTATION 0]';
-                [motor_up, motor_lo, servo1, servo2, e_i, trim_values] = control_function(coax_state, Rb2w, trajectory, e_i, dt, cont_const, contr_param);
+                [motor_up, motor_lo, servo1, servo2, e_i, trim_values] = control_function(coax_state, Rb2w, trajectory, e_i, dt, param, contr_param);
             elseif (dt_land < SINK_TIME + IDLE_TIME)
                 motor_up = 0.35;
                 motor_lo = 0.35;
@@ -570,41 +573,41 @@ geometry_msgs_Quaternion('send',cid,raw_control);
 
 prev_time = time;
 
-%%%%%%%%%
-if (CONTROL_MODE == CONTROL_HOVER)
-    pos = [A.pose.pose.position.x A.pose.pose.position.y A.pose.pose.position.z]';
-    ori = [A.pose.pose.orientation.x A.pose.pose.orientation.y A.pose.pose.orientation.z A.pose.pose.orientation.w]';
-    lintwist = [A.twist.twist.linear.x A.twist.twist.linear.y A.twist.twist.linear.z]';
-    angtwist = [A.twist.twist.angular.x A.twist.twist.angular.y A.twist.twist.angular.z]';
-
-    TimeStamps(i) = A.header.stamp;
-    Positions(:,i) = pos;
-    Orientations(:,i) = ori;
-    Lintwists(:,i) = lintwist;
-    Angtwists(:,i) = angtwist;
-    Inputs(:,i) = [motor_up-volt_compUp motor_lo-volt_compLo servo1 servo2]';
-%     if (CONTROL_MODE == CONTROL_HOVER)
-%         Trims(:,i) = trim_values;
-%     else
-%         Trims(:,i) = [0 0 0 0]';
-%     end
-    i = i+1;
-end
-%%%%%%%%%
+% %%%%%%%%%
+% if (CONTROL_MODE == CONTROL_HOVER)
+%     pos = [A.pose.pose.position.x A.pose.pose.position.y A.pose.pose.position.z]';
+%     ori = [A.pose.pose.orientation.x A.pose.pose.orientation.y A.pose.pose.orientation.z A.pose.pose.orientation.w]';
+%     lintwist = [A.twist.twist.linear.x A.twist.twist.linear.y A.twist.twist.linear.z]';
+%     angtwist = [A.twist.twist.angular.x A.twist.twist.angular.y A.twist.twist.angular.z]';
+% 
+%     TimeStamps(i) = A.header.stamp;
+%     Positions(:,i) = pos;
+%     Orientations(:,i) = ori;
+%     Lintwists(:,i) = lintwist;
+%     Angtwists(:,i) = angtwist;
+%     Inputs(:,i) = [motor_up-volt_compUp motor_lo-volt_compLo servo1 servo2]';
+% %     if (CONTROL_MODE == CONTROL_HOVER)
+% %         Trims(:,i) = trim_values;
+% %     else
+% %         Trims(:,i) = [0 0 0 0]';
+% %     end
+%     i = i+1;
+% end
+% %%%%%%%%%
 % fprintf('CONTROL_MODE: %d \n',CONTROL_MODE);
 end % end of loop
 
-%%%%%%%%%
-Data.time = TimeStamps - TimeStamps(1);
-Data.position = Positions;
-Data.orientation = Orientations;
-Data.lintwist = Lintwists;
-Data.angtwist = Angtwists;
-Data.inputs = Inputs;
-% Data.trim = Trims;
-
-save ViconData Data
-%%%%%%%%%
+% %%%%%%%%%
+% Data.time = TimeStamps - TimeStamps(1);
+% Data.position = Positions;
+% Data.orientation = Orientations;
+% Data.lintwist = Lintwists;
+% Data.angtwist = Angtwists;
+% Data.inputs = Inputs;
+% % Data.trim = Trims;
+% 
+% save ViconData Data
+% %%%%%%%%%
 
 nav_msgs_Odometry('disconnect',pid);
 geometry_msgs_Quaternion('disconnect',iid);

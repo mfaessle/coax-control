@@ -1,3 +1,10 @@
+load SBDynamics
+
+SB_ori = SBDynamics.SBOrientation;
+time = SBDynamics.time;
+
+zero_ori = [-0.0509 -0.0108 0.9985]';
+
 Pxy = SB_ori(:,1:2);
 
 H = cov(Pxy);
@@ -19,11 +26,14 @@ end
 figure(1)
 plot(SB_ori(:,1),SB_ori(:,2),'*red')
 hold on;
-line([0 v(1)],[0 v(2)])
+line(0.1*[0 v(1)],0.1*[0 v(2)])
 plot(Pplane(:,1),Pplane(:,2),'*green')
+grid on;
+hold off;
 
 figure(2)
 plot(time,alpha)
+grid on;
 
 
 Mbody = [-33 34 35 -22 25; ...

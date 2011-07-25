@@ -1,4 +1,5 @@
 <launch>
+
   <node pkg="coax_simulator"
         name="simulator"
         type="coax_simulator"
@@ -6,7 +7,33 @@
     <param name="init/x" value="0.0"/>
     <param name="init/y" value="0.0"/>
     <param name="init/z" value="2.0"/>
-    <param name="rates/odometry" value="20.0"/>
+    <param name="rates/odometry" value="50.0"/>
     <rosparam file="$(find coax_simulator)/config/coax_parameters.yaml"/>
   </node>
+
+  <node pkg="ipc_nav_msgs"
+        name="nav_msgs_Odometry_publisher"
+        type="nav_msgs_Odometry_publisher"
+        output="screen">
+    <remap from="~topic" to="/simulator/coax/odom"/>
+    <param name="message" value="odom56"/>
+  </node>
+
+  <node pkg="coax_interface"
+        name="coax_interface"
+        type="coax_interface"
+        output="screen">
+    <remap from="/coax_interface/rawcontrol" to="/simulator/coax/cmd"/>
+    <remap from="/coax_interface/raw_control" to="matlab_raw_control"/>
+    <param name="frequency" value="200"/>
+  </node>
+
+  <node pkg="ipc_geometry_msgs"
+        name="Quaternion_raw_control_subscriber"
+        type="geometry_msgs_Quaternion_subscriber"
+        output="screen">
+    <remap from="~topic" to="matlab_raw_control"/>
+    <param name="message" value="raw_control56"/>
+  </node>
+
 </launch>

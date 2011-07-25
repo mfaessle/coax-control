@@ -136,6 +136,7 @@ void CoaXModel::SendCommand()
   cmd_updated = false;
 
   c.SetCommands(u_motup_w, u_motlo_w, u_serv1_w, u_serv2_w);
+  
 }
 
 int CoaXModel::ODEStep(double t, const double* state, double* xdot, void* params)
@@ -156,6 +157,7 @@ int CoaXModel::ODEStep(double t, const double* state, double* xdot, void* params
   double Omega_up = state[12];
   double Omega_lo = state[13];
 
+	//printf("Omega_up: %f  Omega_lo: %f \n", Omega_up, Omega_lo);
   // stabilizer bar direction
   double a_up = state[14];
   double b_up = state[15];
@@ -259,7 +261,9 @@ int CoaXModel::ODEStep(double t, const double* state, double* xdot, void* params
   double Fx = arma::as_scalar(Rb2w.row(0)*F_thrust);
   double Fy = arma::as_scalar(Rb2w.row(1)*F_thrust);
   double Fz = -m*g + arma::as_scalar(Rb2w.row(2)*F_thrust);
-
+	printf("x: %f  y: %f  z: %f  Omega_up: %f  Omega_lo: %f \n", state[0], state[1], state[2], Omega_up, Omega_lo);
+	printf("Inputs: %f   %f   %f   %f \n",u_motup,u_motlo,u_serv1,u_serv2);
+	printf("Fx: %f  Fy: %f  Fz: %f \n",Fx,Fy,Fz);
   // Summarized Moments
   double Mx = q*r*(Iyy-Izz) - T_up*z_Tup(1)*d_up - T_lo*z_Tlo(1)*d_lo + M_flapup(0) + M_flaplo(0);
   double My = p*r*(Izz-Ixx) + T_up*z_Tup(0)*d_up + T_lo*z_Tlo(0)*d_lo + M_flapup(1) + M_flaplo(1);
@@ -486,7 +490,7 @@ void CoaXModel::ResetSimulation(double time_,
   rot[2] = yaw;
 
   memset(vel, 0, sizeof(vel));
-  memset(rotors, 0, sizeof(rotors));
+  //memset(rotors, 0, sizeof(rotors));
   memset(acc, 0, sizeof(acc));
 
   // Reset the evolution of the ODE
@@ -503,7 +507,7 @@ void CoaXModel::ResetSimulation()
   memcpy(rot, init_rot, sizeof(rot));
   memset(vel, 0, sizeof(vel));
   memset(angvel, 0, sizeof(angvel));
-  memset(rotors, 0, sizeof(rotors));
+  memset(rotors, 230, sizeof(rotors));
   memset(acc, 0, sizeof(acc));
 
   // Reset the evolution of the ODE

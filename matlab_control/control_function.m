@@ -1,4 +1,4 @@
-function [motor_up, motor_lo, servo1, servo2, e_i, trim_values] = control_function(state, Rb2w, trajectory, e_i_prev, dt, cont_const, contr_param)
+function [motor_up, motor_lo, servo1, servo2, e_i, trim_values] = control_function(state, Rb2w, trajectory, e_i_prev, dt, param, contr_param)
 
 %=================================
 %%% Function inputs
@@ -11,17 +11,17 @@ z        = state(3);           % z position
 xdot     = state(4);           % u velocity
 ydot     = state(5);           % v velocity
 zdot     = state(6);           % w velocity
-p        = state(7);           % body roll rate
-q        = state(8);           % body pitch rate
-r        = state(9);           % body yaw rate 
-Omega_up = state(10);          % upper rotor speed
-Omega_lo = state(11);          % lower rotor speed
-z_barx   = state(12);          % stabilizer bar z-axis x-component
-z_bary   = state(13);          % stabilizer bar z-axis y-component
-z_barz   = state(14);          % stabilizer bar z-axis z-component
-roll = state(15);
-pitch = state(16);
-yaw = state(17);
+roll     = state(7);           % roll angle
+pitch    = state(8);           % pitch angle
+yaw      = state(9);           % yaw angle
+p        = state(10);          % body roll rate
+q        = state(11);          % body pitch rate
+r        = state(12);          % body yaw rate 
+Omega_up = state(13);          % upper rotor speed
+Omega_lo = state(14);          % lower rotor speed
+z_barx   = state(15);          % stabilizer bar z-axis x-component
+z_bary   = state(16);          % stabilizer bar z-axis y-component
+z_barz   = state(17);          % stabilizer bar z-axis z-component
 
 % Desired trajectory
 x_T      = trajectory(1);     % x position reference
@@ -36,21 +36,35 @@ zddot_T  = trajectory(9);     % z acceleration reference
 psi_T    = trajectory(10);     % reference orientation around z
 psidot_T = trajectory(11);     % referenze rotational speed around z 
 
-% Constants
-g           = cont_const.g;
-m           = cont_const.m;
-k_Tup       = cont_const.k_Tup;
-k_Tlo       = cont_const.k_Tlo;
-k_Mup       = cont_const.k_Mup;
-k_Mlo       = cont_const.k_Mlo;
-l_up        = cont_const.l_up;
-l_lo        = cont_const.l_lo;
-Omega_max   = cont_const.Omega_max;
-max_SPangle = cont_const.max_SPangle;
-zeta_mup    = cont_const.zeta_mup;
-zeta_bup    = cont_const.zeta_bup;
-zeta_mlo    = cont_const.zeta_mlo;
-zeta_blo    = cont_const.zeta_blo;
+% Parameter
+m = param.m;
+g = param.g;
+Ixx = param.Ixx;
+Iyy = param.Iyy;
+Izz = param.Izz;
+d_up = param.d_up;
+d_lo = param.d_lo;
+k_springup = param.k_springup;
+k_springlo = param.k_springlo;
+l_up = param.l_up;
+l_lo = param.l_lo;
+k_Tup = param.k_Tup;
+k_Tlo = param.k_Tlo;
+k_Mup = param.k_Mup;
+k_Mlo = param.k_Mlo;
+Tf_motup = param.Tf_motup;
+Tf_motlo = param.Tf_motlo;
+Tf_up = param.Tf_up;
+rs_mup = param.rs_mup;
+rs_bup = param.rs_bup;
+rs_mlo = param.rs_mlo;
+rs_blo = param.rs_blo;
+zeta_mup = param.zeta_mup;
+zeta_bup = param.zeta_bup;
+zeta_mlo = param.zeta_mlo;
+zeta_blo = param.zeta_blo;
+max_SPangle = param.max_SPangle;
+Omega_max = param.Omega_max;
 
 % Control parameters
 K_p = contr_param.K_p;
@@ -60,6 +74,9 @@ K_pq = contr_param.K_pq;
 K_psi = contr_param.K_psi;
 K_psi_i = contr_param.K_psi_i;
 K_omegaz = contr_param.K_omegaz;
+K_lqr = contr_param.K_lqr;
+T_inv = contr_param.T_inv_lqr; 
+W = contr_param.W_lqr;
 
 %=================================
 %%% Control inputs
@@ -165,27 +182,66 @@ Mz_des       = -K_psi*e_psi - K_psi_i*e_i(4) - K_omegaz*e_omegaz;
 % servo2       = b_lo_des/0.26;%b_lo_des/0.26;
 
 %% Test PID
-c            = 0.3;
-a_lo_des     = -c*Rw2b(2,:)*[F_des(1) F_des(2) 0]';
-b_lo_des     = c*Rw2b(1,:)*[F_des(1) F_des(2) 0]';
+% c            = 0.3;
+% a_lo_des     = -c*Rw2b(2,:)*[F_des(1) F_des(2) 0]';
+% b_lo_des     = c*Rw2b(1,:)*[F_des(1) F_des(2) 0]';
+% 
+% d            = 2;
+% dmot         = d*Mz_des;
+% motor_up     = (F_des(3)+2.37)/10.3 - dmot/2;
+% motor_lo     = (F_des(3)+2.37)/10.3 + dmot/2 + 0.03;
+% servo1       = a_lo_des/0.26;%a_lo_des/0.26;
+% servo2       = b_lo_des/0.26;%b_lo_des/0.26;
+% 
+% % Extract inputs from integrator for trimming
+% F_int = -K_i*e_i(1:3,1);
+% Mz_int = -K_psi_i*e_i(4);
+% servo1_trim = -c*Rw2b(2,:)*[F_int(1) F_int(2) 0]'/0.26;
+% servo2_trim = c*Rw2b(1,:)*[F_des(1) F_des(2) 0]'/0.26;
+% motor_up_trim = (F_int(3)+2.37)/10.3 - d*Mz_int/2;
+% motor_lo_trim = (F_int(3)+2.37)/10.3 + d*Mz_int/2;
+% 
+% trim_values = [motor_up_trim motor_lo_trim servo1_trim servo2_trim]';
 
-d            = 2;
-dmot         = d*Mz_des;
-motor_up     = (F_des(3)+2.37)/10.3 - dmot/2;
-motor_lo     = (F_des(3)+2.37)/10.3 + dmot/2 + 0.03;
-servo1       = a_lo_des/0.26;%a_lo_des/0.26;
-servo2       = b_lo_des/0.26;%b_lo_des/0.26;
+%% LQR Control
 
-% Extract inputs from integrator for trimming
-F_int = -K_i*e_i(1:3,1);
-Mz_int = -K_psi_i*e_i(4);
-servo1_trim = -c*Rw2b(2,:)*[F_int(1) F_int(2) 0]'/0.26;
-servo2_trim = c*Rw2b(1,:)*[F_des(1) F_des(2) 0]'/0.26;
-motor_up_trim = (F_int(3)+2.37)/10.3 - d*Mz_int/2;
-motor_lo_trim = (F_int(3)+2.37)/10.3 + d*Mz_int/2;
+% Upper thrust vector direction
+z_Tupz      = cos(l_up*acos(z_barz));
+if (z_Tupz < 1)
+    temp    = sqrt((1-z_Tupz^2)/(z_barx^2 + z_bary^2));
+    z_Tup   = [z_barx*temp z_bary*temp z_Tupz]';
+else
+    z_Tup   = [0 0 1]';
+end
+zeta        = zeta_mup*Omega_up + zeta_bup;
+RzT         = [cos(zeta) -sin(zeta) 0; sin(zeta) cos(zeta) 0; 0 0 1];
+z_Tup       = RzT*z_Tup;
 
-trim_values = [motor_up_trim motor_lo_trim servo1_trim servo2_trim]';
+Omega_lo0 = sqrt(m*g/(k_Tup*k_Mlo/k_Mup + k_Tlo));
+Omega_up0 = sqrt(k_Mlo/k_Mup*Omega_lo0^2);
 
+b_up = asin(z_Tup(1));
+a_up = -asin(z_Tup(2)/cos(b_up));
+
+error = T_inv*([state(1:14); a_up; b_up] - [x_T y_T z_T xdot_T ydot_T zdot_T 0 0 psi_T 0 0 psidot_T Omega_up0 Omega_lo0 0 0]');
+inputs = -W*K_lqr*error;
+
+% feed forward on rotor speeds
+motor_up = inputs(1) + (Omega_up0 - rs_bup)/rs_mup;
+motor_lo = inputs(2) + (Omega_lo0 - rs_blo)/rs_mlo;
+% correct for phase lag of servo inputs
+a_lo   = l_lo*inputs(3)*max_SPangle;
+b_lo   = l_lo*inputs(4)*max_SPangle;
+z_Tlo  = [sin(b_lo) -sin(a_lo)*cos(b_lo) cos(a_lo)*cos(b_lo)]';
+zeta   = zeta_mlo*Omega_lo + zeta_blo;
+RzT    = [cos(zeta) -sin(zeta) 0; sin(zeta) cos(zeta) 0; 0 0 1];
+z_Tlo  = RzT*z_Tlo;
+b_lo   = asin(z_Tlo(1));
+a_lo   = -asin(z_Tlo(2)/cos(b_lo));
+servo1 = a_lo/(l_lo*max_SPangle);
+servo2 = b_lo/(l_lo*max_SPangle);
+
+trim_values = zeros(4,1);
 
 end
 

@@ -9,27 +9,40 @@
 
   <group ns="Coax56">
 
-    <node pkg="coax_marker_publisher"
-          name="coax_marker_publisher"
-          type="coax_marker_publisher"       
-          output="screen">
-      <remap from="/coax_marker_publisher/names" to="/vicon/names"/>
-      <remap from="/coax_marker_publisher/values" to="/vicon/values"/>
-
-      <remap from="/coax_marker_publisher/marker1" to="/Coax56/marker1"/>
-      <remap from="/coax_marker_publisher/marker2" to="/Coax56/marker2"/>
-      <remap from="/coax_marker_publisher/marker3" to="/Coax56/marker3"/>
-      <remap from="/coax_marker_publisher/marker4" to="/Coax56/marker4"/>
-      <remap from="/coax_marker_publisher/marker5" to="/Coax56/marker5"/>
-      <remap from="/coax_marker_publisher/stabbar" to="/Coax56/stabbar"/>
-
-      <param name="vsk" value="$(find coax_vsk)/vsk/Coax56SB.vsk"/>
+    <node pkg="vicon_calibrate"
+          name="vicon_calibrate"
+          type="vicon_calibrate"
+          output="screen"
+          clear_params="true">
+      <remap from="~values" to="/vicon/values"/>
+      <remap from="~names" to="/vicon/names"/>
+      <param name="calibration" value="$(find coax_vsk)/calibration/Coax56.xml"/>
     </node>
-    
+
+    <node pkg="vicon2odometry"
+          name="vicon2odometry"
+          type="vicon2odometry"       
+          output="screen">
+      <remap from="~names" to="/vicon/names"/>
+      <remap from="~values" to="/vicon/values"/>
+      <remap from="~pose" to="/Coax56/vicon_calibrate/pose"/>
+      <remap from="~odom" to="/Coax56/vicon2odometry/odom"/>
+      <param name="vsk" value="$(find coax_vsk)/vsk/Coax56.vsk"/>
+
+    </node>
+
+    <node pkg="ipc_nav_msgs"
+          name="nav_msgs_Odometry_publisher"
+          type="nav_msgs_Odometry_publisher"
+          output="screen">
+      <remap from="~topic" to="/Coax56/vicon2odometry/odom"/>
+      <param name="message" value="odom56"/>
+    </node>
+
     <node pkg="coax_server"
           name="coax"
           type="coax_server"
-          output="screen"
+	  output="screen"
           args="/dev/tty.usbserial-A800f3Zv:1">
       <remap from="/coax_server/state" to="/Coax56/state"/>
 
@@ -40,11 +53,11 @@
       <remap from="/coax_server/configure_comm" to="/Coax56/configure_comm"/>
       <remap from="/coax_server/set_timeout" to="/Coax56/set_timeout"/>
     </node>
-    
+
     <node pkg="coax_interface"
           name="coax_interface"
           type="coax_interface"
-          output="screen">
+	  output="screen">
       <remap from="/coax_interface/info" to="/Coax56/coax_info"/>
       <remap from="/coax_interface/rawcontrol" to="/Coax56/rawcontrol"/>
       <remap from="/coax_interface/control_mode" to="/Coax56/control_mode"/>
@@ -62,55 +75,7 @@
 
       <param name="frequency" value="100"/>
     </node>
-    
-    <node pkg="ipc_geometry_msgs"
-          name="Quaternion_marker1_publisher"
-          type="geometry_msgs_Quaternion_publisher"
-          output="screen">
-      <remap from="~topic" to="/Coax56/marker1"/>
-      <param name="message" value="marker1"/>
-    </node>
 
-    <node pkg="ipc_geometry_msgs"
-          name="Quaternion_marker2_publisher"
-          type="geometry_msgs_Quaternion_publisher"
-          output="screen">
-      <remap from="~topic" to="/Coax56/marker2"/>
-      <param name="message" value="marker2"/>
-    </node>
-
-    <node pkg="ipc_geometry_msgs"
-          name="Quaternion_marker3_publisher"
-          type="geometry_msgs_Quaternion_publisher"
-          output="screen">
-      <remap from="~topic" to="/Coax56/marker3"/>
-      <param name="message" value="marker3"/>
-    </node>
-
-    <node pkg="ipc_geometry_msgs"
-          name="Quaternion_marker4_publisher"
-          type="geometry_msgs_Quaternion_publisher"
-          output="screen">
-      <remap from="~topic" to="/Coax56/marker4"/>
-      <param name="message" value="marker4"/>
-    </node>
-
-    <node pkg="ipc_geometry_msgs"
-          name="Quaternion_marker5_publisher"
-          type="geometry_msgs_Quaternion_publisher"
-          output="screen">
-      <remap from="~topic" to="/Coax56/marker5"/>
-      <param name="message" value="marker5"/>
-    </node>
-
-    <node pkg="ipc_geometry_msgs"
-          name="Quaternion_stabbar_publisher"
-          type="geometry_msgs_Quaternion_publisher"
-          output="screen">
-      <remap from="~topic" to="/Coax56/stabbar"/>
-      <param name="message" value="stabbar"/>
-    </node>
-    
     <node pkg="ipc_geometry_msgs"
           name="Quaternion_coax_info_publisher"
           type="geometry_msgs_Quaternion_publisher"
