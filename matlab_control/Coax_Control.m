@@ -66,12 +66,13 @@ e_i = [0 0 0 0]';
 FIRST_HOVER = 0;
 FIRST_LANDING = 0;
 FIRST_TRAJECTORY = 0;
-TRAJECTORY_TYPE = TRAJECTORY_YAWOSCIL;
+TRAJECTORY_TYPE = TRAJECTORY_LYINGCIRCLE;
 SERVICE_LANDING = 0;
 SERVICE_TRAJECTORY = 0;
 LOW_POWER_DETECTED = 0;
 mode = geometry_msgs_Quaternion('empty');
 info = geometry_msgs_Quaternion('empty');
+last_ctrl_mode_request = 0;
 motor_up = 0;
 motor_lo = 0;
 prev_Omega_up = 0;
@@ -97,8 +98,9 @@ while (1)
     
 %% Control Mode Transitions
 mode = geometry_msgs_Quaternion('read',cmid,1);
-if (~isempty(mode))
+if (~isempty(mode) && (int8(mode.x)~=last_ctrl_mode_request))
     % state transition
+    last_ctrl_mode_request = int8(mode.x); % make loop only enter once if transition request occurs
     switch int8(mode.x)
         case 1 % start/takeoff
             if (CONTROL_MODE == CONTROL_LANDED)
@@ -177,7 +179,6 @@ if (~isempty(mode))
                 break;
             %end
     end
-    % fprintf('CONTROL_MODE = %d \n',CONTROL_MODE);
 end
 
 %% Low power and Communication loss detection
@@ -467,18 +468,18 @@ switch CONTROL_MODE
         % calculate desired state according to current time and desired
         % trajectory
         % calculate control inputs according to desired state
-        
+
         current_position = coax_state(1:3);
         if (FIRST_TRAJECTORY)
             [~,initial_pose] = trajectory_generation(0,TRAJECTORY_TYPE);
             initial_trajectory_position = initial_pose(1:3);
             initial_trajectory_orientation = initial_pose(4);
-            if (norm(current_position - initial_trajectory_position) > 0.05)
-                CONTROL_MODE = CONTROL_GOTOPOS;
-                FIRST_GOTOPOS = 1;
-                SERVICE_TRAJECTORY = 1;
-                gotopos_position = initial_trajectory_position;
-                gotopos_orientation = initial_trajectory_orientation;
+            if 0;%(norm(current_position - initial_trajectory_position) > 0.05)
+%                 CONTROL_MODE = CONTROL_GOTOPOS;
+%                 FIRST_GOTOPOS = 1;
+%                 SERVICE_TRAJECTORY = 1;
+%                 gotopos_position = initial_trajectory_position;
+%                 gotopos_orientation = initial_trajectory_orientation;
             else
                 FIRST_TRAJECTORY = 0;
                 trajectory_time = time;
@@ -560,8 +561,10 @@ if (~isempty(info))
     volt_compUp = (12.22 - v_bat)*0.0279;
     volt_compLo = (12.22 - v_bat)*0.0287;
 end;
-motor_up = motor_up + volt_compUp;
-motor_lo = motor_lo + volt_compLo;
+if (motor_up > 0.05 || motor_lo > 0.05)
+    motor_up = motor_up + volt_compUp;
+    motor_lo = motor_lo + volt_compLo;
+end
 
 % send inputs
 raw_control = geometry_msgs_Quaternion('empty');
@@ -573,41 +576,43 @@ geometry_msgs_Quaternion('send',cid,raw_control);
 
 prev_time = time;
 
-% %%%%%%%%%
-% if (CONTROL_MODE == CONTROL_HOVER)
-%     pos = [A.pose.pose.position.x A.pose.pose.position.y A.pose.pose.position.z]';
-%     ori = [A.pose.pose.orientation.x A.pose.pose.orientation.y A.pose.pose.orientation.z A.pose.pose.orientation.w]';
-%     lintwist = [A.twist.twist.linear.x A.twist.twist.linear.y A.twist.twist.linear.z]';
-%     angtwist = [A.twist.twist.angular.x A.twist.twist.angular.y A.twist.twist.angular.z]';
-% 
-%     TimeStamps(i) = A.header.stamp;
-%     Positions(:,i) = pos;
-%     Orientations(:,i) = ori;
-%     Lintwists(:,i) = lintwist;
-%     Angtwists(:,i) = angtwist;
-%     Inputs(:,i) = [motor_up-volt_compUp motor_lo-volt_compLo servo1 servo2]';
-% %     if (CONTROL_MODE == CONTROL_HOVER)
-% %         Trims(:,i) = trim_values;
-% %     else
-% %         Trims(:,i) = [0 0 0 0]';
-% %     end
-%     i = i+1;
-% end
-% %%%%%%%%%
+%%%%%%%%%
+if (CONTROL_MODE == CONTROL_TRAJECTORY)
+    pos = [odom.pose.pose.position.x odom.pose.pose.position.y odom.pose.pose.position.z]';
+    ori = [odom.pose.pose.orientation.x odom.pose.pose.orientation.y odom.pose.pose.orientation.z odom.pose.pose.orientation.w]';
+    lintwist = [odom.twist.twist.linear.x odom.twist.twist.linear.y odom.twist.twist.linear.z]';
+    angtwist = [odom.twist.twist.angular.x odom.twist.twist.angular.y odom.twist.twist.angular.z]';
+
+    TimeStamps(i) = odom.header.stamp;
+    Positions(:,i) = pos;
+    Orientations(:,i) = ori;
+    Lintwists(:,i) = lintwist;
+    Angtwists(:,i) = angtwist;
+    Inputs(:,i) = [motor_up-volt_compUp motor_lo-volt_compLo servo1 servo2]';
+%     if (CONTROL_MODE == CONTROL_HOVER)
+%         Trims(:,i) = trim_values;
+%     else
+%         Trims(:,i) = [0 0 0 0]';
+%     end
+    i = i+1;
+end
+%%%%%%%%%
 % fprintf('CONTROL_MODE: %d \n',CONTROL_MODE);
 end % end of loop
 
-% %%%%%%%%%
-% Data.time = TimeStamps - TimeStamps(1);
-% Data.position = Positions;
-% Data.orientation = Orientations;
-% Data.lintwist = Lintwists;
-% Data.angtwist = Angtwists;
-% Data.inputs = Inputs;
-% % Data.trim = Trims;
-% 
-% save ViconData Data
-% %%%%%%%%%
+%%%%%%%%%
+if (~isempty(TimeStamps))
+    Data.time = TimeStamps - TimeStamps(1);
+    Data.position = Positions;
+    Data.orientation = Orientations;
+    Data.lintwist = Lintwists;
+    Data.angtwist = Angtwists;
+    Data.inputs = Inputs;
+    % Data.trim = Trims;
+
+    save ViconData Data
+end
+%%%%%%%%%
 
 nav_msgs_Odometry('disconnect',pid);
 geometry_msgs_Quaternion('disconnect',iid);

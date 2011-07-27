@@ -181,7 +181,7 @@ Mz_des       = -K_psi*e_psi - K_psi_i*e_i(4) - K_omegaz*e_omegaz;
 % servo1       = a_lo_des/0.26;%a_lo_des/0.26;
 % servo2       = b_lo_des/0.26;%b_lo_des/0.26;
 
-%% Test PID
+% % Test PID
 % c            = 0.3;
 % a_lo_des     = -c*Rw2b(2,:)*[F_des(1) F_des(2) 0]';
 % b_lo_des     = c*Rw2b(1,:)*[F_des(1) F_des(2) 0]';
@@ -223,8 +223,10 @@ Omega_up0 = sqrt(k_Mlo/k_Mup*Omega_lo0^2);
 b_up = asin(z_Tup(1));
 a_up = -asin(z_Tup(2)/cos(b_up));
 
-error = T_inv*([state(1:14); a_up; b_up] - [x_T y_T z_T xdot_T ydot_T zdot_T 0 0 psi_T 0 0 psidot_T Omega_up0 Omega_lo0 0 0]');
-inputs = -W*K_lqr*error;
+error = [state(1:14); a_up; b_up] - [x_T y_T z_T xdot_T ydot_T zdot_T 0 0 psi_T 0 0 psidot_T Omega_up0 Omega_lo0 0 0]';
+error(1:3) = Rw2b*error(1:3);
+error(4:6) = Rw2b*error(4:6);
+inputs = -W*K_lqr*T_inv*error;
 
 % feed forward on rotor speeds
 motor_up = inputs(1) + (Omega_up0 - rs_bup)/rs_mup;

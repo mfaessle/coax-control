@@ -129,10 +129,16 @@ sysd         = c2d(ss(A,B,eye(n),zeros(n,p)),Ts_lowlevel,'zoh');
 Ad           = sysd.A;
 Bd           = sysd.B;
 
-Q            = diag([10 10 10 0.1 0.1 0.1 2 2 2 0.1 0.1 0.1 0.1 0.1 1 1]);
+% Q            = 0.01*diag([5 5 10 0.5 0.5 0.5 2 2 2 0.01 0.01 0.01 0.1 0.1 1 1]);
+Q            = 0.01*diag([5.5 5.5 80  10 10 1  0.01 0.01 0.08  0.07 0.07 0.01  0.1 0.1 1 1]);
 R            = eye(4);
 
 K_lqr        = dlqr(Ad,Bd,Q,R);
+
+% knock out feedback from roll/pitch
+K_lqr(3:4,7:8) = zeros(2,2);
+% knock out feedback from a_up/b_up
+K_lqr(3:4,15:16) = zeros(2,2);
 
 % Control parameter struct
 contr_param.K_lqr = K_lqr;
