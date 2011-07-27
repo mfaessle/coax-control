@@ -4,10 +4,10 @@
         name="simulator"
         type="coax_simulator"
         output="screen">
-    <param name="init/x" value="0.0"/>
+    <param name="init/x" value="0.01"/>
     <param name="init/y" value="0.0"/>
     <param name="init/z" value="2.0"/>
-    <param name="rates/odometry" value="50.0"/>
+    <param name="rates/odometry" value="100.0"/>
     <rosparam file="$(find coax_simulator)/config/coax_parameters.yaml"/>
   </node>
 
@@ -25,7 +25,7 @@
         output="screen">
     <remap from="/coax_interface/rawcontrol" to="/simulator/coax/cmd"/>
     <remap from="/coax_interface/raw_control" to="matlab_raw_control"/>
-    <param name="frequency" value="200"/>
+    <param name="frequency" value="100"/>
   </node>
 
   <node pkg="ipc_geometry_msgs"

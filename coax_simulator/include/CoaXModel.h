@@ -78,6 +78,7 @@ public:
   void SetMotorFollowingTime(double Tf_motup, double Tf_motlo);
   void SetUpperRotorSpeedConversion(double rs_mup, double rs_bup);
   void SetLowerRotorSpeedConversion(double rs_mlo, double rs_blo);
+  void SetMaximumSwashPlateAngle(double max_SPangle);
 
   void SetCommand(double u_motup, double u_motlo,
                   double u_serv1, double u_serv2);

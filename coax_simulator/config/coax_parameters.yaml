@@ -39,3 +39,5 @@ speed_conversion:
   offset:
     upper: -0.2555
     lower: -2.9047
+
+max_swashplate_angle: 0.26

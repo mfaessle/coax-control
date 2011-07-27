@@ -78,7 +78,7 @@ void CoaXModel::SetUpperRotorFollowingTime(double Tf_up)
 void CoaXModel::SetRotorLinkageFactor(double l_up, double l_lo)
 {
   model_params.l_up = l_up;
-  model_params.l_up = l_lo;
+  model_params.l_lo = l_lo;
 }
 
 void CoaXModel::SetRotorSpringConstant(double k_springup, double k_springlo)
@@ -115,6 +115,11 @@ void CoaXModel::SetLowerRotorSpeedConversion(double rs_mlo, double rs_blo)
 {
   model_params.rs_mlo = rs_mlo;
   model_params.rs_blo = rs_blo;
+}
+
+void CoaXModel::SetMaximumSwashPlateAngle(double max_SPangle)
+{
+	model_params.max_SPangle = max_SPangle;
 }
 
 void CoaXModel::SetCommand(double u_motup, double u_motlo,
@@ -186,7 +191,7 @@ int CoaXModel::ODEStep(double t, const double* state, double* xdot, void* params
   double rs_mlo = param->rs_mlo;
   double rs_blo = param->rs_blo;
   double max_SPangle = param->max_SPangle;
-
+	
   // Controls
   double u_motup = param->control[0];
   double u_motlo = param->control[1];
@@ -261,9 +266,12 @@ int CoaXModel::ODEStep(double t, const double* state, double* xdot, void* params
   double Fx = arma::as_scalar(Rb2w.row(0)*F_thrust);
   double Fy = arma::as_scalar(Rb2w.row(1)*F_thrust);
   double Fz = -m*g + arma::as_scalar(Rb2w.row(2)*F_thrust);
-	printf("x: %f  y: %f  z: %f  Omega_up: %f  Omega_lo: %f \n", state[0], state[1], state[2], Omega_up, Omega_lo);
-	printf("Inputs: %f   %f   %f   %f \n",u_motup,u_motlo,u_serv1,u_serv2);
-	printf("Fx: %f  Fy: %f  Fz: %f \n",Fx,Fy,Fz);
+	//printf("x: %f  y: %f  z: %f  Omega_up: %f  Omega_lo: %f \n", state[0], state[1], state[2], Omega_up, Omega_lo);
+	//printf("Inputs: %f   %f   %f   %f \n",u_motup,u_motlo,u_serv1,u_serv2);
+	//printf("Fx: %f  Fy: %f  Fz: %f \n",Fx,Fy,Fz);
+	//printf("z_Tup: %f   %f   %f \n",z_Tup(0),z_Tup(1),z_Tup(2));
+	//printf("z_Tlo: %f   %f   %f \n",z_Tlo(0),z_Tlo(1),z_Tlo(2));
+	//printf("a_lo: %f  b_lo: %f \n",a_lo,b_lo);
   // Summarized Moments
   double Mx = q*r*(Iyy-Izz) - T_up*z_Tup(1)*d_up - T_lo*z_Tlo(1)*d_lo + M_flapup(0) + M_flaplo(0);
   double My = p*r*(Izz-Ixx) + T_up*z_Tup(0)*d_up + T_lo*z_Tlo(0)*d_lo + M_flapup(1) + M_flaplo(1);
@@ -507,7 +515,7 @@ void CoaXModel::ResetSimulation()
   memcpy(rot, init_rot, sizeof(rot));
   memset(vel, 0, sizeof(vel));
   memset(angvel, 0, sizeof(angvel));
-  memset(rotors, 230, sizeof(rotors));
+  memset(rotors, 238.9734, 226.7098);
   memset(acc, 0, sizeof(acc));
 
   // Reset the evolution of the ODE

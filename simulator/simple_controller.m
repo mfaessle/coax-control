@@ -7,12 +7,15 @@ run parameter
 raw_control = geometry_msgs_Quaternion('empty');
 odom = nav_msgs_Odometry('read',pid,1);
 
+Ts = 0.01;
+
 FIRST_RUN = 1;
 VEL = 0.05;
 % set desired position and orientation
 end_position = [0 0 1.5]';
 end_orientation = 0;
 
+time = 0;
 while (1)
 
     % Read Odometry message, rotor speeds and stabilizer bar angles
@@ -24,9 +27,6 @@ while (1)
 %     while (isempty(add_state))
 %         add_state = geometry_msgs_Quaternion('read',aid,1);
 %     end
-    
-    % get current time
-    time = clock;
     
     % extract state values from messages
     x        = odom.pose.pose.position.x;
@@ -65,7 +65,7 @@ while (1)
     end
     
     % Compute trajectory
-    dt = etime(time, start_time);
+    dt = time - start_time;
     if (dt < duration)
         desPosition = start_position + VEL*dt*dir;
         trajectory = [desPosition' VEL*dir' 0 0 0 dt/duration*end_orientation end_orientation/duration]';
@@ -74,6 +74,9 @@ while (1)
     end
     
     % compute control commands
+    Omega_lo0 = sqrt(m*g/(k_Tup*k_Mlo/k_Mup + k_Tlo));
+    Omega_up0 = sqrt(k_Mlo/k_Mup*Omega_lo0^2);
+    % control_inputs = [(Omega_up0 - rs_bup)/rs_mup (Omega_lo0 - rs_blo)/rs_mlo 0 0.5]';
     control_inputs = coax_control(state,trajectory,param,cont_param);
     
     % send control commands
@@ -83,6 +86,7 @@ while (1)
     raw_control.w = control_inputs(4);
     geometry_msgs_Quaternion('send',cid,raw_control);
 
+    time = time + Ts;
     
 end
 

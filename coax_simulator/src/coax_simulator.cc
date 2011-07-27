@@ -67,10 +67,14 @@ void load_model_params(ros::NodeHandle &n)
   model->SetUpperRotorSpeedConversion(rs_mup, rs_bup);
 
   double rs_mlo, rs_blo;
-  n.getParam("speed_conversion/slope/upper", rs_mlo);
+  n.getParam("speed_conversion/slope/lower", rs_mlo);
   n.getParam("speed_conversion/offset/lower", rs_blo);
   model->SetLowerRotorSpeedConversion(rs_mlo, rs_blo);
 
+  double max_SPangle;
+  n.getParam("max_swashplate_angle", max_SPangle);
+  model->SetMaximumSwashPlateAngle(max_SPangle);
+  
   return;
 }
 
