@@ -106,6 +106,11 @@ int main(int argc, char** argv)
 
   simulator.GetModelPtr()->SetInitialXYZ(init_x, init_y, init_z);
   simulator.GetModelPtr()->SetInitialRotation(0, 0, 0);
+  
+  double init_Omega_up, init_Omega_lo;
+  n.param("init/Omega_up", init_Omega_up, 0.0);
+  n.param("init/Omega_lo", init_Omega_lo, 0.0);
+  simulator.GetModelPtr()->SetInitialRotorSpeeds(init_Omega_up, init_Omega_lo);
 
   int speedup;
   n.param("speedup",speedup,1);

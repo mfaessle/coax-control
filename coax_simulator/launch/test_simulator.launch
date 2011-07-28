@@ -4,9 +4,11 @@
         name="simulator"
         type="coax_simulator"
         output="screen">
-    <param name="init/x" value="0.01"/>
+    <param name="init/x" value="0.0"/>
     <param name="init/y" value="0.0"/>
-    <param name="init/z" value="2.0"/>
+    <param name="init/z" value="0.0"/>
+    <param name="init/Omega_up" value="0.0"/> <!-- 226.7098"/> -->
+    <param name="init/Omega_lo" value="0.0"/> <!-- 238.9733"/> -->
     <param name="rates/odometry" value="100.0"/>
     <rosparam file="$(find coax_simulator)/config/coax_parameters.yaml"/>
   </node>

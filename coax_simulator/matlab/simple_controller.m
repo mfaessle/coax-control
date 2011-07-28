@@ -14,10 +14,10 @@ Omega_lo = 0;
 a_up = 0;
 b_up = 0;
 
-FIRST_RUN = 0;
+FIRST_RUN = 1;
 VEL = 0.05;
 % set desired position and orientation
-end_position = [0 0 0.5]';
+end_position = [0 0 0.2]';
 end_orientation = 0;
 
 time = 0;

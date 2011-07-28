@@ -66,7 +66,8 @@ public:
 
   void SetInitialXYZ(double x, double y, double z);
   void SetInitialRotation(double roll, double pitch, double yaw);
-
+  void SetInitialRotorSpeeds(double Omega_up, double Omega_lo);
+	
   void SetMass(double mass);
   void SetInertia(double Ixx, double Iyy, double Izz);
   void SetRotorOffset(double d_up, double d_lo);
@@ -83,6 +84,7 @@ public:
   void SetCommand(double u_motup, double u_motlo,
                   double u_serv1, double u_serv2);
   void SendCommand();
+  double LimitRotorSpeed(double rotor_speed);
 
 private:
   static int ODEStep(double t, const double* x, double* xdot, void* params);
@@ -97,6 +99,7 @@ private:
 
   double init_pos[3];
   double init_rot[9];
+  double init_rotors[2];
 
   double time;
 
