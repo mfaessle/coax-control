@@ -70,6 +70,16 @@ void load_model_params(ros::NodeHandle &n)
   n.getParam("speed_conversion/slope/lower", rs_mlo);
   n.getParam("speed_conversion/offset/lower", rs_blo);
   model->SetLowerRotorSpeedConversion(rs_mlo, rs_blo);
+	
+  double zeta_mup, zeta_bup;
+  n.getParam("phase_lag/slope/upper", zeta_mup);
+  n.getParam("phase_lag/offset/upper", zeta_bup);
+  model->SetUpperPhaseLag(zeta_mup, zeta_bup);
+	
+  double zeta_mlo, zeta_blo;
+  n.getParam("phase_lag/slope/lower", zeta_mlo);
+  n.getParam("phase_lag/offset/lower", zeta_blo);
+  model->SetLowerPhaseLag(zeta_mlo, zeta_blo);
 
   double max_SPangle;
   n.getParam("max_swashplate_angle", max_SPangle);
@@ -111,6 +121,8 @@ int main(int argc, char** argv)
   n.param("init/Omega_up", init_Omega_up, 0.0);
   n.param("init/Omega_lo", init_Omega_lo, 0.0);
   simulator.GetModelPtr()->SetInitialRotorSpeeds(init_Omega_up, init_Omega_lo);
+
+  simulator.GetModelPtr()->SetInitialStabilizerBar(0, 0, 1);
 
   int speedup;
   n.param("speedup",speedup,1);

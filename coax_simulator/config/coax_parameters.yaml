@@ -14,8 +14,8 @@ linkage_factor:
   lower: 0.5176
 
 spring_constant:
-  upper: 0.1084
-  lower: 0.4278
+  upper: 0.0542
+  lower: 0.2139
 
 thrust_factor:
   upper: 2.2607e-5
@@ -26,8 +26,7 @@ moment_factor:
   lower: 8.9737e-7
 
 following_time:
-  rotors:
-    upper: 1.6
+  bar: 1.6
   motors:
     upper: 0.185
     lower: 0.115
@@ -39,5 +38,13 @@ speed_conversion:
   offset:
     upper: -0.2555
     lower: -2.9047
+
+phase_lag:
+  slope:
+    upper: -0.001282
+    lower: 0.001282
+  offset:
+    upper: 0.1789
+    lower: -0.0094
 
 max_swashplate_angle: 0.26

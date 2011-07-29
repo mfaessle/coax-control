@@ -7,7 +7,7 @@
 
 #include "CoaXOnboardControl.h"
 
-#define DIMENSION 16
+#define DIMENSION 17
 
 typedef struct
 {
@@ -22,6 +22,8 @@ typedef struct
   double Tf_up;
   double rs_mup, rs_bup;
   double rs_mlo, rs_blo;
+  double zeta_mup, zeta_bup;
+  double zeta_mlo, zeta_blo;
   double max_SPangle;
   double acc[3];
 
@@ -67,6 +69,7 @@ public:
   void SetInitialXYZ(double x, double y, double z);
   void SetInitialRotation(double roll, double pitch, double yaw);
   void SetInitialRotorSpeeds(double Omega_up, double Omega_lo);
+  void SetInitialStabilizerBar(double x, double y, double z);
 	
   void SetMass(double mass);
   void SetInertia(double Ixx, double Iyy, double Izz);
@@ -79,6 +82,8 @@ public:
   void SetMotorFollowingTime(double Tf_motup, double Tf_motlo);
   void SetUpperRotorSpeedConversion(double rs_mup, double rs_bup);
   void SetLowerRotorSpeedConversion(double rs_mlo, double rs_blo);
+  void SetUpperPhaseLag(double zeta_mup, double zeta_bup);
+  void SetLowerPhaseLag(double zeta_mlo, double zeta_blo);
   void SetMaximumSwashPlateAngle(double max_SPangle);
 
   void SetCommand(double u_motup, double u_motlo,
@@ -95,11 +100,12 @@ private:
   double angvel[3];
   double acc[3];
   double rotors[2];
-  double bar[2];
+  double bar[3];
 
   double init_pos[3];
   double init_rot[9];
   double init_rotors[2];
+  double init_bar[3];
 
   double time;
 

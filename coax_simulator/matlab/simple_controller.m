@@ -13,11 +13,13 @@ Omega_up = 0;
 Omega_lo = 0;
 a_up = 0;
 b_up = 0;
+prev_z_bar = [0 0 1]';
+z_bar = [0 0 1]';
 
 FIRST_RUN = 1;
 VEL = 0.05;
 % set desired position and orientation
-end_position = [0 0 0.2]';
+end_position = [0 0.01 0.5]';
 end_orientation = 0;
 
 time = 0;
@@ -47,6 +49,9 @@ while (1)
     p        = odom.twist.twist.angular.x;
     q        = odom.twist.twist.angular.y;
     r        = odom.twist.twist.angular.z;
+    z_barx   = z_bar(1);
+    z_bary   = z_bar(2);
+    z_barz   = z_bar(3);
 %     Omega_up = add_state.x;
 %     Omega_lo = add_state.y;
 %     a_up     = add_state.z;
@@ -55,6 +60,21 @@ while (1)
     roll = atan2(2*(qw*qx+qy*qz),1-2*(qx^2+qy^2));
     pitch = asin(2*(qw*qy-qz*qx));
     yaw = atan2(2*(qw*qz+qx*qy),1-2*(qy^2+qz^2));
+    
+    z_Tupz      = cos(l_up*acos(z_barz));
+    if (z_Tupz < 1)
+        temp    = sqrt((1-z_Tupz^2)/(z_barx^2 + z_bary^2));
+        z_Tup   = [z_barx*temp z_bary*temp z_Tupz]';
+    else
+        z_Tup   = [0 0 1]';
+    end
+
+    % rotation of thrust direction by zeta around z-axis
+    zeta        = zeta_mup*Omega_up + zeta_bup;
+    RzT         = [cos(zeta) -sin(zeta) 0; sin(zeta) cos(zeta) 0; 0 0 1];
+    z_Tup       = RzT*z_Tup;
+    a_up = -asin(z_Tup(2));
+    b_up = asin(z_Tup(1)/cos(a_up));
     
     % coax state
     state = [x y z xdot ydot zdot roll pitch yaw p q r Omega_up Omega_lo a_up b_up]';
@@ -93,8 +113,20 @@ while (1)
     Omega_up = Omega_up + 1/Tf_motup*(Omega_up_des - Omega_up)*Ts;
     Omega_lo = Omega_lo + 1/Tf_motlo*(Omega_lo_des - Omega_lo)*Ts;
 
-    a_up = a_up + (-1/Tf_up*a_up - l_up*p)*Ts;
-    b_up = b_up + (-1/Tf_up*b_up - l_up*q)*Ts;
+    % stabilizer bar orientation
+    b_z_bardotz = 1/Tf_up*acos(prev_z_bar(3))*sqrt(prev_z_bar(1)^2 + prev_z_bar(2)^2);
+    if (b_z_bardotz <= 0)
+        b_z_bardot = [0 0 0]';
+    else
+        temp = prev_z_bar(3)*b_z_bardotz/(prev_z_bar(1)^2+prev_z_bar(2)^2);
+        b_z_bardot = [-prev_z_bar(1)*temp -prev_z_bar(2)*temp b_z_bardotz]';
+    end
+
+    A_k = [0 r -q; -r 0 p; q -p 0];
+
+    z_bar = prev_z_bar + (A_k*prev_z_bar + b_z_bardot)*dt;
+    z_bar = z_bar/norm(z_bar);
+    prev_z_bar = z_bar;
 
     % send control commands
     raw_control.x = control_inputs(1);

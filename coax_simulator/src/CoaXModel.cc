@@ -28,6 +28,7 @@ CoaXModel::CoaXModel()
   memset(init_pos, 0, sizeof(init_pos));
   memset(init_rot, 0, sizeof(init_rot));
   memset(init_rotors, 0, sizeof(init_rotors));
+  memset(init_bar, 0, sizeof(init_bar));
 	
   cmd_updated = false;
 
@@ -118,6 +119,18 @@ void CoaXModel::SetLowerRotorSpeedConversion(double rs_mlo, double rs_blo)
   model_params.rs_blo = rs_blo;
 }
 
+void CoaXModel::SetUpperPhaseLag(double zeta_mup, double zeta_bup)
+{
+	model_params.zeta_mup = zeta_mup;
+	model_params.zeta_bup = zeta_bup;
+}
+
+void CoaXModel::SetLowerPhaseLag(double zeta_mlo, double zeta_blo)
+{
+	model_params.zeta_mlo = zeta_mlo;
+	model_params.zeta_blo = zeta_blo;
+}
+
 void CoaXModel::SetMaximumSwashPlateAngle(double max_SPangle)
 {
 	model_params.max_SPangle = max_SPangle;
@@ -175,8 +188,9 @@ int CoaXModel::ODEStep(double t, const double* state, double* xdot, void* params
   double Omega_lo = state[13];
 	
   // stabilizer bar direction
-  double a_up = state[14];
-  double b_up = state[15];
+  double z_barx = state[14];
+  double z_bary = state[15];
+  double z_barz = state[16]; 
 
   // Parameters
   double g = 9.81;
@@ -201,6 +215,10 @@ int CoaXModel::ODEStep(double t, const double* state, double* xdot, void* params
   double rs_bup = param->rs_bup;
   double rs_mlo = param->rs_mlo;
   double rs_blo = param->rs_blo;
+  double zeta_mup = param->zeta_mup;
+  double zeta_bup = param->zeta_bup;
+  double zeta_mlo = param->zeta_mlo;
+  double zeta_blo = param->zeta_blo;
   double max_SPangle = param->max_SPangle;
 	
   // Controls
@@ -208,21 +226,51 @@ int CoaXModel::ODEStep(double t, const double* state, double* xdot, void* params
   double u_motlo = param->control[1];
   double u_serv1 = param->control[2];
   double u_serv2 = param->control[3];
-
-  // Thrust vector directions
+  
+  // Upper thrust vector direction
+  double z_Tupz = cos(l_up*acos(z_barz));
+  arma::colvec z_Tup_p(3);
+  if (z_Tupz < 1-1e-6){
+	  double temp = sqrt((1-z_Tupz*z_Tupz)/(z_barx*z_barx + z_bary*z_bary));
+	  z_Tup_p(0) = z_barx*temp;
+	  z_Tup_p(1) = z_bary*temp;
+	  z_Tup_p(2) = z_Tupz;
+  }else {
+  	  z_Tup_p(0) = 0;
+      z_Tup_p(1) = 0;
+      z_Tup_p(2) = 1;
+  }
+  double zeta = zeta_mup*Omega_up + zeta_bup;
+  arma::colvec z_Tup(3);
+  z_Tup(0) = cos(zeta)*z_Tup_p(0) - sin(zeta)*z_Tup_p(1);
+  z_Tup(1) = sin(zeta)*z_Tup_p(0) + cos(zeta)*z_Tup_p(1);
+  z_Tup(2) = z_Tup_p(2);
+	
+  // Lower thrust vector direction
   double a_lo = l_lo*u_serv1*max_SPangle;
   double b_lo = l_lo*u_serv2*max_SPangle;
-
-  // rot around body-x then body-y
-  arma::colvec z_Tup(3);
-  z_Tup(0) = cos(a_up)*sin(b_up);
-  z_Tup(1) = -sin(a_up);
-  z_Tup(2) = cos(a_up)*cos(b_up);
-
+	
+  arma::colvec z_SP(3);
+  z_SP(0) = sin(b_lo);
+  z_SP(1) = -sin(a_lo)*cos(b_lo);
+  z_SP(2) = cos(a_lo)*cos(b_lo);
+  double z_Tloz = cos(l_lo*acos(z_SP(2)));
+  arma::colvec z_Tlo_p(3);
+  if (z_Tloz < 1-1e-6){
+	  double temp = sqrt((1-z_Tloz*z_Tloz)/(z_SP(1)*z_SP(1) + z_SP(2)*z_SP(2)));
+	  z_Tlo_p(0) = z_SP(1)*temp;
+	  z_Tlo_p(1) = z_SP(2)*temp;
+	  z_Tlo_p(2) = z_Tloz;
+  }else {
+	  z_Tlo_p(0) = 0;
+	  z_Tlo_p(1) = 0;
+	  z_Tlo_p(2) = 1;  
+  }
+  zeta = zeta_mlo*Omega_lo + zeta_blo;
   arma::colvec z_Tlo(3);
-  z_Tlo(0) = cos(a_lo)*sin(b_lo);
-  z_Tlo(1) = -sin(a_lo);
-  z_Tlo(2) = cos(a_lo)*cos(b_lo);
+  z_Tlo(0) = cos(zeta)*z_Tlo_p(0) + sin(zeta)*z_Tlo_p(1);
+  z_Tlo(1) = -sin(zeta)*z_Tlo_p(0) + cos(zeta)*z_Tlo_p(1);
+  z_Tlo(2) = z_Tlo_p(2);
 
   // Coordinate transformation body to world coordinates
   double c_r = cos(roll);
@@ -299,9 +347,23 @@ int CoaXModel::ODEStep(double t, const double* state, double* xdot, void* params
   double Omega_lo_des = rs_mlo*u_motlo + rs_blo;
   double Omega_updot = 1/Tf_motup*(Omega_up_des - Omega_up);
   double Omega_lodot = 1/Tf_motlo*(Omega_lo_des - Omega_lo);
+  
+  double b_z_bardotz = 1/Tf_up*acos(z_barz)*sqrt(z_barx*z_barx + z_bary*z_bary);
+  arma::colvec b_z_bardot(3);
+  if (fabs(b_z_bardotz) > 1e-6){
+	  double temp = z_barz*b_z_bardotz/(z_barx*z_barx + z_bary*z_bary);
+	  b_z_bardot(0) = -z_barx*temp;
+	  b_z_bardot(1) = -z_bary*temp;
+	  b_z_bardot(2) = b_z_bardotz;
+  }else {
+	  b_z_bardot(0) = 0;
+	  b_z_bardot(1) = 0;
+	  b_z_bardot(2) = 0;
+  }
 	
-  double a_updot = -1/Tf_up*a_up - l_up*p;
-  double b_updot = -1/Tf_up*b_up - l_up*q;
+  double z_barxdot = b_z_bardot(0) - q*z_barz + r*z_bary;
+  double z_barydot = b_z_bardot(1) - r*z_barx + p*z_barz;
+  double z_barzdot = b_z_bardot(2) - p*z_bary + q*z_barx;
 
   xdot[0] = state[3];
   xdot[1] = state[4];
@@ -317,8 +379,9 @@ int CoaXModel::ODEStep(double t, const double* state, double* xdot, void* params
   xdot[11] = rdot;
   xdot[12] = Omega_updot;
   xdot[13] = Omega_lodot;
-  xdot[14] = a_updot;
-  xdot[15] = b_updot;
+  xdot[14] = z_barxdot;
+  xdot[15] = z_barydot;
+  xdot[16] = z_barzdot;
 	
   return GSL_SUCCESS;
 }
@@ -421,6 +484,17 @@ void CoaXModel::SetInitialRotorSpeeds(double Omega_up, double Omega_lo)
 	init_rotors[1] = Omega_up;
 }
 
+void CoaXModel::SetInitialStabilizerBar(double x, double y, double z)
+{
+	bar[0] = x;
+	init_bar[0] = x;
+	bar[1] = z;
+	init_bar[1] = z;
+	bar[2] = z;
+	init_bar[2] = z;
+
+}
+
 void CoaXModel::GetXYZ(double& x, double& y, double& z)
 {
   x = pos[0];
@@ -512,12 +586,16 @@ void CoaXModel::ResetSimulation(double time_,
   pos[1] = y;
   pos[2] = z;
 
-  rot[0] = roll;
-  rot[1] = pitch;
+  rot[0] = 0;//roll;
+  rot[1] = 0;//pitch;
   rot[2] = yaw;
 
+  bar[0] = 0;
+  bar[1] = 0;
+  bar[2] = 1;
+	
   memset(vel, 0, sizeof(vel));
-  //memset(rotors, 0, sizeof(rotors));
+  memset(angvel, 0, sizeof(angvel));
   memset(acc, 0, sizeof(acc));
 
   // Reset the evolution of the ODE
@@ -534,6 +612,7 @@ void CoaXModel::ResetSimulation()
   memset(vel, 0, sizeof(vel));
   memset(angvel, 0, sizeof(angvel));
   memcpy(rotors, init_rotors, sizeof(rotors));
+  memcpy(bar, init_bar, sizeof(bar));
   memset(acc, 0, sizeof(acc));
 
   // Reset the evolution of the ODE

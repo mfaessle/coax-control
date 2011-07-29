@@ -13,8 +13,8 @@ Tf_up         = 1.6;             % upper rotor following time [s] (Skybotix)
 %Tf_lo         = 0.08;            % lower rotor following time [s] (Skybotix)
 l_up          = 0.6130;          % upper rotor linkage factor [-] (Skybotix)
 l_lo          = 0.5176;          % lower rotor linkage factor [-] (Skybotix)
-k_springup    = 0.1084;          % spring constant upper rotor [Nm/rad] (Skybotix)
-k_springlo    = 0.4278;          % spring constant lower rotor [Nm/rad] (Skybotix)
+k_springup    = 0.0542;          % spring constant upper rotor [Nm/rad] (Skybotix)
+k_springlo    = 0.2139;          % spring constant lower rotor [Nm/rad] (Skybotix)
 
 k_Tup         = 2.2607e-5;       % thrust factor upper rotor [Ns^2/rad^2] (Skybotix)
 k_Tlo         = 3.1531e-5;       % thrust factor lower rotor [Ns^2/rad^2] (Skybotix)
@@ -31,8 +31,8 @@ rs_blo        = -2.9047;         % offset of input to lower rotor speed conversi
 
 zeta_mup      = -0.001282;       % slope of phase lag function upper rotor [s] (Skybotix)
 zeta_bup      = 0.1789;          % offset of phase lag function upper rotor [rad] (Skybotix)
-zeta_mlo      = -0.001282;       % slope of phase lag function lower rotor [s] (Skybotix)
-zeta_blo      = 0.0094;          % offset of phase lag function lower rotor [rad] (Skybotix)
+zeta_mlo      = 0.001282;        % slope of phase lag function lower rotor [s] (Skybotix)
+zeta_blo      = -0.0094;         % offset of phase lag function lower rotor [rad] (Skybotix)
 
 max_SPangle   = 15/360*2*pi;     % maximum swash plate tilt angle [rad]
 Omega_max     = 320;             % maximum rotor speed [rad/s]
