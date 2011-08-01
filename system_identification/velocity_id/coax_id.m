@@ -19,7 +19,7 @@ for i=1:length(Time)
     RPY(i,:) = [roll pitch yaw];
 end
 
-% single measurements must be in rows!
+% y = [Data.position(:,3000:7000)' RPY]; % single measurements must be in rows!
 y = [Data.lintwist(:,Nstart:Nstop)' Data.angtwist(:,Nstart:Nstop)'];
 u = Data.inputs(:,Nstart:Nstop)';
 
@@ -150,6 +150,7 @@ param = set_model_param(id_param); % set identified parameters
 t0 = Time(1);
 % x0 = findstates(nlgr,z);
 x0 = cell2mat(getinit(nlgr));
+x0 = x0(4:17);
 
 % Outputs
 X = zeros(length(Time),length(x0));
@@ -164,7 +165,7 @@ for i=Nstart : Nstop-1
     
     control = u(i-Nstart+1,:)';
     
-    % [time,state] = ode45(@coax_eom,[tstart tstop],x,[],control,param);
+    %[time,state] = ode45(@coax_eom,[tstart tstop],x,[],control,param);
     [time,state] = ode45(@CoaX_grey_box,[tstart tstop],x,[],control,m,g,Ixx,Iyy,Izz,d_up,d_lo,k_springup,k_springlo,l_up,l_lo,k_Tup,k_Tlo,k_Mup,k_Mlo,Tf_motup,Tf_motlo,Tf_up,rs_mup,rs_bup,rs_mlo,rs_blo,zeta_mup,zeta_bup,zeta_mlo,zeta_blo,max_SPangle);
     
     x = state(end,:)';
@@ -175,25 +176,25 @@ end
 %% Plot
 figure;
 subplot(4,1,1)
-plot(Time,X(:,1:6))
+plot(Time,X(:,1:3))
 grid on;
-legend('x','y','z','u','v','w')
+legend('u','v','w')
 title('Translational states')
 
 subplot(4,1,2)
-plot(Time,X(:,7:12))
+plot(Time,X(:,4:9))
 grid on;
 legend('\phi','\theta','\psi','p','q','r')
 title('Rotational states')
 
 subplot(4,1,3)
-plot(Time,X(:,13:14))
+plot(Time,X(:,10:11))
 grid on;
 legend('\omega_{up}','\omega_{lo}')
 title('Rotor speeds')
 
 subplot(4,1,4)
-plot(Time,X(:,15:17))
+plot(Time,X(:,12:14))
 grid on;
 legend('x','y','z')
 title('Upper thrust vector direction')
