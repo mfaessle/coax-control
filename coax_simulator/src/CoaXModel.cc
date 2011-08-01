@@ -190,7 +190,7 @@ int CoaXModel::ODEStep(double t, const double* state, double* xdot, void* params
   // stabilizer bar direction
   double z_barx = state[14];
   double z_bary = state[15];
-  double z_barz = state[16]; 
+  double z_barz = state[16];
 
   // Parameters
   double g = 9.81;
@@ -247,19 +247,19 @@ int CoaXModel::ODEStep(double t, const double* state, double* xdot, void* params
   z_Tup(2) = z_Tup_p(2);
 	
   // Lower thrust vector direction
-  double a_lo = l_lo*u_serv1*max_SPangle;
-  double b_lo = l_lo*u_serv2*max_SPangle;
+  double a_SP = u_serv1*max_SPangle;
+  double b_SP = u_serv2*max_SPangle;
 	
   arma::colvec z_SP(3);
-  z_SP(0) = sin(b_lo);
-  z_SP(1) = -sin(a_lo)*cos(b_lo);
-  z_SP(2) = cos(a_lo)*cos(b_lo);
+  z_SP(0) = sin(b_SP);
+  z_SP(1) = -sin(a_SP)*cos(b_SP);
+  z_SP(2) = cos(a_SP)*cos(b_SP);
   double z_Tloz = cos(l_lo*acos(z_SP(2)));
   arma::colvec z_Tlo_p(3);
   if (z_Tloz < 1-1e-6){
-	  double temp = sqrt((1-z_Tloz*z_Tloz)/(z_SP(1)*z_SP(1) + z_SP(2)*z_SP(2)));
-	  z_Tlo_p(0) = z_SP(1)*temp;
-	  z_Tlo_p(1) = z_SP(2)*temp;
+	  double temp = sqrt((1-z_Tloz*z_Tloz)/(z_SP(0)*z_SP(0) + z_SP(1)*z_SP(1)));
+	  z_Tlo_p(0) = z_SP(0)*temp;
+	  z_Tlo_p(1) = z_SP(1)*temp;
 	  z_Tlo_p(2) = z_Tloz;
   }else {
 	  z_Tlo_p(0) = 0;
@@ -349,22 +349,23 @@ int CoaXModel::ODEStep(double t, const double* state, double* xdot, void* params
   double Omega_lodot = 1/Tf_motlo*(Omega_lo_des - Omega_lo);
   
   double b_z_bardotz = 1/Tf_up*acos(z_barz)*sqrt(z_barx*z_barx + z_bary*z_bary);
-  arma::colvec b_z_bardot(3);
+  arma::colvec b_z_bardot = arma::zeros(3);
   if (fabs(b_z_bardotz) > 1e-6){
 	  double temp = z_barz*b_z_bardotz/(z_barx*z_barx + z_bary*z_bary);
 	  b_z_bardot(0) = -z_barx*temp;
 	  b_z_bardot(1) = -z_bary*temp;
 	  b_z_bardot(2) = b_z_bardotz;
-  }else {
-	  b_z_bardot(0) = 0;
-	  b_z_bardot(1) = 0;
-	  b_z_bardot(2) = 0;
   }
 	
   double z_barxdot = b_z_bardot(0) - q*z_barz + r*z_bary;
   double z_barydot = b_z_bardot(1) - r*z_barx + p*z_barz;
   double z_barzdot = b_z_bardot(2) - p*z_bary + q*z_barx;
 
+	double z_bar_norm = sqrt(z_barx*z_barx + z_bary*z_bary + z_barz*z_barz);
+	printf("z_bar: %f   %f   %f \n",z_barx,z_bary,z_barz);
+	printf("z_bardot: %f   %f   %f \n",z_barxdot,z_barydot,z_barzdot);
+	printf("Norm: %f \n\n",z_bar_norm);
+	
   xdot[0] = state[3];
   xdot[1] = state[4];
   xdot[2] = state[5];

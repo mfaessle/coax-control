@@ -3,7 +3,9 @@
 *.asv
 _*.py
 *.pyc
+*.mexmaci64
 matlab_control/*.mat
+system_identification/*.mat
 
 build
 bin

@@ -16,10 +16,12 @@ b_up = 0;
 prev_z_bar = [0 0 1]';
 z_bar = [0 0 1]';
 
+idle_time = 0;
+
 FIRST_RUN = 1;
 VEL = 0.05;
 % set desired position and orientation
-end_position = [0 0.01 0.5]';
+end_position = [0 0.01 0.05]';
 end_orientation = 0;
 
 time = 0;
@@ -61,26 +63,26 @@ while (1)
     pitch = asin(2*(qw*qy-qz*qx));
     yaw = atan2(2*(qw*qz+qx*qy),1-2*(qy^2+qz^2));
     
-    z_Tupz      = cos(l_up*acos(z_barz));
-    if (z_Tupz < 1)
-        temp    = sqrt((1-z_Tupz^2)/(z_barx^2 + z_bary^2));
-        z_Tup   = [z_barx*temp z_bary*temp z_Tupz]';
-    else
-        z_Tup   = [0 0 1]';
-    end
-
-    % rotation of thrust direction by zeta around z-axis
-    zeta        = zeta_mup*Omega_up + zeta_bup;
-    RzT         = [cos(zeta) -sin(zeta) 0; sin(zeta) cos(zeta) 0; 0 0 1];
-    z_Tup       = RzT*z_Tup;
-    a_up = -asin(z_Tup(2));
-    b_up = asin(z_Tup(1)/cos(a_up));
+%     z_Tupz      = cos(l_up*acos(z_barz));
+%     if (z_Tupz < 1)
+%         temp    = sqrt((1-z_Tupz^2)/(z_barx^2 + z_bary^2));
+%         z_Tup   = [z_barx*temp z_bary*temp z_Tupz]';
+%     else
+%         z_Tup   = [0 0 1]';
+%     end
+% 
+%     % rotation of thrust direction by zeta around z-axis
+%     zeta        = zeta_mup*Omega_up + zeta_bup;
+%     RzT         = [cos(zeta) -sin(zeta) 0; sin(zeta) cos(zeta) 0; 0 0 1];
+%     z_Tup       = RzT*z_Tup;
+%     a_up = -asin(z_Tup(2));
+%     b_up = asin(z_Tup(1)/cos(a_up));
     
     % coax state
-    state = [x y z xdot ydot zdot roll pitch yaw p q r Omega_up Omega_lo a_up b_up]';
-    % state = [x y z xdot ydot zdot roll pitch yaw p q r 0 0 0 0]';
+    state = [x y z xdot ydot zdot roll pitch yaw p q r Omega_up Omega_lo z_bar']';
+
     
-    if ((time >= 0) && FIRST_RUN)
+    if ((time >= idle_time) && FIRST_RUN)
         start_position = state(1:3);
         start_time = time;
         dist = norm(end_position - start_position);
@@ -88,17 +90,17 @@ while (1)
         duration = dist/VEL;
         FIRST_RUN = 0;
     end
-    if (time < 0)
+    if (time < idle_time)
         control_inputs = [0.35 0.35 0 0];
     else
         % Compute trajectory
-        dt = time - start_time;
-        if (dt < duration)
-            desPosition = start_position + VEL*dt*dir;
-            trajectory = [desPosition' VEL*dir' 0 0 0 dt/duration*end_orientation end_orientation/duration]';
-        else
+%         dt = time - start_time;
+%         if (dt < duration)
+%             desPosition = start_position + VEL*dt*dir;
+%             trajectory = [desPosition' VEL*dir' 0 0 0 dt/duration*end_orientation end_orientation/duration]';
+%         else
             trajectory = [end_position' 0 0 0 0 0 0 end_orientation 0]';
-        end
+%         end
     
         % compute control commands
         Omega_lo0 = sqrt(m*g/(k_Tup*k_Mlo/k_Mup + k_Tlo));

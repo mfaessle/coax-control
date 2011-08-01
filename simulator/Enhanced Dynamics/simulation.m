@@ -24,11 +24,12 @@ U = [];
 
 FIRST_RUN = 1;
 VEL = 0.05;
-end_position = [0.5 0 0]';
+end_position = [0.1 0 0.5]';
 end_orientation = 0;
 
 t = t0;
 x = x0;
+tic
 while (t < tsim)
     
     tstart = t;
@@ -54,7 +55,8 @@ while (t < tsim)
     % control = [u_motup u_motlo u_serv1 u_serv2]  u_mot in [0,1]; u_serv in [-1, 1]
     control = coax_control(x,trajectory,param,cont_param);
     
-    [time,state] = ode45(@coax_eom,[tstart tstop],x,[],control,param);
+    %[time,state] = ode45(@coax_eom,[tstart tstop],x,[],control,param);
+    [time,state] = ode45(@CoaX_grey_box,[tstart tstop],x,[],control,m,g,Ixx,Iyy,Izz,d_up,d_lo,k_springup,k_springlo,l_up,l_lo,k_Tup,k_Tlo,k_Mup,k_Mlo,Tf_motup,Tf_motlo,Tf_up,rs_mup,rs_bup,rs_mlo,rs_blo,zeta_mup,zeta_bup,zeta_mlo,zeta_blo,max_SPangle);
     
     t = time(end);
     x = state(end,:)';
@@ -63,7 +65,7 @@ while (t < tsim)
     T = [T; t];
     U = [U; control'];
 end
-
+toc
 
 %% Plot
 figure(1)
