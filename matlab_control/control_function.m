@@ -174,12 +174,13 @@ Mz_des       = -K_psi*e_psi - K_psi_i*e_i(4) - K_omegaz*e_omegaz;
 % 
 % b_lo_des     = asin(z_SP(1));
 % a_lo_des     = asin(-z_SP(2)/cos(b_lo_des));
+% 
+% % implement the conversion from physical to actual input values !!!
+% motor_up = (Omega_up_des - rs_bup)/rs_mup;
+% motor_lo = (Omega_lo_des - rs_blo)/rs_mlo;
+% servo1   = a_lo_des/(max_SPangle);
+% servo2   = b_lo_des/(max_SPangle);
 
-% implement the conversion from physical to actual input values !!!
-% motor_up     = Omega_up_des*0.002369883069058 + 0.001408825580969;
-% motor_lo     = Omega_lo_des*0.002278342819983 + 0.008205565116347;
-% servo1       = a_lo_des/0.26;%a_lo_des/0.26;
-% servo2       = b_lo_des/0.26;%b_lo_des/0.26;
 
 % % Test PID
 % c            = 0.3;
@@ -220,8 +221,8 @@ z_Tup       = RzT*z_Tup;
 Omega_lo0 = sqrt(m*g/(k_Tup*k_Mlo/k_Mup + k_Tlo));
 Omega_up0 = sqrt(k_Mlo/k_Mup*Omega_lo0^2);
 
-b_up = asin(z_Tup(1));
-a_up = -asin(z_Tup(2)/cos(b_up));
+a_up = -asin(z_Tup(2));
+b_up = asin(z_Tup(1)/cos(a_up));
 
 error = [state(1:14); a_up; b_up] - [x_T y_T z_T xdot_T ydot_T zdot_T 0 0 psi_T 0 0 psidot_T Omega_up0 Omega_lo0 0 0]';
 error(1:3) = Rw2b*error(1:3);
@@ -232,16 +233,31 @@ inputs = -W*K_lqr*T_inv*error;
 motor_up = inputs(1) + (Omega_up0 - rs_bup)/rs_mup;
 motor_lo = inputs(2) + (Omega_lo0 - rs_blo)/rs_mlo;
 % correct for phase lag of servo inputs
-a_lo   = l_lo*inputs(3)*max_SPangle;
-b_lo   = l_lo*inputs(4)*max_SPangle;
-z_Tlo  = [sin(b_lo) -sin(a_lo)*cos(b_lo) cos(a_lo)*cos(b_lo)]';
-zeta   = zeta_mlo*Omega_lo + zeta_blo;
-RzT    = [cos(zeta) -sin(zeta) 0; sin(zeta) cos(zeta) 0; 0 0 1];
-z_Tlo  = RzT*z_Tlo;
-b_lo   = asin(z_Tlo(1));
-a_lo   = -asin(z_Tlo(2)/cos(b_lo));
-servo1 = a_lo/(l_lo*max_SPangle);
-servo2 = b_lo/(l_lo*max_SPangle);
+a_SP = inputs(3)*max_SPangle;
+b_SP = inputs(4)*max_SPangle;
+z_SP = [sin(b_SP) -sin(a_SP)*cos(b_SP) cos(a_SP)*cos(b_SP)]';
+z_Tloz      = cos(l_lo*acos(z_SP(3)));
+if (z_Tloz < 1)
+    temp    = sqrt((1-z_Tloz^2)/(z_SP(1)^2 + z_SP(2)^2));
+    z_Tlo   = [z_SP(1)*temp z_SP(2)*temp z_Tloz]';
+else
+    z_Tlo   = [0 0 1]';
+end
+zeta        = zeta_mlo*Omega_lo + zeta_blo;
+RzT         = [cos(zeta) -sin(zeta) 0; sin(zeta) cos(zeta) 0; 0 0 1];
+z_Tlo       = RzT*z_Tlo;
+
+z_SPz        = cos(1/l_lo*acos(z_Tlo(3)));
+if (z_SPz < 1)
+    temp     = sqrt((1-z_SPz^2)/(z_Tlo(1)^2 + z_Tlo(2)^2));
+    z_SP     = [z_Tlo(1)*temp z_Tlo(2)*temp z_SPz]';
+else
+    z_SP     = [0 0 1]';
+end
+b_lo_des     = asin(z_SP(1));
+a_lo_des     = asin(-z_SP(2)/cos(b_lo_des));
+servo1       = a_lo_des/(max_SPangle);
+servo2       = b_lo_des/(max_SPangle);
 
 trim_values = zeros(4,1);
 
