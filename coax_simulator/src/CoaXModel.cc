@@ -356,16 +356,11 @@ int CoaXModel::ODEStep(double t, const double* state, double* xdot, void* params
 	  b_z_bardot(1) = -z_bary*temp;
 	  b_z_bardot(2) = b_z_bardotz;
   }
-	
+
   double z_barxdot = b_z_bardot(0) - q*z_barz + r*z_bary;
   double z_barydot = b_z_bardot(1) - r*z_barx + p*z_barz;
   double z_barzdot = b_z_bardot(2) - p*z_bary + q*z_barx;
 
-	double z_bar_norm = sqrt(z_barx*z_barx + z_bary*z_bary + z_barz*z_barz);
-	printf("z_bar: %f   %f   %f \n",z_barx,z_bary,z_barz);
-	printf("z_bardot: %f   %f   %f \n",z_barxdot,z_barydot,z_barzdot);
-	printf("Norm: %f \n\n",z_bar_norm);
-	
   xdot[0] = state[3];
   xdot[1] = state[4];
   xdot[2] = state[5];
@@ -383,6 +378,7 @@ int CoaXModel::ODEStep(double t, const double* state, double* xdot, void* params
   xdot[14] = z_barxdot;
   xdot[15] = z_barydot;
   xdot[16] = z_barzdot;
+
 	
   return GSL_SUCCESS;
 }
@@ -489,8 +485,8 @@ void CoaXModel::SetInitialStabilizerBar(double x, double y, double z)
 {
 	bar[0] = x;
 	init_bar[0] = x;
-	bar[1] = z;
-	init_bar[1] = z;
+	bar[1] = y;
+	init_bar[1] = y;
 	bar[2] = z;
 	init_bar[2] = z;
 
@@ -591,9 +587,9 @@ void CoaXModel::ResetSimulation(double time_,
   rot[1] = 0;//pitch;
   rot[2] = yaw;
 
-  bar[0] = 0;
-  bar[1] = 0;
-  bar[2] = 1;
+  //bar[0] = 0;
+  //bar[1] = 0;
+  //bar[2] = 1;
 	
   memset(vel, 0, sizeof(vel));
   memset(angvel, 0, sizeof(angvel));

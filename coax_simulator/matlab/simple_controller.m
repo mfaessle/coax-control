@@ -21,7 +21,7 @@ idle_time = 0;
 FIRST_RUN = 1;
 VEL = 0.05;
 % set desired position and orientation
-end_position = [0 0.01 0.05]';
+end_position = [0 0.01 0.5]';
 end_orientation = 0;
 
 time = 0;
@@ -94,18 +94,18 @@ while (1)
         control_inputs = [0.35 0.35 0 0];
     else
         % Compute trajectory
-%         dt = time - start_time;
-%         if (dt < duration)
-%             desPosition = start_position + VEL*dt*dir;
-%             trajectory = [desPosition' VEL*dir' 0 0 0 dt/duration*end_orientation end_orientation/duration]';
-%         else
+        dt = time - start_time;
+        if (dt < duration)
+            desPosition = start_position + VEL*dt*dir;
+            trajectory = [desPosition' VEL*dir' 0 0 0 dt/duration*end_orientation end_orientation/duration]';
+        else
             trajectory = [end_position' 0 0 0 0 0 0 end_orientation 0]';
-%         end
+        end
     
         % compute control commands
         Omega_lo0 = sqrt(m*g/(k_Tup*k_Mlo/k_Mup + k_Tlo));
         Omega_up0 = sqrt(k_Mlo/k_Mup*Omega_lo0^2);
-        % control_inputs = [(Omega_up0 - rs_bup)/rs_mup (Omega_lo0 - rs_blo)/rs_mlo 0 0]';
+        % control_inputs = [(Omega_up0 - rs_bup)/rs_mup (Omega_lo0 - rs_blo)/rs_mlo -0.2 0.3]';
         control_inputs = coax_control(state,trajectory,param,cont_param);
     end
     
@@ -126,7 +126,7 @@ while (1)
 
     A_k = [0 r -q; -r 0 p; q -p 0];
 
-    z_bar = prev_z_bar + (A_k*prev_z_bar + b_z_bardot)*dt;
+    z_bar = prev_z_bar + (A_k*prev_z_bar + b_z_bardot)*Ts;
     z_bar = z_bar/norm(z_bar);
     prev_z_bar = z_bar;
 

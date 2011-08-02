@@ -53,7 +53,7 @@ void load_model_params(ros::NodeHandle &n)
   model->SetRotorMomentFactor(k_Mup, k_Mlo);
 
   double Tf_up;
-  n.getParam("following_time/rotors/upper", Tf_up);
+  n.getParam("following_time/bar", Tf_up);
   model->SetUpperRotorFollowingTime(Tf_up);
 
   double Tf_motup, Tf_motlo;

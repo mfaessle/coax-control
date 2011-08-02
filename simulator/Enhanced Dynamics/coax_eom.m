@@ -68,9 +68,9 @@ RzT         = [cos(zeta) -sin(zeta) 0; sin(zeta) cos(zeta) 0; 0 0 1];
 z_Tup       = RzT*z_Tup;
 
 % Lower thrust vector direction
-a_lo = l_lo*u_serv1*max_SPangle;
-b_lo = l_lo*u_serv2*max_SPangle;
-z_SP        = [sin(b_lo) -sin(a_lo)*cos(b_lo) cos(a_lo)*cos(b_lo)]';
+a_SP = u_serv1*max_SPangle;
+b_SP = u_serv2*max_SPangle;
+z_SP        = [sin(b_SP) -sin(a_SP)*cos(b_SP) cos(a_SP)*cos(b_SP)]';
 z_Tloz      = cos(l_lo*acos(z_SP(3)));
 if (z_Tloz < 1)
     temp    = sqrt((1-z_Tloz^2)/(z_SP(1)^2 + z_SP(2)^2));
@@ -157,7 +157,7 @@ z_barydot   = b_z_bardot(2) - r*z_barx + p*z_barz;
 z_barzdot   = b_z_bardot(3) - p*z_bary + q*z_barx;
 
 % Function outputs
-xdot = zeros(16,1);
+xdot = zeros(17,1);
 
 xdot(1)  = state(4);
 xdot(2)  = state(5);
