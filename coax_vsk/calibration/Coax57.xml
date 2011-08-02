@@ -1,13 +1,13 @@
 <calibration>
 	<position>
-		<x>0.</x>
-		<y>-0.</y>
-		<z>0.</z>
+		<x>0.0213552</x>
+		<y>-0.0188824</y>
+		<z>-0.0268981</z>
 	</position>
 	<orientation>
-		<x>-0.</x>
-		<y>0.</y>
-		<z>-0.</z>
-		<w>1.0</w>
+		<x>-0.00297778</x>
+		<y>0.00325121</y>
+		<z>0.0494644</z>
+		<w>0.998766</w>
 	</orientation>
 </calibration>

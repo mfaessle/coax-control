@@ -1,32 +1,44 @@
-<positions>
-  <position>
-    <xyz>-331.546 -155.616 -75</xyz>
-  </position>
-  <position>
-    <xyz>-198.045 -187.147 -75</xyz>
-  </position>
-  <position>
-    <xyz>220.145 -187.147 -75</xyz>
-  </position>
-  <position>
-    <xyz>356.643 -169.434 -75</xyz>
-  </position>
-  <position>
-    <xyz>295.533 105.415 -75</xyz>
-  </position>
-  <position>
-    <xyz>356.643 179.023 -75</xyz>
-  </position>
-  <position>
-    <xyz>246.006 202.198 -75</xyz>
-  </position>
-  <position>
-    <xyz>-175.810 167.579 -75</xyz>
-  </position>
-  <position>
-    <xyz>-313.705 188.863 -75</xyz>
-  </position>
-  <position>
-    <xyz>-356.002 92.593 -75</xyz>
-  </position>
-</positions>
+<reference>
+	<markers>
+		<marker>
+			<name>CoaxCalib:Unlabeled67007</name>
+			<position>-351.546 -155.616 -115.000</position>
+		</marker>
+		<marker>
+			<name>CoaxCalib:Unlabeled67012</name>
+			<position>-218.045 -187.147 -115.000</position>
+		</marker>
+		<marker>
+			<name>CoaxCalib:Unlabeled67003</name>
+			<position>200.145 -187.147 -115.000</position>
+		</marker>
+		<marker>
+			<name>CoaxCalib:Unlabeled67009</name>
+			<position>336.643 -169.434 -115.000</position>
+		</marker>
+		<marker>
+			<name>CoaxCalib:Unlabeled67005</name>
+			<position>275.533 105.415 -115.000</position>
+		</marker>
+		<marker>
+			<name>CoaxCalib:Unlabeled67006</name>
+			<position>336.643 179.023 -115.000</position>
+		</marker>
+		<marker>
+			<name>CoaxCalib:Unlabeled67010</name>
+			<position>226.006 202.198 -115.000</position>
+		</marker>
+		<marker>
+			<name>CoaxCalib:Unlabeled67011</name>
+			<position>-195.810 167.579 -115.000</position>
+		</marker>
+		<marker>
+			<name>CoaxCalib:Unlabeled67008</name>
+			<position>-333.705 188.863 -115.000</position>
+		</marker>
+		<marker>
+			<name>CoaxCalib:Unlabeled67004</name>
+			<position>-376.002 92.593 -115.000</position>
+		</marker>
+	</markers>
+</reference>
