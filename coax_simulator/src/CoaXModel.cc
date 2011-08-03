@@ -356,7 +356,7 @@ int CoaXModel::ODEStep(double t, const double* state, double* xdot, void* params
 	  b_z_bardot(1) = -z_bary*temp;
 	  b_z_bardot(2) = b_z_bardotz;
   }
-
+	b_z_bardot = arma::zeros(3);
   double z_barxdot = b_z_bardot(0) - q*z_barz + r*z_bary;
   double z_barydot = b_z_bardot(1) - r*z_barx + p*z_barz;
   double z_barzdot = b_z_bardot(2) - p*z_bary + q*z_barx;
@@ -379,6 +379,8 @@ int CoaXModel::ODEStep(double t, const double* state, double* xdot, void* params
   xdot[15] = z_barydot;
   xdot[16] = z_barzdot;
 
+	printf("Omega_up: %f Omega_lo: %f \n",Omega_up,Omega_lo);
+	printf("z_bar: %f   %f   %f \n\n",z_barx,z_bary,z_barz);
 	
   return GSL_SUCCESS;
 }

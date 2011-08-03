@@ -230,7 +230,7 @@ void compute_dx(
         b_z_bardot[1] = -z_bary*temp;
         b_z_bardot[2] = b_z_bardotz;
     }
-
+    
     double z_barxdot = b_z_bardot[0] - wq*z_barz + wr*z_bary;
     double z_barydot = b_z_bardot[1] - wr*z_barx + wp*z_barz;
     double z_barzdot = b_z_bardot[2] - wp*z_bary + wq*z_barx;

@@ -54,7 +54,7 @@ Omega_lo_des = rs_mlo*v(2) + rs_blo;
 a_lo = l_lo*v(3)*max_SPangle;
 b_lo = l_lo*v(4)*max_SPangle;
 z_Tup = [cos(z(15))*sin(z(16)) -sin(z(15)) cos(z(15))*cos(z(16))]'; % rot around body-x then body-y
-z_Tlo = [cos(a_lo)*sin(b_lo) -sin(a_lo) cos(a_lo)*cos(b_lo)]';
+z_Tlo = [sin(b_lo) -sin(a_lo)*cos(b_lo) cos(a_lo)*cos(b_lo)]';
 
 % Thrust magnitudes
 T_up = k_Tup*z(13)^2;

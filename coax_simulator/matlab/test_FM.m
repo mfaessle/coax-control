@@ -1,8 +1,36 @@
 run parameter
 
+qx = 0.0274045334483;
+qy = -0.04734162125;
+qz = 0.00334408780377;
+qw = 0.998497160497;
+roll = atan2(2*(qw*qx+qy*qz),1-2*(qx^2+qy^2));
+pitch = asin(2*(qw*qy-qz*qx));
+yaw = atan2(2*(qw*qz+qx*qy),1-2*(qy^2+qz^2));
+
+x = 0.0605228325054;
+y = 0.0315342829308;
+z = 0.423585729345;
+
+u = 0.0689274916026;
+v = 0.0603583174183;
+w = 9.40186901227e-05;
+
+p = 0.323559237606;
+q = 0.0530269700116;
+r = -0.00133176165819;
+
+Omega_up = 227.183188;
+Omega_lo = 239.472329;
+z_bar = [-0.043390   -0.753383   0.656149];
+
+trajectory = [end_position' 0 0 0 0 0 0 end_orientation 0]';
+control_inputs = coax_control(state,trajectory,param,cont_param);
+
 Omega_lo0 = sqrt(m*g/(k_Tup*k_Mlo/k_Mup + k_Tlo));
 Omega_up0 = sqrt(k_Mlo/k_Mup*Omega_lo0^2);
 state = [0 0 0 0 0 0 0 0 0 0 0 0 Omega_up0 Omega_lo0 0.1 -0.05 0.99373034572];
+state = [x y z u v w roll pitch yaw p q r Omega_up Omega_lo z_bar]';
 
 control = [(Omega_up0 - rs_bup)/rs_mup (Omega_lo0 - rs_blo)/rs_mlo -0.2 0.3]';
 

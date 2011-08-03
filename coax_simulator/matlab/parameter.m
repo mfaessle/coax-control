@@ -3,7 +3,7 @@
 g             = 9.81;            % gravitational acceleration [m/s]
 m             = 0.302;           % helicopter mass [kg] (measured)
 Ixx           = 1.837e-3;        % x-axis moment of inertia [kg*m^2] (Skybotix)
-Iyy           = 1.87e-3;         % y-axis moment of inertia [kg*m^2] (Skybotix)
+Iyy           = 1.837e-3;         % y-axis moment of inertia [kg*m^2] (Skybotix)
 Izz           = 2.7786e-4;       % z-axis moment of inertia [kg*m^2] (Skybotix)
 
 d_up          = 0.165;           % distance from CoG to upper rotor hub [m] (measured)

@@ -1,13 +1,13 @@
 <package>
-  <description brief="coax_control">
+  <description brief="coax_keyboard_control">
 
-     coax_control
+     coax_keyboard_control
 
   </description>
   <author>Matthias Faessler</author>
   <license>BSD</license>
   <review status="unreviewed" notes=""/>
-  <url>http://ros.org/wiki/coax_control</url>
+  <url>http://ros.org/wiki/coax_keyboard_control</url>
   <depend package="rospy"/>
   <depend package="roscpp"/>
   <depend package="std_msgs"/>

@@ -58,8 +58,8 @@ vel_filter = zeros(3,4);
 filt_window = 1/4*ones(4,1);
 
 % Initial Values
-run constants
-run control_constants
+run parameter
+run control_parameter
 run normalize_linearize
 CONTROL_MODE = CONTROL_LANDED;
 e_i = [0 0 0 0]';
