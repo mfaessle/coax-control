@@ -35,3 +35,5 @@ Rotor Tip Speeds:
   Maximal: 56.4 m/s
 
 Max time in hover: ca. 17 min
+
+Max payload: ca. 200g

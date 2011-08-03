@@ -67,6 +67,26 @@ Run Experiment:
 
 
 ================
+Vicon Calibration:
+================
+
+1. Requirements
+	1.1 Place CoaX on Calibration stand in the Vicon space
+	1.2 Put an Identiy .xml file in coax_vsk/calibration
+	1.3 Make sure launch file in coax_vsk/launch takes the desired .xml file from 1.2 as input
+
+2. Calibrate
+	2.1 roscd coax_vsk/launch
+	2.2 roslaunch CoaxCalibration.launch
+	2.3 rostopic echo /vicon_calibrate/pose should show identity
+	2.4 rosservice call /vicon_calibrate/toggle_calibration to start calibration
+	2.5 wait until /vicon_calibrate/pose converges
+	2.6 rosservice call /vicon_calibrate/toggle_calibration to stop calibration
+	
+3. Use the file from 1.2 as calibration file for experiments
+
+
+================
 Charging:
 ================
 
