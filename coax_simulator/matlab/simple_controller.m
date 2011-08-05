@@ -21,7 +21,7 @@ idle_time = 0;
 FIRST_RUN = 1;
 VEL = 0.05;
 % set desired position and orientation
-end_position = [0 0.01 0.5]';
+end_position = [0.1 0 0.5]';
 end_orientation = 0;
 
 time = 0;
@@ -84,6 +84,7 @@ while (1)
     
     if ((time >= idle_time) && FIRST_RUN)
         start_position = state(1:3);
+        start_orientation = state(9);
         start_time = time;
         dist = norm(end_position - start_position);
         dir = (end_position - start_position)/dist;
@@ -97,7 +98,7 @@ while (1)
         dt = time - start_time;
         if (dt < duration)
             desPosition = start_position + VEL*dt*dir;
-            trajectory = [desPosition' VEL*dir' 0 0 0 dt/duration*end_orientation end_orientation/duration]';
+            trajectory = [desPosition' VEL*dir' 0 0 0 dt/duration*(end_orientation-start_orientation)+start_orientation (end_orientation-start_orientation)/duration]';
         else
             trajectory = [end_position' 0 0 0 0 0 0 end_orientation 0]';
         end

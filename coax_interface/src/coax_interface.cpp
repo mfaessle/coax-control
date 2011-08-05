@@ -294,10 +294,16 @@ int main(int argc, char** argv)
 	
 	CoaxInterface api(n);
 	
-	ros::Duration(1.5).sleep(); // make sure coax_server has enough time to boot up
-	api.configureComm(10, SBS_MODES | SBS_BATTERY); // configuration of sending back data from CoaX
-	api.setTimeout(500, 5000);
-	
+	int simulation;
+	n.param("simulation", simulation, 0);
+	if (!simulation) {
+		ros::Duration(1.5).sleep(); // make sure coax_server has enough time to boot up
+		api.configureComm(10, SBS_MODES | SBS_BATTERY); // configuration of sending back data from CoaX
+		api.setTimeout(500, 5000);
+	} else {
+		ROS_INFO("CoaX Interface in Simulation Mode");
+	}
+
 	int frequency;
 	n.param("frequency", frequency, 100);
 

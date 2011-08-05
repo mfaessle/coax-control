@@ -4,11 +4,11 @@
         name="simulator"
         type="coax_simulator"
         output="screen">
-    <param name="init/x" value="0.0"/>
+    <param name="init/x" value="0.001"/>
     <param name="init/y" value="0.0"/>
     <param name="init/z" value="0.0"/>
-    <param name="init/Omega_up" value="0.0"/> <!-- 226.7098"/> -->
-    <param name="init/Omega_lo" value="0.0"/> <!-- 238.9733"/> -->
+    <param name="init/Omega_up" value="226.7098"/> <!-- 226.7098"/> -->
+    <param name="init/Omega_lo" value="238.9733"/> <!-- 238.9733"/> -->
     <param name="rates/odometry" value="100.0"/>
     <rosparam file="$(find coax_simulator)/config/coax_parameters.yaml"/>
   </node>
@@ -28,6 +28,7 @@
     <remap from="/coax_interface/rawcontrol" to="/simulator/coax/cmd"/>
     <remap from="/coax_interface/raw_control" to="matlab_raw_control"/>
     <param name="frequency" value="100"/>
+    <param name="simulation" value="1"/>
   </node>
 
   <node pkg="ipc_geometry_msgs"

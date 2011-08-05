@@ -356,11 +356,13 @@ int CoaXModel::ODEStep(double t, const double* state, double* xdot, void* params
 	  b_z_bardot(1) = -z_bary*temp;
 	  b_z_bardot(2) = b_z_bardotz;
   }
-	b_z_bardot = arma::zeros(3);
+	
+	//b_z_bardot = arma::zeros(3);
   double z_barxdot = b_z_bardot(0) - q*z_barz + r*z_bary;
   double z_barydot = b_z_bardot(1) - r*z_barx + p*z_barz;
   double z_barzdot = b_z_bardot(2) - p*z_bary + q*z_barx;
 
+	
   xdot[0] = state[3];
   xdot[1] = state[4];
   xdot[2] = state[5];
@@ -379,8 +381,25 @@ int CoaXModel::ODEStep(double t, const double* state, double* xdot, void* params
   xdot[15] = z_barydot;
   xdot[16] = z_barzdot;
 
-	printf("Omega_up: %f Omega_lo: %f \n",Omega_up,Omega_lo);
-	printf("z_bar: %f   %f   %f \n\n",z_barx,z_bary,z_barz);
+	/*
+	xdot[0] = 0;
+	xdot[1] = 0;
+	xdot[2] = 0;
+	xdot[3] = 0;
+	xdot[4] = 0;
+	xdot[5] = 0;
+	xdot[6] = 0;
+	xdot[7] = 0;
+	xdot[8] = 0;
+	xdot[9] = 0;
+	xdot[10] = 0;
+	xdot[11] = 0;
+	xdot[12] = Omega_updot;
+	xdot[13] = Omega_lodot;
+	xdot[14] = 0;
+	xdot[15] = 0;
+	xdot[16] = 0;
+	*/
 	
   return GSL_SUCCESS;
 }
@@ -426,9 +445,11 @@ void CoaXModel::Update(double time_)
   memcpy(rotors, (void*)(&statespace[12]), sizeof(rotors));
   memcpy(bar, (void*)(&statespace[14]), sizeof(bar));
   memcpy(acc, model_params.acc, sizeof(model_params.acc));
-
+	
   rotors[0] = CoaXModel::LimitRotorSpeed(rotors[0]);
   rotors[1] = CoaXModel::LimitRotorSpeed(rotors[1]);
+	
+	printf("Omega_up: %f Omega_lo: %f \n",rotors[0],rotors[1]);
 
   double u1, u2, u3, u4;
   c.GetControls(u1, u2, u3, u4);
@@ -585,16 +606,19 @@ void CoaXModel::ResetSimulation(double time_,
   pos[1] = y;
   pos[2] = z;
 
-  rot[0] = 0;//roll;
-  rot[1] = 0;//pitch;
+  rot[0] = roll;
+  rot[1] = pitch;
   rot[2] = yaw;
 
   //bar[0] = 0;
   //bar[1] = 0;
   //bar[2] = 1;
 	
+	rotors[0] = 226.709779;
+	rotors[1] = 238.973356;
+	
   memset(vel, 0, sizeof(vel));
-  memset(angvel, 0, sizeof(angvel));
+  //memset(angvel, 0, sizeof(angvel));
   memset(acc, 0, sizeof(acc));
 
   // Reset the evolution of the ODE

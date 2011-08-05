@@ -29,8 +29,8 @@ control_inputs = coax_control(state,trajectory,param,cont_param);
 
 Omega_lo0 = sqrt(m*g/(k_Tup*k_Mlo/k_Mup + k_Tlo));
 Omega_up0 = sqrt(k_Mlo/k_Mup*Omega_lo0^2);
-state = [0 0 0 0 0 0 0 0 0 0 0 0 Omega_up0 Omega_lo0 0.1 -0.05 0.99373034572];
-state = [x y z u v w roll pitch yaw p q r Omega_up Omega_lo z_bar]';
+state = [0 0 0 0 0 0 0 0 0 0 0 0 Omega_up0 Omega_lo0 0.1 -0.05 0.99373034571759];
+% state = [x y z u v w roll pitch yaw p q r Omega_up Omega_lo z_bar]';
 
 control = [(Omega_up0 - rs_bup)/rs_mup (Omega_lo0 - rs_blo)/rs_mlo -0.2 0.3]';
 
@@ -180,6 +180,9 @@ Omega_updot = 1/Tf_motup*(Omega_up_des - Omega_up);
 Omega_lodot = 1/Tf_motlo*(Omega_lo_des - Omega_lo);
 
 b_z_bardotz = 1/Tf_up*acos(z_barz)*sqrt(z_barx^2 + z_bary^2);
+
+[Tf_up z_barx z_bary z_barz acos(z_barz) sqrt(z_barx^2 + z_bary^2)]'
+
 if (b_z_bardotz == 0)
     b_z_bardot = [0 0 0]';
 else
@@ -216,3 +219,5 @@ xdot(17) = z_barzdot;
 [Mx My Mz]
 
 xdot
+
+b_z_bardot
