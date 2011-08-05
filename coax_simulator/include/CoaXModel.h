@@ -96,14 +96,14 @@ private:
 
   double pos[3];
   double vel[3];
-  double rot[9];
+  double rot[3];
   double angvel[3];
   double acc[3];
   double rotors[2];
   double bar[3];
 
   double init_pos[3];
-  double init_rot[9];
+  double init_rot[3];
   double init_rotors[2];
   double init_bar[3];
 

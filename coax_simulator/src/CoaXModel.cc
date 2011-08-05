@@ -437,7 +437,7 @@ void CoaXModel::Update(double time_)
     }
 
   time = tstop;
-
+	
   memcpy(pos, statespace, sizeof(pos));
   memcpy(vel, (void*)(&statespace[3]), sizeof(vel));
   memcpy(rot, (void*)(&statespace[6]), sizeof(rot));
@@ -614,8 +614,8 @@ void CoaXModel::ResetSimulation(double time_,
   //bar[1] = 0;
   //bar[2] = 1;
 	
-	rotors[0] = 226.709779;
-	rotors[1] = 238.973356;
+	//rotors[0] = 226.709779;
+	//rotors[1] = 238.973356;
 	
   memset(vel, 0, sizeof(vel));
   //memset(angvel, 0, sizeof(angvel));

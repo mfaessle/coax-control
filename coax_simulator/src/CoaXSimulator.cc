@@ -62,7 +62,7 @@ void CoaXSimulator::Update()
     {
       double x, y, z;
       double roll, pitch, yaw;
-		printf("simulation resetted (ground collision) \n");
+		printf("simulation reset (ground collision) \n");
       coax.GetXYZ(x, y, z);
       coax.GetRotation(roll, pitch, yaw);
       coax.ResetSimulation(simulation_time,

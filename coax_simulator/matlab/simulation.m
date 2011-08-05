@@ -3,11 +3,13 @@ clear
 clc
 
 run parameter
-run normalize_linearize
+if(~exist('K_lqr'))
+    run normalize_linearize
+end
 
 %%
 stepsize = 1e-2;
-tsim = 15;
+tsim = 20;
 
 % x = [x y z xdot ydot zdot roll pitch yaw p q r Omega_up Omega_lo a_up b_up]
 
@@ -15,7 +17,7 @@ Omega_lo0 = sqrt(m*g/(k_Tup*k_Mlo/k_Mup + k_Tlo));
 Omega_up0 = sqrt(k_Mlo/k_Mup*Omega_lo0^2);
 
 t0 = 0;
-x0 = [0 0 0  0 0 0  0 0 0.5  0 0 0  Omega_up0 Omega_lo0  0 0 1]';
+x0 = [0 0 0  0 0 0  0 0 0  0 0 0  0 0  0 0 1]';
 
 % Outputs
 X = [];
@@ -63,6 +65,11 @@ while (t < tsim)
     t = time(end);
     x = state(end,:)';
     
+    if (x(3) <= 0)
+        x(3) = 0.01;
+        x(4:6) = [0 0 0]';
+    end
+    
     X = [X; x'];
     T = [T; t];
     U = [U; control'];
@@ -70,42 +77,44 @@ end
 toc
 
 %% Plot
+close all
+
 figure(1)
 
 subplot(4,1,1)
 plot(T,X(:,1:6))
-grid on;
 legend('x','y','z','u','v','w')
 title('Translational states')
+axis tight
 
 subplot(4,1,2)
 plot(T,X(:,7:12))
-grid on;
 legend('\phi','\theta','\psi','p','q','r')
 title('Rotational states')
+axis tight
 
 subplot(4,1,3)
 plot(T,X(:,13:14))
-grid on;
 legend('\omega_{up}','\omega_{lo}')
 title('Rotor speeds')
+axis tight
 
 subplot(4,1,4)
 plot(T,X(:,15:17))
-grid on;
 legend('x','y','z')
 title('Upper thrust vector direction')
+axis tight
 
 figure(2)
 
 subplot(2,1,1)
 plot(T,U(:,1:2))
-grid on;
 legend('u_{mot,up}','u_{mot,lo}')
 title('Motor Inputs')
+axis tight
 
 subplot(2,1,2)
 plot(T,U(:,3:4))
-grid on;
 legend('u_{serv1}','u_{serv2}')
 title('Servo Inputs')
+axis tight

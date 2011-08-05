@@ -29,6 +29,9 @@ end_orientation = 0;
 States = [];
 Inputs = [];
 Time = [];
+ROSStates = [];
+
+state = [0 0 0  0 0 0  0 0 0  0 0 0  0 0  0 0 1]';
 
 
 time = 0;
@@ -64,8 +67,8 @@ while time<20 %(1)
     yaw = atan2(2*(qw*qz+qx*qy),1-2*(qy^2+qz^2));
     
     % coax state
-    state = [x y z xdot ydot zdot roll pitch yaw p q r Omega_up Omega_lo z_bar']';
-
+    % state = [x y z xdot ydot zdot roll pitch yaw p q r Omega_up Omega_lo z_bar']';
+    ROSstate = [x y z xdot ydot zdot roll pitch yaw p q r Omega_up Omega_lo z_bar']';
     
     if ((time >= idle_time) && FIRST_RUN)
         start_position = state(1:3);
@@ -126,14 +129,27 @@ while time<20 %(1)
     Time = [Time; time];
     States = [States; state'];
     Inputs = [Inputs; control_inputs'];
+    ROSStates = [ROSStates; ROSstate'];
     
-    time = time + Ts;
+    tstart = time;
+    tstop = time + Ts;
+    [~,state_inter] = ode45(@CoaX_grey_box,[tstart tstop],state,[],control_inputs,m,g,Ixx,Iyy,Izz,d_up,d_lo,k_springup,k_springlo,l_up,l_lo,k_Tup,k_Tlo,k_Mup,k_Mlo,Tf_motup,Tf_motlo,Tf_up,rs_mup,rs_bup,rs_mlo,rs_blo,zeta_mup,zeta_bup,zeta_mlo,zeta_blo,max_SPangle);
+    
+    state = state_inter(end,:)';
+    
+    if (state(3) <= 0)
+        state(3) = 0.01;
+        state(4:6) = [0 0 0]';
+    end
+    
+    time = tstop;
     
 end
 
 Data.time = Time;
 Data.state = States;
 Data.input = Inputs;
+Data.rosstate = ROSStates;
 
 save ROSData Data
 
@@ -141,15 +157,21 @@ nav_msgs_Odometry('disconnect',pid);
 % geometry_msgs_Quaternion('disconnect',aid);
 geometry_msgs_Quaternion('disconnect',cid);
 
+
 %% plot
 close all
 
 figure(1)
-plot(Data.time,Data.state(:,1:3))
+plot(Data.time,Data.rosstate(:,1:3))
 legend('x','y','z')
-title('ROS Positions')
+title('ROS States')
 
 figure(2)
+plot(Data.time,Data.state(:,1:3))
+legend('x','y','z')
+title('Matlab States')
+
+figure(3)
 subplot(2,1,1)
 plot(Data.time,Data.input(:,1:2))
 legend('u_{mot,up}','u_{mot,lo}')
