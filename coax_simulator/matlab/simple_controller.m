@@ -3,7 +3,7 @@ pid = nav_msgs_Odometry('connect','subscriber','odom56','odom56');
 cid = geometry_msgs_Quaternion('connect','publisher','raw_control56','raw_control56');
 
 run parameter
-if(~exist('K_lqr'))
+if(~exist('K_lqr','var'))
     run normalize_linearize
 end
 raw_control = geometry_msgs_Quaternion('empty');
@@ -11,19 +11,22 @@ odom = nav_msgs_Odometry('read',pid,1);
 
 Ts = 0.01;
 
-Omega_up = 0;
-Omega_lo = 0;
+Omega_lo0 = sqrt(m*g/(k_Tup*k_Mlo/k_Mup + k_Tlo));
+Omega_up0 = sqrt(k_Mlo/k_Mup*Omega_lo0^2);
+
+Omega_up = Omega_up0;
+Omega_lo = Omega_lo0;
 a_up = 0;
 b_up = 0;
 prev_z_bar = [0 0 1]';
 z_bar = [0 0 1]';
 
-idle_time = 0;
+idle_time = 10;
 
 FIRST_RUN = 1;
 VEL = 0.05;
 % set desired position and orientation
-end_position = [0.1 0 0.5]';
+end_position = [0.1 0 0.3]';
 end_orientation = 0;
 
 States = [];
@@ -65,7 +68,6 @@ while time<20 %(1)
     
     % coax state
     state = [x y z xdot ydot zdot roll pitch yaw p q r Omega_up Omega_lo z_bar']';
-
     
     if ((time >= idle_time) && FIRST_RUN)
         start_position = state(1:3);
@@ -77,7 +79,7 @@ while time<20 %(1)
         FIRST_RUN = 0;
     end
     if (time < idle_time)
-        control_inputs = [0.35 0.35 0 0];
+        trajectory = [0 0 0.08 0 0 0 0 0 0 0 0]';
     else
         % Compute trajectory
         dt = time - start_time;
@@ -87,13 +89,12 @@ while time<20 %(1)
         else
             trajectory = [end_position' 0 0 0 0 0 0 end_orientation 0]';
         end
-    
-        % compute control commands
-        Omega_lo0 = sqrt(m*g/(k_Tup*k_Mlo/k_Mup + k_Tlo));
-        Omega_up0 = sqrt(k_Mlo/k_Mup*Omega_lo0^2);
-        % control_inputs = [(Omega_up0 - rs_bup)/rs_mup (Omega_lo0 - rs_blo)/rs_mlo -0.2 0.3]';
-        control_inputs = coax_control(state,trajectory,param,cont_param);
     end
+    % compute control commands
+    Omega_lo0 = sqrt(m*g/(k_Tup*k_Mlo/k_Mup + k_Tlo));
+    Omega_up0 = sqrt(k_Mlo/k_Mup*Omega_lo0^2);
+    % control_inputs = [(Omega_up0 - rs_bup)/rs_mup (Omega_lo0 - rs_blo)/rs_mlo -0.2 0.3]';
+    control_inputs = coax_control(state,trajectory,param,cont_param);
     
     % estimate internal states
     Omega_up_des = rs_mup*control_inputs(1) + rs_bup;

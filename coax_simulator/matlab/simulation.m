@@ -3,13 +3,13 @@ clear
 clc
 
 run parameter
-if(~exist('K_lqr'))
+if(~exist('K_lqr','var'))
     run normalize_linearize
 end
 
 %%
 stepsize = 1e-2;
-tsim = 20;
+tsim = 15;
 
 % x = [x y z xdot ydot zdot roll pitch yaw p q r Omega_up Omega_lo a_up b_up]
 
@@ -17,7 +17,7 @@ Omega_lo0 = sqrt(m*g/(k_Tup*k_Mlo/k_Mup + k_Tlo));
 Omega_up0 = sqrt(k_Mlo/k_Mup*Omega_lo0^2);
 
 t0 = 0;
-x0 = [0 0 0  0 0 0  0 0 0  0 0 0  0 0  0 0 1]';
+x0 = [0 0 0  0 0 0  0 0 0  0 0 0  Omega_up0 Omega_lo0  0 0 1]';
 
 % Outputs
 X = [];
@@ -57,14 +57,14 @@ while (t < tsim)
     
     % control = [u_motup u_motlo u_serv1 u_serv2]  u_mot in [0,1]; u_serv in [-1, 1]
     control = coax_control(x,trajectory,param,cont_param);
-    % control = [(Omega_up0 - rs_bup)/rs_mup (Omega_lo0 - rs_blo)/rs_mlo 0 0]';
+    % control = [(Omega_up0 - rs_bup)/rs_mup (Omega_lo0 - rs_blo)/rs_mlo 0.1 0]';
     
     %[time,state] = ode45(@coax_eom,[tstart tstop],x,[],control,param);
     [time,state] = ode45(@CoaX_grey_box,[tstart tstop],x,[],control,m,g,Ixx,Iyy,Izz,d_up,d_lo,k_springup,k_springlo,l_up,l_lo,k_Tup,k_Tlo,k_Mup,k_Mlo,Tf_motup,Tf_motlo,Tf_up,rs_mup,rs_bup,rs_mlo,rs_blo,zeta_mup,zeta_bup,zeta_mlo,zeta_blo,max_SPangle);
     
     t = time(end);
     x = state(end,:)';
-    
+
     if (x(3) <= 0)
         x(3) = 0.01;
         x(4:6) = [0 0 0]';

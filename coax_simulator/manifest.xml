@@ -14,6 +14,7 @@
   <depend package="coax_msgs"/>
   <depend package="tf"/>
   <depend package="nav_msgs"/>
+  <depend package="coax_interface"/>
 
 </package>
 

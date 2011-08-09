@@ -66,11 +66,14 @@ public:
   void SetRotorSpeed(double upper, double lower);
   void GetRotorSpeed(double &upper, double &lower);
 
+  void SetBarDirection(double z_barx, double z_bary, double z_barz);
+  void GetBarDirection(double &z_barx, double &z_bary, double &z_barz);
+
   void SetInitialXYZ(double x, double y, double z);
   void SetInitialRotation(double roll, double pitch, double yaw);
   void SetInitialRotorSpeeds(double Omega_up, double Omega_lo);
   void SetInitialStabilizerBar(double x, double y, double z);
-	
+
   void SetMass(double mass);
   void SetInertia(double Ixx, double Iyy, double Izz);
   void SetRotorOffset(double d_up, double d_lo);

@@ -163,7 +163,7 @@ void compute_dx(
     cp[2] = 0;
     double norm_cp = sqrt(cp[0]*cp[0] + cp[1]*cp[1] + cp[2]*cp[2]);
     double M_flapup[3] = {0,0,0};
-    if (fabs(norm_cp) > 1e-6){
+    if (fabs(norm_cp) > 0){
         M_flapup[0] = 2*k_springup*cp[0]/norm_cp*acos(z_Tup[2]);
         M_flapup[1] = 2*k_springup*cp[1]/norm_cp*acos(z_Tup[2]);
         M_flapup[2] = 2*k_springup*cp[2]/norm_cp*acos(z_Tup[2]);
@@ -173,8 +173,9 @@ void compute_dx(
     cp[1] = z_Tlo[0];
     cp[2] = 0;
     norm_cp = sqrt(cp[0]*cp[0] + cp[1]*cp[1] + cp[2]*cp[2]);
+
     double M_flaplo[3] = {0,0,0};
-    if (fabs(norm_cp) > 1e-6){
+    if (fabs(norm_cp) > 0){
         M_flaplo[0] = 2*k_springlo*cp[0]/norm_cp*acos(z_Tlo[2]);
         M_flaplo[1] = 2*k_springlo*cp[1]/norm_cp*acos(z_Tlo[2]);
         M_flaplo[2] = 2*k_springlo*cp[2]/norm_cp*acos(z_Tlo[2]);
@@ -197,11 +198,11 @@ void compute_dx(
     Fz -= m*g;
 
     // Summarized Moments
-    double Mx =
+    double Mx = 
       wq*wr*(Iyy-Izz) - T_up*z_Tup[1]*d_up - T_lo*z_Tlo[1]*d_lo + M_flapup[0] + M_flaplo[0];
-    double My =
+    double My = 
       wp*wr*(Izz-Ixx) + T_up*z_Tup[0]*d_up + T_lo*z_Tlo[0]*d_lo + M_flapup[1] + M_flaplo[1];
-    double Mz =
+    double Mz = 
       wp*wq*(Ixx-Iyy) - k_Mup*Omega_up*Omega_up + k_Mlo*Omega_lo*Omega_lo;
 
     // State derivatives
@@ -213,24 +214,24 @@ void compute_dx(
     double pitchdot = wq*c_r - wr*s_r;
     double yawdot   = wq*s_r/c_p + wr*c_r/c_p;
 
-    double pdot = 1/Ixx*Mx;
-    double qdot = 1/Iyy*My;
-    double rdot = 1/Izz*Mz;
+    double pdot = 1.0/Ixx*Mx;
+    double qdot = 1.0/Iyy*My;
+    double rdot = 1.0/Izz*Mz;
 
     double Omega_up_des = rs_mup*u_motup + rs_bup;
     double Omega_lo_des = rs_mlo*u_motlo + rs_blo;
-    double Omega_updot  = 1/Tf_motup*(Omega_up_des - Omega_up);
-    double Omega_lodot  = 1/Tf_motlo*(Omega_lo_des - Omega_lo);
+    double Omega_updot  = 1.0/Tf_motup*(Omega_up_des - Omega_up);
+    double Omega_lodot  = 1.0/Tf_motlo*(Omega_lo_des - Omega_lo);
 
     double b_z_bardotz = 1/Tf_up*acos(z_barz)*sqrt(z_barx*z_barx + z_bary*z_bary);
     double b_z_bardot[3] = {0,0,0};
-    if (fabs(b_z_bardotz) > 1e-6){
+    if (fabs(b_z_bardotz) > 0){
       double temp          = z_barz*b_z_bardotz/(z_barx*z_barx + z_bary*z_bary);
         b_z_bardot[0] = -z_barx*temp;
         b_z_bardot[1] = -z_bary*temp;
         b_z_bardot[2] = b_z_bardotz;
     }
-    
+
     double z_barxdot = b_z_bardot[0] - wq*z_barz + wr*z_bary;
     double z_barydot = b_z_bardot[1] - wr*z_barx + wp*z_barz;
     double z_barzdot = b_z_bardot[2] - wp*z_bary + wq*z_barx;
@@ -252,7 +253,6 @@ void compute_dx(
     dx[14] = z_barxdot;
     dx[15] = z_barydot;
     dx[16] = z_barzdot;
-
 }
 
 /* Output equations. */

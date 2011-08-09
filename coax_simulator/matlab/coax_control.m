@@ -62,6 +62,12 @@ zeta_blo = param.zeta_blo;
 max_SPangle = param.max_SPangle;
 Omega_max = param.Omega_max;
 
+% Rotation Matrix
+Rb2w = [cos(yaw)*cos(pitch) cos(yaw)*sin(pitch)*sin(roll)-sin(yaw)*cos(roll) cos(yaw)*sin(pitch)*cos(roll)+sin(yaw)*sin(roll);
+        sin(yaw)*cos(pitch) sin(yaw)*sin(pitch)*sin(roll)+cos(yaw)*cos(roll) sin(yaw)*sin(pitch)*cos(roll)-cos(yaw)*sin(roll);
+        -sin(pitch) cos(pitch)*sin(roll) cos(pitch)*cos(roll)];
+Rw2b = Rb2w';
+
 % Control Parameter
 K_lqr = cont_param.K_lqr;
 T_inv = cont_param.T_inv_lqr; 
@@ -92,6 +98,8 @@ a_up = -asin(z_Tup(2));
 b_up = asin(z_Tup(1)/cos(a_up));
 
 error = T_inv*([state(1:14); a_up; b_up] - [x_T y_T z_T xdot_T ydot_T zdot_T 0 0 psi_T 0 0 psidot_T Omega_up0 Omega_lo0 0 0]');
+error(1:3) = Rw2b*error(1:3);
+error(4:6) = Rw2b*error(4:6);
 inputs = -W*K_lqr*error;
 
 cont_inputs = zeros(4,1);
