@@ -7,19 +7,7 @@ Nstart = 3000;
 Nstop = 7000;
 Time = Data.time(Nstart:Nstop)';
 
-RPY = zeros(Nstop-Nstart+1,3);%zeros(size(Data.orientation,2),3);
-for i=1:length(Time)
-    qx = Data.orientation(1,i);
-    qy = Data.orientation(2,i);
-    qz = Data.orientation(3,i);
-    qw = Data.orientation(4,i);
-    roll = atan2(2*(qw*qx+qy*qz),1-2*(qx^2+qy^2));
-    pitch = asin(2*(qw*qy-qz*qx));
-    yaw = atan2(2*(qw*qz+qx*qy),1-2*(qy^2+qz^2));
-    RPY(i,:) = [roll pitch yaw];
-end
-
-% y = [Data.position(:,3000:7000)' RPY]; % single measurements must be in rows!
+% single measurements must be in rows!
 y = [Data.lintwist(:,Nstart:Nstop)' Data.angtwist(:,Nstart:Nstop)'];
 u = Data.inputs(:,Nstart:Nstop)';
 
@@ -36,7 +24,7 @@ set(z, 'OutputName', {'x pos' 'y pos' 'z pos' 'roll' 'pitch' 'yaw'}, ...
 set(z, 'TimeUnit', 's');
 
 %% creating a CoaX IDNLGREY model object
-FileName      = 'CoaX_grey_box'; % File describing the model structure.
+FileName      = 'CoaX_grey_box_vel'; % File describing the model structure.
 Order         = [6 4 17]; % Model orders [ny nu nx].
 Parameters    = {m; g; Ixx; Iyy; Izz; d_up; d_lo; k_springup; k_springlo; ...
                 l_up; l_lo; k_Tup; k_Tlo; k_Mup; k_Mlo; Tf_motup; Tf_motlo; ...
@@ -58,7 +46,7 @@ setinit(nlgr, 'Name', {'x-position' 'y-position' 'z-position' 'x-velocity' ...
                        'q' 'r' 'Omega_up' 'Omega_lo' 'z_barx' 'z_bary' 'z_barz'});
 setinit(nlgr, 'Unit', {'m' 'm' 'm' 'm/s' 'm/s' 'm/s' 'rad' 'rad' 'rad' 'rad/s' ...
                        'rad/s' 'rad/s' 'rad/s' 'rad/s' '-' '-' '-'});
-setinit(nlgr, 'Fixed', {true true true false false false true true true ...
+setinit(nlgr, 'Fixed', {false false false false false false false false false ...
                         false false false false false false false false}); 
 setinit(nlgr, 'Minimum', {-5 -5 0 -2 -2 -2 -pi/2 -pi/2 -2*pi -2.5 -2.5 -2.5 0 0 -0.25 -0.25 0});
 setinit(nlgr, 'Maximum', {5 5 5 2 2 2 pi/2 pi/2 2*pi 2.5 2.5 2.5 320 320 0.25 0.25 1});
@@ -113,6 +101,12 @@ nlgr.Parameters(7).Fixed  = true; % d_lo
 % nlgr.Parameters(9).Fixed  = true; % k_springlo
 % nlgr.Parameters(10).Fixed = true; % l_up
 % nlgr.Parameters(11).Fixed = true; % l_lo
+% nlgr.Parameters(12).Fixed = true; % k_Tup
+% nlgr.Parameters(13).Fixed = true; % k_Tlo
+% nlgr.Parameters(14).Fixed = true; % k_Mup
+% nlgr.Parameters(15).Fixed = true; % k_Mlo
+% nlgr.Parameters(16).Fixed = true; % Tf_motup
+% nlgr.Parameters(17).Fixed = true; % Tf_motlo
 % nlgr.Parameters(18).Fixed = true; % Tf_up
 nlgr.Parameters(19).Fixed = true; % rs_mup
 nlgr.Parameters(20).Fixed = true; % rs_bup
@@ -150,7 +144,6 @@ param = set_model_param(id_param); % set identified parameters
 t0 = Time(1);
 % x0 = findstates(nlgr,z);
 x0 = cell2mat(getinit(nlgr));
-x0 = x0(4:17);
 
 % Outputs
 X = zeros(length(Time),length(x0));
@@ -165,8 +158,7 @@ for i=Nstart : Nstop-1
     
     control = u(i-Nstart+1,:)';
     
-    %[time,state] = ode45(@coax_eom,[tstart tstop],x,[],control,param);
-    [time,state] = ode45(@CoaX_grey_box,[tstart tstop],x,[],control,m,g,Ixx,Iyy,Izz,d_up,d_lo,k_springup,k_springlo,l_up,l_lo,k_Tup,k_Tlo,k_Mup,k_Mlo,Tf_motup,Tf_motlo,Tf_up,rs_mup,rs_bup,rs_mlo,rs_blo,zeta_mup,zeta_bup,zeta_mlo,zeta_blo,max_SPangle);
+    [time,state] = ode45(@CoaX_grey_box_vel,[tstart tstop],x,[],control,m,g,Ixx,Iyy,Izz,d_up,d_lo,k_springup,k_springlo,l_up,l_lo,k_Tup,k_Tlo,k_Mup,k_Mlo,Tf_motup,Tf_motlo,Tf_up,rs_mup,rs_bup,rs_mlo,rs_blo,zeta_mup,zeta_bup,zeta_mlo,zeta_blo,max_SPangle);
     
     x = state(end,:)';
     
@@ -176,25 +168,25 @@ end
 %% Plot
 figure;
 subplot(4,1,1)
-plot(Time,X(:,1:3))
+plot(Time,X(:,1:6))
 grid on;
-legend('u','v','w')
+legend('x','y','z','u','v','w')
 title('Translational states')
 
 subplot(4,1,2)
-plot(Time,X(:,4:9))
+plot(Time,X(:,7:12))
 grid on;
 legend('\phi','\theta','\psi','p','q','r')
 title('Rotational states')
 
 subplot(4,1,3)
-plot(Time,X(:,10:11))
+plot(Time,X(:,13:14))
 grid on;
 legend('\omega_{up}','\omega_{lo}')
 title('Rotor speeds')
 
 subplot(4,1,4)
-plot(Time,X(:,12:14))
+plot(Time,X(:,15:17))
 grid on;
 legend('x','y','z')
 title('Upper thrust vector direction')
@@ -211,4 +203,3 @@ plot(Time,u(:,3:4))
 grid on;
 legend('u_{serv1}','u_{serv2}')
 title('Servo Inputs')
-

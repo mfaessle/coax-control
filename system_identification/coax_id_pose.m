@@ -19,8 +19,7 @@ for i=1:length(Time)
     RPY(i,:) = [roll pitch yaw];
 end
 
-% single measurements must be in rows!
-y = [Data.lintwist(:,Nstart:Nstop)' Data.angtwist(:,Nstart:Nstop)'];
+y = [Data.position(:,Nstart:Nstop)' RPY]; % single measurements must be in rows!
 u = Data.inputs(:,Nstart:Nstop)';
 
 %% load parameters
@@ -36,7 +35,7 @@ set(z, 'OutputName', {'x pos' 'y pos' 'z pos' 'roll' 'pitch' 'yaw'}, ...
 set(z, 'TimeUnit', 's');
 
 %% creating a CoaX IDNLGREY model object
-FileName      = 'CoaX_grey_box'; % File describing the model structure.
+FileName      = 'CoaX_grey_box_pose'; % File describing the model structure.
 Order         = [6 4 17]; % Model orders [ny nu nx].
 Parameters    = {m; g; Ixx; Iyy; Izz; d_up; d_lo; k_springup; k_springlo; ...
                 l_up; l_lo; k_Tup; k_Tlo; k_Mup; k_Mlo; Tf_motup; Tf_motlo; ...
@@ -44,7 +43,7 @@ Parameters    = {m; g; Ixx; Iyy; Izz; d_up; d_lo; k_springup; k_springlo; ...
                 zeta_mlo; zeta_blo; max_SPangle}; % Initial parameters.
 Omega_lo0 = sqrt(m*g/(k_Tup*k_Mlo/k_Mup + k_Tlo));
 Omega_up0 = sqrt(k_Mlo/k_Mup*Omega_lo0^2);
-InitialStates = [0 0 0  y(1,1:3)  0 0 0  y(1,4:6)  Omega_up0 Omega_lo0  0 0 1]'; % Initial initial states.
+InitialStates = [y(1,1:3)  0 0 0  y(1,4:6)  0 0 0  Omega_up0 Omega_lo0  0 0 1]'; % Initial initial states.
 Ts            = 0;                     % Time-continuous system.
 nlgr = idnlgrey(FileName, Order, Parameters, InitialStates, Ts, 'Name', 'CoaX');
 set(nlgr, 'InputName', {'Motor up' 'Motor lo' 'Servo roll' 'Servo pitch'}, ...
@@ -58,7 +57,7 @@ setinit(nlgr, 'Name', {'x-position' 'y-position' 'z-position' 'x-velocity' ...
                        'q' 'r' 'Omega_up' 'Omega_lo' 'z_barx' 'z_bary' 'z_barz'});
 setinit(nlgr, 'Unit', {'m' 'm' 'm' 'm/s' 'm/s' 'm/s' 'rad' 'rad' 'rad' 'rad/s' ...
                        'rad/s' 'rad/s' 'rad/s' 'rad/s' '-' '-' '-'});
-setinit(nlgr, 'Fixed', {true true true false false false true true true ...
+setinit(nlgr, 'Fixed', {false false false false false false false false false ...
                         false false false false false false false false}); 
 setinit(nlgr, 'Minimum', {-5 -5 0 -2 -2 -2 -pi/2 -pi/2 -2*pi -2.5 -2.5 -2.5 0 0 -0.25 -0.25 0});
 setinit(nlgr, 'Maximum', {5 5 5 2 2 2 pi/2 pi/2 2*pi 2.5 2.5 2.5 320 320 0.25 0.25 1});
@@ -113,6 +112,12 @@ nlgr.Parameters(7).Fixed  = true; % d_lo
 % nlgr.Parameters(9).Fixed  = true; % k_springlo
 % nlgr.Parameters(10).Fixed = true; % l_up
 % nlgr.Parameters(11).Fixed = true; % l_lo
+% nlgr.Parameters(12).Fixed = true; % k_Tup
+% nlgr.Parameters(13).Fixed = true; % k_Tlo
+% nlgr.Parameters(14).Fixed = true; % k_Mup
+% nlgr.Parameters(15).Fixed = true; % k_Mlo
+% nlgr.Parameters(16).Fixed = true; % Tf_motup
+% nlgr.Parameters(17).Fixed = true; % Tf_motlo
 % nlgr.Parameters(18).Fixed = true; % Tf_up
 nlgr.Parameters(19).Fixed = true; % rs_mup
 nlgr.Parameters(20).Fixed = true; % rs_bup
@@ -164,8 +169,7 @@ for i=Nstart : Nstop-1
     
     control = u(i-Nstart+1,:)';
     
-    % [time,state] = ode45(@coax_eom,[tstart tstop],x,[],control,param);
-    [time,state] = ode45(@CoaX_grey_box,[tstart tstop],x,[],control,m,g,Ixx,Iyy,Izz,d_up,d_lo,k_springup,k_springlo,l_up,l_lo,k_Tup,k_Tlo,k_Mup,k_Mlo,Tf_motup,Tf_motlo,Tf_up,rs_mup,rs_bup,rs_mlo,rs_blo,zeta_mup,zeta_bup,zeta_mlo,zeta_blo,max_SPangle);
+    [time,state] = ode45(@CoaX_grey_box_pose,[tstart tstop],x,[],control,m,g,Ixx,Iyy,Izz,d_up,d_lo,k_springup,k_springlo,l_up,l_lo,k_Tup,k_Tlo,k_Mup,k_Mlo,Tf_motup,Tf_motlo,Tf_up,rs_mup,rs_bup,rs_mlo,rs_blo,zeta_mup,zeta_bup,zeta_mlo,zeta_blo,max_SPangle);
     
     x = state(end,:)';
     
