@@ -22,9 +22,10 @@ Mbody = [-33.9434   33.3300   33.3245  -20.4397   24.9739; ...
          -59.0677  -60.2362   60.9161   20.7246  -17.8216; ...
          -44.4484  -44.8094  -44.9953   33.4755   34.3630];  % markers in body frame (without stabilizer bar)
 
-N = 1000;
+N = 3000;
 
 SBOrientation = zeros(N,3);
+BodyZOrientation = zeros(N,3);
 time = zeros(N,1);
 t0 = clock;
 i = 1;
@@ -77,12 +78,13 @@ while 1
     
     % calculate stabilizer bar orientation
     if (SB(4) > 0.5)
-        hinge_body = [0 0 180]';
+        hinge_body = [-0.45 0.6 180]';
         sb = SB(1:3);
         sb_body = Rhat'*(sb - That);
 
         z_SB = sb_body - hinge_body;
         z_SB = z_SB/norm(z_SB); % stabilizer bar orientation in body coordinates
+        z_SB_w = Rhat*z_SB;
     else
         z_SB = [0 0 0]';
     end
@@ -90,6 +92,7 @@ while 1
     pause(0.005);
     if (dt > 5)
         SBOrientation(i,:) = z_SB';
+        BodyZOrientation(i,:) = Rhat(:,3)';
         time(i) = toc;
         i = i+1;
     end
@@ -105,6 +108,7 @@ time = time - time(1);
 
 SBDynamics.time = time;
 SBDynamics.SBOrientation = SBOrientation;
+SBDynamics.BodyZOrientation = BodyZOrientation;
 
 save SBDynamics SBDynamics
 

@@ -3,6 +3,7 @@
 *.asv
 _*.py
 *.pyc
+*.o
 *.mexmaci64
 *.mat
 

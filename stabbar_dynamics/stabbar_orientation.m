@@ -3,7 +3,7 @@ load SBDynamics
 SB_ori = SBDynamics.SBOrientation;
 time = SBDynamics.time;
 
-zero_ori = [-0.0509 -0.0108 0.9985]';
+%zero_ori = [-0.0509 -0.0108 0.9985]';
 
 Pxy = SB_ori(:,1:2);
 
@@ -36,9 +36,9 @@ plot(time,alpha)
 grid on;
 
 
-Mbody = [-33 34 35 -22 25; ...
-         -58 -60 61 20 -18; ...
-         -41 -41 -41 39 39];  % markers in body frame (without stabilizer bar)
+Mbody = [-33.9434   33.3300   33.3245  -20.4397   24.9739; ...
+         -59.0677  -60.2362   60.9161   20.7246  -17.8216; ...
+         -44.4484  -44.8094  -44.9953   33.4755   34.3630];  % markers in body frame (without stabilizer bar)
 hinge_body = [0 0 180]';
 L = 50; % length of part that carries stabbar marker
 
