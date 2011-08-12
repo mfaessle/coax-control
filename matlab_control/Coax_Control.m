@@ -59,6 +59,10 @@ filt_window = 1/4*ones(4,1);
 
 % Initial Values
 run parameter
+load ../system_identification/nlgr_vel
+id_param = cell2mat(getpar(nlgr));
+param = set_model_param(id_param); % set identified parameters
+
 run control_parameter
 run normalize_linearize
 CONTROL_MODE = CONTROL_LANDED;
@@ -484,6 +488,7 @@ switch CONTROL_MODE
                 FIRST_TRAJECTORY = 0;
                 trajectory_time = time;
             end
+            dt_traj = etime(time, trajectory_time);
             desPosition = coax_state(1:3);
             trajectory = [desPosition' 0 0 0 0 0 0 initial_trajectory_orientation 0]';
             [motor_up, motor_lo, servo1, servo2, e_i, trim_values] = control_function(coax_state, Rb2w, trajectory, e_i, dt, param, contr_param);
@@ -578,23 +583,25 @@ prev_time = time;
 
 %%%%%%%%%
 if (CONTROL_MODE == CONTROL_TRAJECTORY)
-    pos = [odom.pose.pose.position.x odom.pose.pose.position.y odom.pose.pose.position.z]';
-    ori = [odom.pose.pose.orientation.x odom.pose.pose.orientation.y odom.pose.pose.orientation.z odom.pose.pose.orientation.w]';
-    lintwist = [odom.twist.twist.linear.x odom.twist.twist.linear.y odom.twist.twist.linear.z]';
-    angtwist = [odom.twist.twist.angular.x odom.twist.twist.angular.y odom.twist.twist.angular.z]';
+    if ((dt_traj > 10) && (dt_traj < 70))
+        pos = [odom.pose.pose.position.x odom.pose.pose.position.y odom.pose.pose.position.z]';
+        ori = [odom.pose.pose.orientation.x odom.pose.pose.orientation.y odom.pose.pose.orientation.z odom.pose.pose.orientation.w]';
+        lintwist = [odom.twist.twist.linear.x odom.twist.twist.linear.y odom.twist.twist.linear.z]';
+        angtwist = [odom.twist.twist.angular.x odom.twist.twist.angular.y odom.twist.twist.angular.z]';
 
-    TimeStamps(i) = odom.header.stamp;
-    Positions(:,i) = pos;
-    Orientations(:,i) = ori;
-    Lintwists(:,i) = lintwist;
-    Angtwists(:,i) = angtwist;
-    Inputs(:,i) = [motor_up-volt_compUp motor_lo-volt_compLo servo1 servo2]';
-%     if (CONTROL_MODE == CONTROL_HOVER)
-%         Trims(:,i) = trim_values;
-%     else
-%         Trims(:,i) = [0 0 0 0]';
-%     end
-    i = i+1;
+        TimeStamps(i) = odom.header.stamp;
+        Positions(:,i) = pos;
+        Orientations(:,i) = ori;
+        Lintwists(:,i) = lintwist;
+        Angtwists(:,i) = angtwist;
+        Inputs(:,i) = [motor_up-volt_compUp motor_lo-volt_compLo servo1 servo2]';
+    %     if (CONTROL_MODE == CONTROL_HOVER)
+    %         Trims(:,i) = trim_values;
+    %     else
+    %         Trims(:,i) = [0 0 0 0]';
+    %     end
+        i = i+1;
+    end
 end
 %%%%%%%%%
 % fprintf('CONTROL_MODE: %d \n',CONTROL_MODE);
@@ -610,7 +617,7 @@ if (~isempty(TimeStamps))
     Data.inputs = Inputs;
     % Data.trim = Trims;
 
-    save ViconData Data
+    save ViconData_velid Data
 end
 %%%%%%%%%
 

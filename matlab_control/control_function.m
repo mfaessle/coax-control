@@ -182,7 +182,7 @@ Mz_des       = -K_psi*e_psi - K_psi_i*e_i(4) - K_omegaz*e_omegaz;
 % servo2   = b_lo_des/(max_SPangle);
 
 
-% % Test PID
+% %% Test PID
 % c            = 0.3;
 % a_lo_des     = -c*Rw2b(2,:)*[F_des(1) F_des(2) 0]';
 % b_lo_des     = c*Rw2b(1,:)*[F_des(1) F_des(2) 0]';
@@ -227,6 +227,11 @@ b_up = asin(z_Tup(1)/cos(a_up));
 error = [state(1:14); a_up; b_up] - [x_T y_T z_T xdot_T ydot_T zdot_T 0 0 psi_T 0 0 psidot_T Omega_up0 Omega_lo0 0 0]';
 error(1:3) = Rw2b*error(1:3);
 error(4:6) = Rw2b*error(4:6);
+if (error(9) > pi)
+    error(9) = error(9) - 2*pi;
+elseif (error(9) < -pi)
+    error(9) = error(9) + 2*pi;
+end
 inputs = -W*K_lqr*T_inv*error;
 
 % feed forward on rotor speeds

@@ -44,8 +44,8 @@ switch TYPE
     
     case 2 % Vertical Oscillation
 
-        amplitude   = 0.25;
-        omega       = 2*pi/5;
+        amplitude  = 0.25;
+        omega      = 2*pi/5;
         
         initial_pose = [0 0 0.3 pi]';
         
@@ -65,19 +65,20 @@ switch TYPE
 
         radius     = 0.5;
         omega      = 2*pi/10;
+        vert_amp   = 0.15;
         
-        initial_pose = [0 0 0.3 pi]';
+        initial_pose = [1 0 0.3 -pi/4]';
         
         x_ref      = radius*cos(omega*t) - radius + initial_pose(1);
         y_ref      = radius*sin(omega*t);
-        z_ref      = initial_pose(3);
+        z_ref      = initial_pose(3) + vert_amp + vert_amp*sin(omega*t);
         xdot_ref   = -radius*omega*sin(omega*t);
         ydot_ref   = radius*omega*cos(omega*t);
-        zdot_ref   = 0;
+        zdot_ref   = omega*vert_amp*cos(omega*t);
         xddot_ref  = -radius*omega^2*cos(omega*t);
         yddot_ref  = -radius*omega^2*sin(omega*t);
-        zddot_ref  = 0;
-        psi_ref    = pi;%omega*t + initial_pose(4);
+        zddot_ref  = -omega^2*vert_amp*sin(omega*t);
+        psi_ref    = initial_pose(4);%omega*t + initial_pose(4);
         psidot_ref = 0;%omega;
 
     case 4 % STANDINGCIRCLE

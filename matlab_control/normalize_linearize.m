@@ -41,9 +41,6 @@ Rb2w = [cos(z(9))*cos(z(8)) cos(z(9))*sin(z(8))*sin(z(7))-sin(z(9))*cos(z(7)) co
 %% State equations
 % dx/dt = T^-1 * f (T*x, W*u) (new equations in x and u)
 clear f;
-f(1,1) = z(4);
-f(2,1) = z(5);
-f(3,1) = z(6);
 
 % Desired rotor speeds
 Omega_up_des = rs_mup*v(1) + rs_bup;
@@ -72,6 +69,9 @@ Mx = z(11)*z(12)*(Iyy-Izz) - T_up*z_Tup(2)*d_up - T_lo*z_Tlo(2)*d_lo + M_flapup(
 My = z(10)*z(12)*(Izz-Ixx) + T_up*z_Tup(1)*d_up + T_lo*z_Tlo(1)*d_lo + M_flapup(2) + M_flaplo(2);
 Mz = z(10)*z(11)*(Ixx-Iyy) - k_Mup*z(13)^2 + k_Mlo*z(14)^2;
 
+f(1,1) = z(4);
+f(2,1) = z(5);
+f(3,1) = z(6);
 f(4,1) = 1/m*Fx;
 f(5,1) = 1/m*Fy;
 f(6,1) = 1/m*Fz;
@@ -131,13 +131,14 @@ Bd           = sysd.B;
 
 % Q            = 0.01*diag([5 5 10 0.5 0.5 0.5 2 2 2 0.01 0.01 0.01 0.1 0.1 1 1]);
 % Q            = 0.01*diag([5.5 5.5 80  10 10 1  0.01 0.01 0.08  0.07 0.07 0.01  0.1 0.1 1 1]);
-Q            = 0.01*diag([5.5 5.5 80  10 10 1  0.01 0.01 0.08  0.1 0.1 0.01  0.1 0.1 1 1]);
+Q            = 0.01*diag([5.5 5.5 80  10 10 1  0.01 0.01 0.06  0.1 0.1 0.02  0.1 0.1 1 1]);
 R            = eye(4);
 
 K_lqr        = dlqr(Ad,Bd,Q,R);
 
 % knock out feedback from roll/pitch
-K_lqr(3:4,7:8) = zeros(2,2);
+%K_lqr(3:4,7:8) = zeros(2,2);
+K_lqr(3:4,7:8) = -0.3*K_lqr(3:4,7:8);
 % knock out feedback from a_up/b_up
 K_lqr(3:4,15:16) = zeros(2,2);
 

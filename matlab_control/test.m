@@ -27,7 +27,7 @@ omega = pi/2;
 t0 = clock;
 i = 0;
 tic
-while 1%i<500
+while i<500
     
     dt = etime(clock, t0);
     if (dt < 2)
