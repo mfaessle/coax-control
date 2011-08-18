@@ -27,15 +27,15 @@ omega = pi/2;
 t0 = clock;
 i = 0;
 tic
-while i<500
+while 1%i<500
     
     dt = etime(clock, t0);
     if (dt < 2)
         motor_up = 0.35;
         motor_lo = 0.35;
     else
-        motor_up = 0.35;
-        motor_lo = 0.35;
+        motor_up = 0.511;
+        motor_lo = 0.541;
     end
     
     

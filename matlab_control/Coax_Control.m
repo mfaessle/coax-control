@@ -52,16 +52,16 @@ SINK_TIME = START_HEIGHT/SINK_VELOCITY;
 GOTOPOS_VELOCITY = 0.05;
 
 % Filtering
-pqr_filter = zeros(3,4);
-vel_filter = zeros(3,4);
+pqr_filter = zeros(3,1);
+vel_filter = zeros(3,1);
 %filt_window = [0.66 0.34]';
-filt_window = 1/4*ones(4,1);
+filt_window = 1*ones(1,1);
 
 % Initial Values
 run parameter
-load ../system_identification/nlgr_vel
-id_param = cell2mat(getpar(nlgr));
-param = set_model_param(id_param); % set identified parameters
+% load ../system_identification/nlgr_vel
+% id_param = cell2mat(getpar(nlgr));
+% param = set_model_param(id_param); % set identified parameters
 
 run control_parameter
 run normalize_linearize
@@ -90,6 +90,7 @@ Orientations = [];
 Lintwists = [];
 Angtwists = [];
 Inputs = [];
+Trajectory = [];
 Trims = [];
 servo1 = 0;
 servo2 = 0;
@@ -115,7 +116,7 @@ if (~isempty(mode) && (int8(mode.x)~=last_ctrl_mode_request))
                     info = geometry_msgs_Quaternion('read',iid,1);
                 end
                 
-                if ((0.89*info.y + 1.39) > 11)
+                if ((0.8817*info.y + 1.5299) > 11)
                     if (info.x < 5)
                         nav_mode = std_msgs_Bool('empty');
                         nav_mode.data = 1;
@@ -136,7 +137,7 @@ if (~isempty(mode) && (int8(mode.x)~=last_ctrl_mode_request))
                     FIRST_START = 1;
                 else
                     if (~LOW_POWER_DETECTED)
-                        fprintf('Battery Low!!! (%f V) Start denied \n',(0.89*info.y + 1.39));
+                        fprintf('Battery Low!!! (%f V) Start denied \n',(0.8817*info.y + 1.5299));
                     end
                     LOW_POWER_DETECTED = 1;
                 end
@@ -188,9 +189,9 @@ end
 %% Low power and Communication loss detection
 info = geometry_msgs_Quaternion('read',iid,1);
 if (~isempty(info)) % if empty catch it the next time
-    if (((0.89*info.y + 1.39) < 11) && ~LOW_POWER_DETECTED)
+    if (((0.8817*info.y + 1.5299) < 10.80) && ~LOW_POWER_DETECTED)
         LOW_POWER_DETECTED = 1;
-        fprintf('Battery Low!!! (%fV) Landing initialized \n',0.89*info.y + 1.39);
+        fprintf('Battery Low!!! (%fV) Landing initialized \n',0.8817*info.y + 1.5299);
     end
 %     if ((int8(info.x) ~= 7) && (CONTROL_MODE ~= CONTROL_LANDED))
 %         % Lost Zigbee connection
@@ -316,8 +317,8 @@ z_bar = z_bar/norm(z_bar);
 prev_z_bar = z_bar;
 
 % Rotor speeds
-prev_Omega_up_des = motor_up*430 - 21.5;
-prev_Omega_lo_des = motor_lo*430 - 21.5;
+prev_Omega_up_des = rs_mup*motor_up + rs_bup;
+prev_Omega_lo_des = rs_mlo*motor_lo + rs_blo;
 
 Omega_up = prev_Omega_up + 1/Tf_motup*(prev_Omega_up_des - prev_Omega_up)*dt;
 Omega_lo = prev_Omega_lo + 1/Tf_motlo*(prev_Omega_lo_des - prev_Omega_lo)*dt;
@@ -582,8 +583,8 @@ geometry_msgs_Quaternion('send',cid,raw_control);
 prev_time = time;
 
 %%%%%%%%%
-if (CONTROL_MODE == CONTROL_TRAJECTORY)
-    if ((dt_traj > 10) && (dt_traj < 70))
+if (CONTROL_MODE == CONTROL_HOVER)
+    if (i<5000)%(dt_traj > 10) && (dt_traj < 70))
         pos = [odom.pose.pose.position.x odom.pose.pose.position.y odom.pose.pose.position.z]';
         ori = [odom.pose.pose.orientation.x odom.pose.pose.orientation.y odom.pose.pose.orientation.z odom.pose.pose.orientation.w]';
         lintwist = [odom.twist.twist.linear.x odom.twist.twist.linear.y odom.twist.twist.linear.z]';
@@ -595,12 +596,15 @@ if (CONTROL_MODE == CONTROL_TRAJECTORY)
         Lintwists(:,i) = lintwist;
         Angtwists(:,i) = angtwist;
         Inputs(:,i) = [motor_up-volt_compUp motor_lo-volt_compLo servo1 servo2]';
+        Trajectory(:,i) = trajectory';
     %     if (CONTROL_MODE == CONTROL_HOVER)
     %         Trims(:,i) = trim_values;
     %     else
     %         Trims(:,i) = [0 0 0 0]';
     %     end
         i = i+1;
+    else
+        fprintf('done \n');
     end
 end
 %%%%%%%%%
@@ -615,9 +619,10 @@ if (~isempty(TimeStamps))
     Data.lintwist = Lintwists;
     Data.angtwist = Angtwists;
     Data.inputs = Inputs;
+    Data.trajectory = Trajectory;
     % Data.trim = Trims;
 
-    save ViconData_velid Data
+    save ViconData_hover Data
 end
 %%%%%%%%%
 

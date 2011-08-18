@@ -1,17 +1,4 @@
 %=================================
-%%% Make constants global
-%=================================
-
-global g m k_Tup k_Tlo k_Mup k_Mlo d_up d_lo Tf_up Tf_lo Tf_motup Tf_motlo
-global Ixx Iyy Izz l_up l_lo I_up I_lo k_springup k_springlo J_dtup J_dtlo
-global Cd rho Ax Ay Az
-global zeta_mup zeta_bup zeta_mlo zeta_blo
-global omega_up_hat omega_lo_hat z_barx_hat z_bary_hat z_barz_hat
-global K_p K_v K_i K_pq K_psi K_omegaz e_i_prev Ts_lowlevel
-global Omega_max max_SBangle max_SPangle
-global CONTROL GYRO_MOMENTS DRAG
-
-%=================================
 %%% Constant model parameters
 %=================================
 
