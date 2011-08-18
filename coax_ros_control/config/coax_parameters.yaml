@@ -1,0 +1,50 @@
+mass: 0.302
+
+inertia:
+  Ixx: 1.837e-3
+  Iyy: 1.837e-3
+  Izz: 2.7786e-4
+
+offset:
+  upper: 0.165
+  lower: 0.103
+
+linkage_factor:
+  upper: 0.6130
+  lower: 0.5176
+
+spring_constant:
+  upper: 0.0542
+  lower: 0.2139
+
+thrust_factor:
+  upper: 2.2607e-5
+  lower: 3.1531e-5
+
+moment_factor:
+  upper: 9.9708e-7
+  lower: 8.9737e-7
+
+following_time:
+  bar: 1.6
+  motors:
+    upper: 0.185
+    lower: 0.115
+
+speed_conversion:
+  slope:
+    upper: 421.3723
+    lower: 437.7036
+  offset:
+    upper: -0.2555
+    lower: -2.9047
+
+phase_lag:
+  slope:
+    upper: -0.001282
+    lower: 0.001282
+  offset:
+    upper: 0.1789
+    lower: -0.0094
+
+max_swashplate_angle: 0.26
