@@ -6,8 +6,6 @@
         output="screen">
   </node>
 
-<group ns="Coax56">
-
     <node pkg="vicon_calibrate"
           name="vicon_calibrate"
           type="vicon_calibrate"
@@ -24,8 +22,8 @@
           output="screen">
       <remap from="~names" to="/vicon/names"/>
       <remap from="~values" to="/vicon/values"/>
-      <remap from="~pose" to="/Coax56/vicon_calibrate/pose"/>
-      <remap from="~odom" to="/Coax56/vicon2odometry/odom"/>
+      <remap from="~pose" to="/vicon_calibrate/pose"/>
+      <remap from="~odom" to="/vicon2odometry/odom"/>
       <param name="vsk" value="$(find coax_vsk)/vsk/Coax56.vsk"/>
 
     </node>
@@ -35,14 +33,14 @@
           type="coax_server"
 	  output="screen"
           args="/dev/tty.usbserial-A800f3Zv:1">
-      <remap from="/coax_server/state" to="/Coax56/state"/>
+      <remap from="/coax_server/state" to="/state"/>
 
-      <remap from="/coax_server/control" to="/Coax56/control"/>
-      <remap from="/coax_server/rawcontrol" to="/Coax56/rawcontrol"/>
+      <remap from="/coax_server/control" to="/control"/>
+      <remap from="/coax_server/rawcontrol" to="/rawcontrol"/>
 
-      <remap from="/coax_server/reach_nav_state" to="/Coax56/reach_nav_state"/>
-      <remap from="/coax_server/configure_comm" to="/Coax56/configure_comm"/>
-      <remap from="/coax_server/set_timeout" to="/Coax56/set_timeout"/>
+      <remap from="/coax_server/reach_nav_state" to="/reach_nav_state"/>
+      <remap from="/coax_server/configure_comm" to="/configure_comm"/>
+      <remap from="/coax_server/set_timeout" to="/set_timeout"/>
     </node>
 
 
@@ -50,23 +48,22 @@
           name="coax_ros_control"
           type="coax_ros_control"
 	  output="screen">
-      <remap from="/coax_ros_control/odom" to="/Coax56/vicon2odometry/odom"/>
-      <remap from="/coax_ros_control/state" to="/Coax56/state"/>
+      <remap from="/coax_ros_control/odom" to="/vicon2odometry/odom"/>
+      <remap from="/coax_ros_control/state" to="/state"/>
 
-      <remap from="/coax_ros_control/rawcontrol" to="/Coax56/rawcontrol"/>
+      <remap from="/coax_ros_control/rawcontrol" to="/rawcontrol"/>
 
-      <remap from="/coax_ros_control/reach_nav_state" to="/Coax56/reach_nav_state"/>
-      <remap from="/coax_ros_control/configure_comm" to="/Coax56/configure_comm"/>
-      <remap from="/coax_ros_control/set_timeout" to="/Coax56/set_timeout"/>
+      <remap from="/coax_ros_control/reach_nav_state" to="/reach_nav_state"/>
+      <remap from="/coax_ros_control/configure_comm" to="/configure_comm"/>
+      <remap from="/coax_ros_control/set_timeout" to="/set_timeout"/>
 
-      <remap from="/coax_ros_control/set_control_mode" to="/Coax56/set_control_mode"/>
+      <remap from="/coax_ros_control/set_control_mode" to="/set_control_mode"/>
 
-      <param name="frequency" value="10"/>
+      <param name="frequency" value="100"/>
       <param name="CoaX" value="56"/>
 
       <rosparam file="$(find coax_ros_control)/config/coax_parameters.yaml"/>
     </node>
 
-</group>
 
 </launch>

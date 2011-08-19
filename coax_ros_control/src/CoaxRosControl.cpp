@@ -25,7 +25,7 @@ CoaxRosControl::CoaxRosControl(ros::NodeHandle & n)
 		
 	set_control_mode.push_back(n.advertiseService("set_control_mode", &CoaxRosControl::setControlMode, this));
 		
-	battery_voltage = 12;
+	battery_voltage = 12.22;
 	coax_state_age = 0;
 	coax_nav_mode = 0;
 	raw_control_age = 0;
@@ -44,10 +44,16 @@ CoaxRosControl::CoaxRosControl(ros::NodeHandle & n)
 	servo_roll = 0;
 	servo_pitch = 0;
 	
-	Omega_up = 0;
-	Omega_lo = 0;
-	prev_Omega_up = 0;
-	prev_Omega_lo = 0;
+	Omega_up = prev_Omega_up = 0;
+	Omega_lo = prev_Omega_lo = 0;
+	z_bar[0] = prev_z_bar[0] = 0;
+	z_bar[1] = prev_z_bar[1] = 0;
+	z_bar[2] = prev_z_bar[2] = 1;
+	
+	START_HEIGHT = 0.3;
+	RISE_VELOCITY = 0.05; // [m/s]
+	RISE_TIME = START_HEIGHT/RISE_VELOCITY;
+	IDLE_TIME = 3;
 }
 CoaxRosControl::~CoaxRosControl()
 {
@@ -110,34 +116,19 @@ void CoaxRosControl::coaxOdomCallback(const nav_msgs::Odometry::ConstPtr & messa
 
 	// vicon jump detection ?
 	
-	// Read odometry values
-	arma::colvec coax_state = arma::zeros(17);
-	coax_state(0) = message->pose.pose.position.x;
-	coax_state(1) = message->pose.pose.position.y;
-	coax_state(2) = message->pose.pose.position.z;
-	coax_state(3) = message->twist.twist.linear.x;
-	coax_state(4) = message->twist.twist.linear.y;
-	coax_state(5) = message->twist.twist.linear.z;
-	double qx = message->pose.pose.orientation.x;
-	double qy = message->pose.pose.orientation.y;
-	double qz = message->pose.pose.orientation.z;
-	double qw = message->pose.pose.orientation.w;
-	coax_state(6) = atan2(2*(qw*qx+qy*qz),1-2*(qx*qx+qy*qy));
-	coax_state(7) = asin(2*(qw*qy-qz*qx));
-	coax_state(8) = atan2(2*(qw*qz+qx*qy),1-2*(qy*qy+qz*qz));
-	coax_state(9) = message->twist.twist.angular.x;
-	coax_state(10) = message->twist.twist.angular.y;
-	coax_state(11) = message->twist.twist.angular.z;
-	coax_state(12) = Omega_up;
-	coax_state(13) = Omega_lo;
-	
 	// getting current time
 	time_now = ros::Time::now().toSec();
 	if (FIRST_RUN){
 		time_prev = time_now;
 		FIRST_RUN = 0;
 	}
-	//double delta_t = time_now - time_prev;
+	double delta_t = time_now - time_prev;
+	
+	// Get orientation quaternion
+	double qx = message->pose.pose.orientation.x;
+	double qy = message->pose.pose.orientation.y;
+	double qz = message->pose.pose.orientation.z;
+	double qw = message->pose.pose.orientation.w;
 	
 	// Compute rotation matrix
 	arma::mat Rb2w = arma::zeros(3,3);
@@ -152,15 +143,109 @@ void CoaxRosControl::coaxOdomCallback(const nav_msgs::Odometry::ConstPtr & messa
 	Rb2w(2,2) = 1-2*qx*qx-2*qy*qy;
 	
 	// Estimate stabilizer bar orientation
+	double b_z_bardotz = 1/model_params.Tf_up*acos(prev_z_bar[2])*sqrt(prev_z_bar[0]*prev_z_bar[0] + prev_z_bar[1]*prev_z_bar[1]);
+	arma::colvec b_z_bardot(3);
+	if (b_z_bardotz <= 0){
+		b_z_bardot = arma::zeros(3);
+	}else{
+		double temp = prev_z_bar[2]*b_z_bardotz/(prev_z_bar[0]*prev_z_bar[0]+prev_z_bar[1]*prev_z_bar[1]);
+		b_z_bardot(0) = -prev_z_bar[0]*temp;
+		b_z_bardot(1) = -prev_z_bar[1]*temp;
+		b_z_bardot(2) = b_z_bardotz;
+	}
+
+	double p = message->twist.twist.angular.x;
+	double q = message->twist.twist.angular.y;
+	double r = message->twist.twist.angular.z;
 	
+	z_bar[0] = prev_z_bar[0] + (r*prev_z_bar[1] - q*prev_z_bar[2] + b_z_bardot(0))*delta_t;
+	z_bar[1] = prev_z_bar[1] + (-r*prev_z_bar[0] + p*prev_z_bar[2] + b_z_bardot(1))*delta_t;
+	z_bar[2] = prev_z_bar[2] + (q*prev_z_bar[0] - p*prev_z_bar[1] + b_z_bardot(2))*delta_t;
 	
+	double norm_z_bar = sqrt(z_bar[0]*z_bar[0] + z_bar[1]*z_bar[1] + z_bar[2]*z_bar[2]);
+	z_bar[0] = z_bar[0]/norm_z_bar;
+	z_bar[1] = z_bar[1]/norm_z_bar;
+	z_bar[2] = z_bar[2]/norm_z_bar;
+	
+	prev_z_bar[0] = z_bar[0];
+	prev_z_bar[1] = z_bar[1];
+	prev_z_bar[2] = z_bar[2];
+	
+	// Compose coax_state
+	arma::colvec coax_state = arma::zeros(17);
+	coax_state(0) = message->pose.pose.position.x;
+	coax_state(1) = message->pose.pose.position.y;
+	coax_state(2) = message->pose.pose.position.z;
+	coax_state(3) = message->twist.twist.linear.x;
+	coax_state(4) = message->twist.twist.linear.y;
+	coax_state(5) = message->twist.twist.linear.z;
+	coax_state(6) = atan2(2*(qw*qx+qy*qz),1-2*(qx*qx+qy*qy));
+	coax_state(7) = asin(2*(qw*qy-qz*qx));
+	coax_state(8) = atan2(2*(qw*qz+qx*qy),1-2*(qy*qy+qz*qz));
+	coax_state(9) = p;
+	coax_state(10) = q;
+	coax_state(11) = r;
+	coax_state(12) = Omega_up;
+	coax_state(13) = Omega_lo;
+	coax_state(14) = z_bar[0];
+	coax_state(15) = z_bar[1];
+	coax_state(16) = z_bar[2];
 	
 	arma::colvec trajectory = arma::zeros(11);
 	double control[4] = {0,0,0,0};	
+	double dt_start;
 	
 	switch (CONTROL_MODE) {
+			
 		case CONTROL_START:
-			setControls(control);
+			if (FIRST_START){
+				start_position[0] = coax_state(0);
+				start_position[1] = coax_state(1);
+				start_position[2] = coax_state(2);
+				start_orientation = atan2(Rb2w(1,0),Rb2w(0,0));
+				start_time = time_now;
+            
+				FIRST_START = false;
+			}
+			
+			dt_start = time_now - start_time;
+			if (dt_start < IDLE_TIME/2){
+				control[0] = 0.35;
+				control[1] = 0;
+				control[2] = 0;
+				control[3] = 0;
+			}else if (dt_start < IDLE_TIME){
+				control[0] = 0.35;
+				control[1] = 0.35;
+				control[2] = 0;
+				control[3] = 0;
+			}else if (dt_start < (IDLE_TIME + RISE_TIME)){
+				// rise
+				trajectory(0) = start_position[0];
+				trajectory(1) = start_position[1];
+				trajectory(2) = start_position[2] + RISE_VELOCITY*(dt_start - IDLE_TIME);
+				trajectory(5) = RISE_VELOCITY;
+				trajectory(9) = start_orientation;
+				
+				// compute control commands
+				controlFunction(control, coax_state, Rb2w, trajectory, model_params, control_params);
+			}else{
+				CONTROL_MODE = CONTROL_HOVER;
+				// No FIRST_HOVER required !!!
+				hover_position[0] = start_position[0];
+				hover_position[1] = start_position[1];
+				hover_position[2] = start_position[2] + START_HEIGHT;
+				hover_orientation = start_orientation;
+				
+				trajectory(0) = hover_position[0];
+				trajectory(1) = hover_position[1];
+				trajectory(2) = hover_position[2];
+				trajectory(9) = hover_orientation;
+				
+				// compute control commands
+				controlFunction(control, coax_state, Rb2w, trajectory, model_params, control_params);
+			}
+			
 			break;
 		
 		case CONTROL_HOVER:
@@ -176,6 +261,7 @@ void CoaxRosControl::coaxOdomCallback(const nav_msgs::Odometry::ConstPtr & messa
 				FIRST_LANDING = 1;
 			}
 			
+			// compose trajectory
 			trajectory(0) = hover_position[0];
 			trajectory(1) = hover_position[1];
 			trajectory(2) = hover_position[2];
@@ -184,56 +270,39 @@ void CoaxRosControl::coaxOdomCallback(const nav_msgs::Odometry::ConstPtr & messa
 			// compute control commands
 			controlFunction(control, coax_state, Rb2w, trajectory, model_params, control_params);
 			
-			// set control commands
-			setControls(control);
 			break;
 		
+		case CONTROL_LANDING:
+			
+			break;
+			
 		case CONTROL_LANDED:
-			setControls(control);
+			// flush integrators
+			// check if flags need to be resetted
 			break;
 
 		default:
 			break;
 	}
 	
+	// Voltage compensation
+	double volt_compUp = (12.22 - battery_voltage)*0.0279;
+	double volt_compLo = (12.22 - battery_voltage)*0.0287;
+	if (control[0] > 0.05 || control[1] > 0.05){
+		control[0] = control[0] + volt_compUp;
+		control[1] = control[1] + volt_compLo;
+	}
+	
+	// set control commands
+	setControls(control);
+										
 	raw_control_age = 0;
 	time_prev = time_now;
 }
-
-void CoaxRosControl::setControls(double* control)
-{
-	if (control[0] > 1) {
-		motor_up = 1;
-	} else if (control[0] < 0) {
-		motor_up = 0;
-	} else {
-		motor_up = control[0];
-	}
-	
-	if (control[1] > 1) {
-		motor_lo = 1;
-	} else if (control[1] < 0) {
-		motor_lo = 0;
-	} else {
-		motor_lo = control[1];
-	}
-	
-	if (control[2] > 1) {
-		servo_roll = 1;
-	} else if (control[2] < -1) {
-		servo_roll = -1;
-	} else {
-		servo_roll = control[2];
-	}
-	
-	if (control[3] > 1) {
-		servo_pitch = 1;
-	} else if (control[3] < -1) {
-		servo_pitch = -1;
-	} else {
-		servo_pitch = control[3];
-	}
-}
+										
+//===================
+// Control functions
+//===================
 
 void CoaxRosControl::controlFunction(double* control, arma::colvec coax_state, arma::mat Rb2w, 
 									 arma::colvec trajectory, model_params_t model_params, control_params_t control_params)
@@ -279,6 +348,27 @@ void CoaxRosControl::controlFunction(double* control, arma::colvec coax_state, a
 	
 	// Control Parameters
 	double K_lqr[4][16] = {};
+	K_lqr[0][2] = 0.4912;
+	K_lqr[0][5] = 0.5238;
+	K_lqr[0][8] = -0.1602;
+	K_lqr[0][12] = 0.0220;
+	K_lqr[0][13] = -0.0005;
+	K_lqr[1][2] = 0.4239;
+	K_lqr[1][5] = 0.4416;
+	K_lqr[1][8] = 0.1239;
+	K_lqr[1][12] = -0.0006;
+	K_lqr[1][13] = 0.0172;
+	K_lqr[2][1] = -0.5359;
+	K_lqr[2][4] = -0.5979;
+	K_lqr[3][0] = 0.5359;
+	K_lqr[3][3] = 0.5982;
+	//for (int k=0; k<4; k++) {
+	//	printf("\n");
+	//	for (int l=0; l<16; l++) {
+	//		printf("%4.4f  ",K_lqr[k][l]);
+	//	}
+	//}
+	//printf("\n");
 	
 	// Upper thrust vector direction
 	double z_Tupz = cos(l_up*acos(z_barz));
@@ -303,8 +393,8 @@ void CoaxRosControl::controlFunction(double* control, arma::colvec coax_state, a
 	double Omega_lo0 = sqrt(m*g/(k_Tup*k_Mlo/k_Mup + k_Tlo));
 	double Omega_up0 = sqrt(k_Mlo/k_Mup*Omega_lo0*Omega_lo0);
 	
-	double a_up = -asin(z_Tup(2));
-	double b_up = asin(z_Tup(1)/cos(a_up));
+	double a_up = -asin(z_Tup(1));
+	double b_up = asin(z_Tup(0)/cos(a_up));
 	
 	
 	arma::colvec pos_error(3);
@@ -339,13 +429,18 @@ void CoaxRosControl::controlFunction(double* control, arma::colvec coax_state, a
 		error[8] = error[8] + 2*M_PI;
 	}
 	
+	//for (int k=0; k<16; k++) {
+	//	printf("%3.3f  ",error[k]);
+	//}
+	//printf("\n\n");
+	
 	double inputs[4] = {0,0,0,0};
 	for (int i=0; i<4; i++) {
 		for (int j=0; j<16; j++) {
 			inputs[i] -= K_lqr[i][j]*error[j];
 		}
 	}
-	
+
 	// feed forward on rotor speeds
 	control[0] = inputs[0] + (Omega_up0 - rs_bup)/rs_mup;
 	control[1] = inputs[1] + (Omega_lo0 - rs_blo)/rs_mlo;
@@ -392,6 +487,63 @@ void CoaxRosControl::controlFunction(double* control, arma::colvec coax_state, a
 	control[2] = a_lo_des/max_SPangle;
 	control[3] = b_lo_des/max_SPangle;
 	
+	int k;
+	for (k=0; k<17; k++) {
+		printf("%4.4f  ",coax_state[k]);
+	}
+	printf("\n");
+	printf("%4.4f %4.4f %4.4f \n",Rb2w(0,0),Rb2w(0,1),Rb2w(0,2));
+	printf("%4.4f %4.4f %4.4f \n",Rb2w(1,0),Rb2w(1,1),Rb2w(1,2));
+	printf("%4.4f %4.4f %4.4f \n",Rb2w(2,0),Rb2w(2,1),Rb2w(2,2));
+	printf("\n");
+	for (k=0; k<11; k++) {
+		printf("%4.4f  ",trajectory[k]);
+	}
+	printf("\n");
+	for (k=0; k<16; k++) {
+		printf("%4.4f  ",error[k]);
+	}
+	printf("\n");
+	for (k=0; k<4; k++) {
+		printf("%4.4f  ",control[k]);
+	}
+	printf("\n\n");
+	
+}
+
+void CoaxRosControl::setControls(double* control)
+{
+	if (control[0] > 1) {
+		motor_up = 1;
+	} else if (control[0] < 0) {
+		motor_up = 0;
+	} else {
+		motor_up = control[0];
+	}
+	
+	if (control[1] > 1) {
+		motor_lo = 1;
+	} else if (control[1] < 0) {
+		motor_lo = 0;
+	} else {
+		motor_lo = control[1];
+	}
+	
+	if (control[2] > 1) {
+		servo_roll = 1;
+	} else if (control[2] < -1) {
+		servo_roll = -1;
+	} else {
+		servo_roll = control[2];
+	}
+	
+	if (control[3] > 1) {
+		servo_pitch = 1;
+	} else if (control[3] < -1) {
+		servo_pitch = -1;
+	} else {
+		servo_pitch = control[3];
+	}
 }
 
 //===================
@@ -429,11 +581,15 @@ void CoaxRosControl::rawControlPublisher(unsigned int rate)
 		// Estimate rotor speeds (do that here to have the same frequency as we apply inputs)
 		double prev_Omega_up_des = model_params.rs_mup*motor_up + model_params.rs_bup;
 		double prev_Omega_lo_des = model_params.rs_mlo*motor_lo + model_params.rs_blo;
+		//printf("%f   %f \n", prev_Omega_up_des,prev_Omega_lo_des);
+		//printf("%f   %f \n", prev_Omega_up,prev_Omega_lo);
 		
 		Omega_up = prev_Omega_up + 1/model_params.Tf_motup*(prev_Omega_up_des - prev_Omega_up)/rate;
 		Omega_lo = prev_Omega_lo + 1/model_params.Tf_motlo*(prev_Omega_lo_des - prev_Omega_lo)/rate;
 		prev_Omega_up = Omega_up;
 		prev_Omega_lo = Omega_lo;
+		//printf("%f   %f \n", model_params.Tf_motup,model_params.Tf_motlo);
+		//printf("%f   %f \n\n", Omega_up,Omega_lo);
 		
 		ros::spinOnce();
 		loop_rate.sleep();
@@ -451,30 +607,36 @@ bool CoaxRosControl::setControlMode(coax_ros_control::SetControlMode::Request &r
 	switch (req.mode)
 	{
 		case 1:
-			if (battery_voltage > 11) {
-                if (coax_nav_mode != SB_NAV_RAW) {
-					if (coax_nav_mode != SB_NAV_STOP) {
-						reachNavState(SB_NAV_STOP, 0.5);
-						ros::Duration(0.5).sleep(); // make sure CoaX is in SB_NAV_STOP mode
+			if (CONTROL_MODE == CONTROL_LANDED){
+				if (battery_voltage > 11) {
+					if (coax_nav_mode != SB_NAV_RAW) {
+						if (coax_nav_mode != SB_NAV_STOP) {
+							reachNavState(SB_NAV_STOP, 0.5);
+							ros::Duration(0.5).sleep(); // make sure CoaX is in SB_NAV_STOP mode
+						}
+						reachNavState(SB_NAV_RAW, 0.5);
 					}
-                    reachNavState(SB_NAV_RAW, 0.5);
-				}
-				// set initial trim
-				if (COAX == 56) {
-					roll_trim = 0.0285;
-					pitch_trim = 0.0921;
+					// set initial trim
+					if (COAX == 56) {
+						roll_trim = 0.0285;
+						pitch_trim = 0.0921;
+					} else {
+						roll_trim = 0;
+						pitch_trim = 0;
+					}
+					// switch to start procedure
+					CONTROL_MODE = CONTROL_START;
+					FIRST_START = true;
+					ROS_INFO("switch to control mode 1");
 				} else {
-					roll_trim = 0;
-					pitch_trim = 0;
+					ROS_INFO("Battery Low!!! (%f V) Start denied",battery_voltage);
+					LOW_POWER_DETECTED = true;
+					out.result = 0;
 				}
-				// switch to start procedure
-				CONTROL_MODE = CONTROL_START;
-				FIRST_START = true;
-            } else {
-				ROS_INFO("Battery Low!!! (%f V) Start denied",battery_voltage);
-				LOW_POWER_DETECTED = true;
-				out.result = 0;
+			} else {
+				ROS_INFO("Start can only be executed from mode CONTROL_LANDED");
 			}
+
 			break;
 		
 		case 3:

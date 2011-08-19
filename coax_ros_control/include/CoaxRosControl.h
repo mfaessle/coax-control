@@ -115,6 +115,15 @@ private:
 	double Omega_lo;
 	double prev_Omega_up;
 	double prev_Omega_lo;
+	double z_bar[3];
+	double prev_z_bar[3];
+	double start_position[3];
+	double start_orientation;
+	double start_time;
+	double IDLE_TIME;
+	double RISE_TIME;
+	double RISE_VELOCITY;
+	double START_HEIGHT;
 
 };
 
