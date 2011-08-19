@@ -193,11 +193,6 @@ if (~isempty(info)) % if empty catch it the next time
         LOW_POWER_DETECTED = 1;
         fprintf('Battery Low!!! (%fV) Landing initialized \n',0.8817*info.y + 1.5299);
     end
-%     if ((int8(info.x) ~= 7) && (CONTROL_MODE ~= CONTROL_LANDED))
-%         % Lost Zigbee connection
-%         fprintf('Zigbee has lost its connection for too long %d \n', CONTROL_MODE);
-%         CONTROL_MODE = CONTROL_LANDED;
-%     end
 end
 
 
@@ -479,19 +474,20 @@ switch CONTROL_MODE
             [~,initial_pose] = trajectory_generation(0,TRAJECTORY_TYPE);
             initial_trajectory_position = initial_pose(1:3);
             initial_trajectory_orientation = initial_pose(4);
-            if 0;%(norm(current_position - initial_trajectory_position) > 0.05)
-%                 CONTROL_MODE = CONTROL_GOTOPOS;
-%                 FIRST_GOTOPOS = 1;
-%                 SERVICE_TRAJECTORY = 1;
-%                 gotopos_position = initial_trajectory_position;
-%                 gotopos_orientation = initial_trajectory_orientation;
+            if (norm(current_position - initial_trajectory_position) > 0.1)
+                CONTROL_MODE = CONTROL_GOTOPOS;
+                FIRST_GOTOPOS = 1;
+                SERVICE_TRAJECTORY = 1;
+                gotopos_position = initial_trajectory_position;
+                gotopos_orientation = initial_trajectory_orientation;
             else
                 FIRST_TRAJECTORY = 0;
                 trajectory_time = time;
             end
-            dt_traj = etime(time, trajectory_time);
+            dt_traj = 0; % only for data acquisition needed
             desPosition = coax_state(1:3);
-            trajectory = [desPosition' 0 0 0 0 0 0 initial_trajectory_orientation 0]';
+            x_proj = Rb2w(:,1) - [0 0 Rb2w(3,1)]';
+            trajectory = [desPosition' 0 0 0 0 0 0 atan2(x_proj(2),x_proj(1)) 0]';
             [motor_up, motor_lo, servo1, servo2, e_i, trim_values] = control_function(coax_state, Rb2w, trajectory, e_i, dt, param, contr_param);
         else
             dt_traj = etime(time, trajectory_time);
@@ -583,8 +579,8 @@ geometry_msgs_Quaternion('send',cid,raw_control);
 prev_time = time;
 
 %%%%%%%%%
-if (CONTROL_MODE == CONTROL_HOVER)
-    if (i<5000)%(dt_traj > 10) && (dt_traj < 70))
+if (CONTROL_MODE == CONTROL_TRAJECTORY)
+    if ((dt_traj > 10) && (dt_traj < 70))
         pos = [odom.pose.pose.position.x odom.pose.pose.position.y odom.pose.pose.position.z]';
         ori = [odom.pose.pose.orientation.x odom.pose.pose.orientation.y odom.pose.pose.orientation.z odom.pose.pose.orientation.w]';
         lintwist = [odom.twist.twist.linear.x odom.twist.twist.linear.y odom.twist.twist.linear.z]';
@@ -604,7 +600,7 @@ if (CONTROL_MODE == CONTROL_HOVER)
     %     end
         i = i+1;
     else
-        fprintf('done \n');
+        %fprintf('done \n');
     end
 end
 %%%%%%%%%
@@ -622,7 +618,7 @@ if (~isempty(TimeStamps))
     Data.trajectory = Trajectory;
     % Data.trim = Trims;
 
-    save ViconData_hover Data
+    save ViconData_osccirclefast Data
 end
 %%%%%%%%%
 

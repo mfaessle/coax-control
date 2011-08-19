@@ -65,19 +65,20 @@ switch TYPE
 
         radius     = 0.5;
         omega      = 2*pi/10;
-        vert_amp   = 0.15;
+        omega_vert = 2*omega;
+        vert_amp   = 0.2;
         
-        initial_pose = [1 0 0.3 -pi/4]';
+        initial_pose = [0.5 0 0.5 pi]';
         
         x_ref      = radius*cos(omega*t) - radius + initial_pose(1);
         y_ref      = radius*sin(omega*t);
-        z_ref      = initial_pose(3) + vert_amp + vert_amp*sin(omega*t);
+        z_ref      = initial_pose(3) + vert_amp + vert_amp*sin(omega_vert*t);
         xdot_ref   = -radius*omega*sin(omega*t);
         ydot_ref   = radius*omega*cos(omega*t);
-        zdot_ref   = omega*vert_amp*cos(omega*t);
+        zdot_ref   = omega_vert*vert_amp*cos(omega_vert*t);
         xddot_ref  = -radius*omega^2*cos(omega*t);
         yddot_ref  = -radius*omega^2*sin(omega*t);
-        zddot_ref  = -omega^2*vert_amp*sin(omega*t);
+        zddot_ref  = -omega_vert^2*vert_amp*sin(omega_vert*t);
         psi_ref    = initial_pose(4);%omega*t + initial_pose(4);
         psidot_ref = 0;%omega;
 
