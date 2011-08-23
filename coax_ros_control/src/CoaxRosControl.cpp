@@ -3,6 +3,8 @@
 #include <coax_msgs/CoaxState.h>
 #include <coax_msgs/CoaxReachNavState.h>
 #include <coax_ros_control/SetControlMode.h>
+#include <coax_ros_control/SetTrajectoryType.h>
+#include <coax_ros_control/SetTargetPosition.h>
 #include <coax_msgs/CoaxConfigureComm.h>
 #include <coax_msgs/CoaxSetTimeout.h>
 #include <coax_msgs/CoaxRawControl.h>
@@ -20,10 +22,12 @@ CoaxRosControl::CoaxRosControl(ros::NodeHandle & n)
 		
 	raw_control_pub = n.advertise<coax_msgs::CoaxRawControl>("rawcontrol",1);
 		
-	coax_odom_sub = n.subscribe("odom", 10, &CoaxRosControl::coaxOdomCallback, this);
-	coax_state_sub = n.subscribe("state", 10, &CoaxRosControl::coaxStateCallback, this);
+	coax_odom_sub = n.subscribe("odom", 1, &CoaxRosControl::coaxOdomCallback, this);
+	coax_state_sub = n.subscribe("state", 1, &CoaxRosControl::coaxStateCallback, this);
 		
 	set_control_mode.push_back(n.advertiseService("set_control_mode", &CoaxRosControl::setControlMode, this));
+	set_trajectory_type.push_back(n.advertiseService("set_trajectory_type", &CoaxRosControl::setTrajectoryType, this));
+	set_target_position.push_back(n.advertiseService("set_target_position", &CoaxRosControl::setTargetPosition, this));
 		
 	battery_voltage = 12.22;
 	coax_state_age = 0;
@@ -36,11 +40,14 @@ CoaxRosControl::CoaxRosControl(ros::NodeHandle & n)
 	FIRST_TRAJECTORY = false;
 	FIRST_LANDING = false;
 	FIRST_RUN = true;
-		
+	FIRST_GOTOPOS = false;
+	SERVICE_LANDING = false;
+	SERVICE_TRAJECTORY = false;
+	
 	roll_trim = 0;
 	pitch_trim = 0;
-	motor_up = 0;
-	motor_lo = 0;
+	motor_up = prev_motor_up = 0;
+	motor_lo = prev_motor_lo = 0;
 	servo_roll = 0;
 	servo_pitch = 0;
 	
@@ -51,9 +58,13 @@ CoaxRosControl::CoaxRosControl(ros::NodeHandle & n)
 	z_bar[2] = prev_z_bar[2] = 1;
 	
 	START_HEIGHT = 0.3;
-	RISE_VELOCITY = 0.05; // [m/s]
+	RISE_VELOCITY = 0.1; // [m/s]
 	RISE_TIME = START_HEIGHT/RISE_VELOCITY;
 	IDLE_TIME = 3;
+	
+	GOTOPOS_VELOCITY = 0.1;
+	SINK_VELOCITY = 0.1;
+	SINK_TIME = START_HEIGHT/SINK_VELOCITY;
 }
 CoaxRosControl::~CoaxRosControl()
 {
@@ -178,7 +189,7 @@ void CoaxRosControl::coaxOdomCallback(const nav_msgs::Odometry::ConstPtr & messa
 	coax_state(2) = message->pose.pose.position.z;
 	coax_state(3) = message->twist.twist.linear.x;
 	coax_state(4) = message->twist.twist.linear.y;
-	coax_state(5) = message->twist.twist.linear.z;
+	coax_state(5) = message->twist.twist.linear.z;	
 	coax_state(6) = atan2(2*(qw*qx+qy*qz),1-2*(qx*qx+qy*qy));
 	coax_state(7) = asin(2*(qw*qy-qz*qx));
 	coax_state(8) = atan2(2*(qw*qz+qx*qy),1-2*(qy*qy+qz*qz));
@@ -193,7 +204,13 @@ void CoaxRosControl::coaxOdomCallback(const nav_msgs::Odometry::ConstPtr & messa
 	
 	arma::colvec trajectory = arma::zeros(11);
 	double control[4] = {0,0,0,0};	
+	
 	double dt_start;
+	double dt_gotopos;
+	double dt_land;
+	double gotopos_distance;
+	double position_error;
+	int i;
 	
 	switch (CONTROL_MODE) {
 			
@@ -272,13 +289,164 @@ void CoaxRosControl::coaxOdomCallback(const nav_msgs::Odometry::ConstPtr & messa
 			
 			break;
 		
+		case CONTROL_GOTOPOS:
+			if (FIRST_GOTOPOS){
+				initial_gotopos_position[0] = coax_state(0);
+				initial_gotopos_position[1] = coax_state(1);
+				initial_gotopos_position[2] = coax_state(2);
+				initial_gotopos_orientation = atan2(Rb2w(1,0),Rb2w(0,0));
+				gotopos_time = time_now;
+				gotopos_distance = 0;
+				for (i=0; i<3; i++) {
+					gotopos_distance += (gotopos_position[i] - initial_gotopos_position[i])*(gotopos_position[i] - initial_gotopos_position[i]);
+				}
+				gotopos_distance = sqrt(gotopos_distance);
+				gotopos_direction[0] = (gotopos_position[0] - initial_gotopos_position[0])/gotopos_distance;
+				gotopos_direction[1] = (gotopos_position[1] - initial_gotopos_position[1])/gotopos_distance;
+				gotopos_direction[2] = (gotopos_position[2] - initial_gotopos_position[2])/gotopos_distance;
+				
+				gotopos_duration = gotopos_distance/GOTOPOS_VELOCITY;
+				FIRST_GOTOPOS = false;
+			}
+			if (LOW_POWER_DETECTED){
+				CONTROL_MODE = CONTROL_HOVER;
+				FIRST_HOVER = true;
+			}
+			
+			dt_gotopos = time_now - gotopos_time;
+			if (dt_gotopos < gotopos_duration){
+				// compose trajectory
+				trajectory(0) = initial_gotopos_position[0] + GOTOPOS_VELOCITY*dt_gotopos*gotopos_direction[0];
+				trajectory(1) = initial_gotopos_position[1] + GOTOPOS_VELOCITY*dt_gotopos*gotopos_direction[1];
+				trajectory(2) = initial_gotopos_position[2] + GOTOPOS_VELOCITY*dt_gotopos*gotopos_direction[2];
+				trajectory(3) = GOTOPOS_VELOCITY*gotopos_direction[0];
+				trajectory(4) = GOTOPOS_VELOCITY*gotopos_direction[1];
+				trajectory(5) = GOTOPOS_VELOCITY*gotopos_direction[2];
+				trajectory(9) = dt_gotopos/gotopos_duration*(gotopos_orientation-initial_gotopos_orientation)+initial_gotopos_orientation;
+				trajectory(10) = (gotopos_orientation-initial_gotopos_orientation)/gotopos_duration;
+				
+				// compute control commands
+				controlFunction(control, coax_state, Rb2w, trajectory, model_params, control_params);
+			}else{
+				if (SERVICE_LANDING){
+					CONTROL_MODE = CONTROL_LANDING;
+					SERVICE_LANDING = false;
+					
+					// compose trajectory
+					trajectory(0) = start_position[0];
+					trajectory(1) = start_position[1];
+					trajectory(2) = start_position[2] + START_HEIGHT;
+					trajectory(9) = gotopos_orientation;
+					
+					// compute control commands
+					controlFunction(control, coax_state, Rb2w, trajectory, model_params, control_params);
+				}else if (SERVICE_TRAJECTORY){
+					CONTROL_MODE = CONTROL_TRAJECTORY;
+					SERVICE_TRAJECTORY = false;
+					
+					// compose trajectory
+					trajectory(0) = coax_state(0);
+					trajectory(1) = coax_state(1);
+					trajectory(2) = coax_state(2);
+					trajectory(9) = gotopos_orientation;
+					
+					// compute control commands
+					controlFunction(control, coax_state, Rb2w, trajectory, model_params, control_params);
+				}else{
+					position_error = 0;
+					for (i=0; i<3; i++) {
+						position_error += (coax_state(i)-gotopos_position[i])*(coax_state(i)-start_position[i]);
+					}			
+					position_error = sqrt(position_error);
+					
+					if (position_error > 0.1){
+						CONTROL_MODE = CONTROL_GOTOPOS;
+						FIRST_GOTOPOS = 1;
+					}else{
+						CONTROL_MODE = CONTROL_HOVER; // in the end if manually entered goto position
+						hover_position[0] = target_pose[0];
+						hover_position[1] = target_pose[1];
+						hover_position[2] = target_pose[2];
+						hover_orientation = target_pose[3];
+					}
+					
+					// compose trajectory
+					trajectory(0) = coax_state(0);
+					trajectory(1) = coax_state(1);
+					trajectory(2) = coax_state(2);
+					trajectory(9) = gotopos_orientation;
+					
+					// compute control commands
+					controlFunction(control, coax_state, Rb2w, trajectory, model_params, control_params);
+				}
+			}
+													  
+			break;
+			
+		case CONTROL_TRAJECTORY:
+			
+			break;
+		
 		case CONTROL_LANDING:
+			position_error = (coax_state(0)-start_position[0])*(coax_state(0)-start_position[0]);
+			position_error += (coax_state(1)-start_position[1])*(coax_state(1)-start_position[1]);
+			position_error += (coax_state(2)-start_position[2]-START_HEIGHT)*(coax_state(2)-start_position[2]-START_HEIGHT);			
+			position_error = sqrt(position_error);
+			if (FIRST_LANDING){
+				if (position_error > 0.1){
+					CONTROL_MODE = CONTROL_GOTOPOS;
+					FIRST_GOTOPOS = 1;
+					SERVICE_LANDING = 1;
+					gotopos_position[0] = start_position[0];
+					gotopos_position[1] = start_position[1];
+					gotopos_position[2] = start_position[2] + START_HEIGHT;
+					gotopos_orientation = start_orientation;
+				}else{
+					FIRST_LANDING = 0;
+					landing_time = time_now;
+				}
+				
+				// compose trajectory
+				trajectory(0) = coax_state(0);
+				trajectory(1) = coax_state(1);
+				trajectory(2) = coax_state(2);
+				trajectory(9) = start_orientation;
+				
+				// compute control commands
+				controlFunction(control, coax_state, Rb2w, trajectory, model_params, control_params);
+			}else{
+				dt_land = time_now - landing_time;
+				if (dt_land < SINK_TIME){					
+					// compose trajectory
+					trajectory(0) = start_position[0];
+					trajectory(1) = start_position[1];
+					trajectory(2) = start_position[2] + START_HEIGHT - SINK_VELOCITY*dt_land;
+					trajectory(5) = -SINK_VELOCITY;
+					trajectory(9) = start_orientation;
+					
+					// compute control commands
+					controlFunction(control, coax_state, Rb2w, trajectory, model_params, control_params);
+				}else if (dt_land < SINK_TIME + IDLE_TIME){
+					motor_up = 0.35;
+					motor_lo = 0.35;
+					servo_roll = 0;
+					servo_pitch = 0;
+				}else{
+					CONTROL_MODE = CONTROL_LANDED; // in the end of maneuver
+					// flush integrators
+					motor_up = 0;
+					motor_lo = 0;
+					servo_roll = 0;
+					servo_pitch = 0;
+					reachNavState(SB_NAV_STOP, 0.5);
+				}
+			}
 			
 			break;
 			
 		case CONTROL_LANDED:
-			// flush integrators
-			// check if flags need to be resetted
+			
+			// maybe if flags need to be reset
 			break;
 
 		default:
@@ -348,20 +516,20 @@ void CoaxRosControl::controlFunction(double* control, arma::colvec coax_state, a
 	
 	// Control Parameters
 	double K_lqr[4][16] = {};
-	K_lqr[0][2] = 0.4912;
-	K_lqr[0][5] = 0.5238;
-	K_lqr[0][8] = -0.1602;
-	K_lqr[0][12] = 0.0220;
+	K_lqr[0][2] = 3.3377;
+	K_lqr[0][5] = 1.4157;
+	K_lqr[0][8] = -0.3600;
+	K_lqr[0][12] = 0.0230;
 	K_lqr[0][13] = -0.0005;
-	K_lqr[1][2] = 0.4239;
-	K_lqr[1][5] = 0.4416;
-	K_lqr[1][8] = 0.1239;
+	K_lqr[1][2] = 3.0077;
+	K_lqr[1][5] = 1.2103;
+	K_lqr[1][8] = 0.2658;
 	K_lqr[1][12] = -0.0006;
-	K_lqr[1][13] = 0.0172;
-	K_lqr[2][1] = -0.5359;
-	K_lqr[2][4] = -0.5979;
-	K_lqr[3][0] = 0.5359;
-	K_lqr[3][3] = 0.5982;
+	K_lqr[1][13] = 0.0177;
+	K_lqr[2][1] = -1.3719;
+	K_lqr[2][4] = -0.9622;
+	K_lqr[3][0] = 1.3720;
+	K_lqr[3][3] = 0.9630;
 	//for (int k=0; k<4; k++) {
 	//	printf("\n");
 	//	for (int l=0; l<16; l++) {
@@ -390,12 +558,12 @@ void CoaxRosControl::controlFunction(double* control, arma::colvec coax_state, a
 	z_Tup(1) = sin(zeta)*z_Tup_p(0) + cos(zeta)*z_Tup_p(1);
 	z_Tup(2) = z_Tup_p(2);
 	
-	double Omega_lo0 = sqrt(m*g/(k_Tup*k_Mlo/k_Mup + k_Tlo));
-	double Omega_up0 = sqrt(k_Mlo/k_Mup*Omega_lo0*Omega_lo0);
-	
 	double a_up = -asin(z_Tup(1));
 	double b_up = asin(z_Tup(0)/cos(a_up));
 	
+	
+	double Omega_lo0 = sqrt(m*g/(k_Tup*k_Mlo/k_Mup + k_Tlo));
+	double Omega_up0 = sqrt(k_Mlo/k_Mup*Omega_lo0*Omega_lo0);
 	
 	arma::colvec pos_error(3);
 	arma::colvec vel_error(3);
@@ -424,9 +592,9 @@ void CoaxRosControl::controlFunction(double* control, arma::colvec coax_state, a
 	error[15] = b_up;
 	
 	if (error[8] > M_PI){
-		error[8] = error[8] - 2*M_PI;
+		error[8] -= - 2*M_PI;
 	}else if (error[8] < -M_PI){
-		error[8] = error[8] + 2*M_PI;
+		error[8] += 2*M_PI;
 	}
 	
 	//for (int k=0; k<16; k++) {
@@ -446,8 +614,8 @@ void CoaxRosControl::controlFunction(double* control, arma::colvec coax_state, a
 	control[1] = inputs[1] + (Omega_lo0 - rs_blo)/rs_mlo;
 	
 	// correct for phase lag of servo inputs
-	double a_SP = inputs[3]*max_SPangle;
-	double b_SP = inputs[4]*max_SPangle;
+	double a_SP = inputs[2]*max_SPangle;
+	double b_SP = inputs[3]*max_SPangle;
 	arma::colvec z_SP(3);
 	z_SP(0) = sin(b_SP);
 	z_SP(1) = -sin(a_SP)*cos(b_SP);
@@ -458,7 +626,7 @@ void CoaxRosControl::controlFunction(double* control, arma::colvec coax_state, a
 		temp = sqrt((1-z_Tloz*z_Tloz)/(z_SP(0)*z_SP(0) + z_SP(1)*z_SP(1)));
 		z_Tlo(0) = z_SP(0)*temp;
 		z_Tlo(1) = z_SP(1)*temp;
-		z_Tlo(2) = z_Tupz;
+		z_Tlo(2) = z_Tloz;
 	}else{
 		z_Tlo(0) = 0;
 		z_Tlo(1) = 0;
@@ -486,28 +654,6 @@ void CoaxRosControl::controlFunction(double* control, arma::colvec coax_state, a
 	
 	control[2] = a_lo_des/max_SPangle;
 	control[3] = b_lo_des/max_SPangle;
-	
-	int k;
-	for (k=0; k<17; k++) {
-		printf("%4.4f  ",coax_state[k]);
-	}
-	printf("\n");
-	printf("%4.4f %4.4f %4.4f \n",Rb2w(0,0),Rb2w(0,1),Rb2w(0,2));
-	printf("%4.4f %4.4f %4.4f \n",Rb2w(1,0),Rb2w(1,1),Rb2w(1,2));
-	printf("%4.4f %4.4f %4.4f \n",Rb2w(2,0),Rb2w(2,1),Rb2w(2,2));
-	printf("\n");
-	for (k=0; k<11; k++) {
-		printf("%4.4f  ",trajectory[k]);
-	}
-	printf("\n");
-	for (k=0; k<16; k++) {
-		printf("%4.4f  ",error[k]);
-	}
-	printf("\n");
-	for (k=0; k<4; k++) {
-		printf("%4.4f  ",control[k]);
-	}
-	printf("\n\n");
 	
 }
 
@@ -579,8 +725,8 @@ void CoaxRosControl::rawControlPublisher(unsigned int rate)
 		coax_state_age += 1;
 		
 		// Estimate rotor speeds (do that here to have the same frequency as we apply inputs)
-		double prev_Omega_up_des = model_params.rs_mup*motor_up + model_params.rs_bup;
-		double prev_Omega_lo_des = model_params.rs_mlo*motor_lo + model_params.rs_blo;
+		double prev_Omega_up_des = model_params.rs_mup*prev_motor_up + model_params.rs_bup;
+		double prev_Omega_lo_des = model_params.rs_mlo*prev_motor_lo + model_params.rs_blo;
 		//printf("%f   %f \n", prev_Omega_up_des,prev_Omega_lo_des);
 		//printf("%f   %f \n", prev_Omega_up,prev_Omega_lo);
 		
@@ -588,6 +734,8 @@ void CoaxRosControl::rawControlPublisher(unsigned int rate)
 		Omega_lo = prev_Omega_lo + 1/model_params.Tf_motlo*(prev_Omega_lo_des - prev_Omega_lo)/rate;
 		prev_Omega_up = Omega_up;
 		prev_Omega_lo = Omega_lo;
+		prev_motor_up = raw_control.motor1;
+		prev_motor_lo = raw_control.motor2;
 		//printf("%f   %f \n", model_params.Tf_motup,model_params.Tf_motlo);
 		//printf("%f   %f \n\n", Omega_up,Omega_lo);
 		
@@ -602,7 +750,7 @@ void CoaxRosControl::rawControlPublisher(unsigned int rate)
 
 bool CoaxRosControl::setControlMode(coax_ros_control::SetControlMode::Request &req, coax_ros_control::SetControlMode::Response &out)
 {
-	out.result = 1;
+	out.result = 0;
 	
 	switch (req.mode)
 	{
@@ -631,7 +779,7 @@ bool CoaxRosControl::setControlMode(coax_ros_control::SetControlMode::Request &r
 				} else {
 					ROS_INFO("Battery Low!!! (%f V) Start denied",battery_voltage);
 					LOW_POWER_DETECTED = true;
-					out.result = 0;
+					out.result = -1;
 				}
 			} else {
 				ROS_INFO("Start can only be executed from mode CONTROL_LANDED");
@@ -644,16 +792,29 @@ bool CoaxRosControl::setControlMode(coax_ros_control::SetControlMode::Request &r
 				CONTROL_MODE = CONTROL_HOVER;
 			FIRST_HOVER = true;
 			} else {
-				out.result = 0;
+				out.result = -1;
 			}
 			break;
 		
+		case 4:
+			if (CONTROL_MODE == CONTROL_HOVER){
+				CONTROL_MODE = CONTROL_GOTOPOS;
+				FIRST_GOTOPOS = true;
+				gotopos_position[0] = target_pose[0];
+				gotopos_position[1] = target_pose[1];
+				gotopos_position[2] = target_pose[2];
+				gotopos_orientation = target_pose[3];
+			} else {
+				out.result = -1;
+			}
+			break;
+			
 		case 5:
 			if ((CONTROL_MODE == CONTROL_HOVER) || (CONTROL_MODE == CONTROL_GOTOPOS)){
 				CONTROL_MODE = CONTROL_TRAJECTORY;
 				FIRST_TRAJECTORY = true;
 			} else {
-				out.result = 0;
+				out.result = -1;
 			}
 			break;
 		
@@ -662,7 +823,7 @@ bool CoaxRosControl::setControlMode(coax_ros_control::SetControlMode::Request &r
 				CONTROL_MODE = CONTROL_LANDING;
 				FIRST_LANDING = true;
 			} else {
-				out.result = 0;
+				out.result = -1;
 			}
 			break;
 		
@@ -681,9 +842,59 @@ bool CoaxRosControl::setControlMode(coax_ros_control::SetControlMode::Request &r
 		
 		default:
 			ROS_INFO("Non existent or non valid state request!");
-			out.result = 0;
+			out.result = -1;
 	}
 	
+	return true;
+}
+
+bool CoaxRosControl::setTrajectoryType(coax_ros_control::SetTrajectoryType::Request &req, coax_ros_control::SetTrajectoryType::Response &out)
+{
+	
+	if ((req.trajectory_type <= 6) && (req.trajectory_type >= 0)) {
+		TRAJECTORY_TYPE = req.trajectory_type;
+		out.result = 0;
+	} else {
+		ROS_INFO("Non existent trajectory type!");
+		out.result = -1;
+	}
+	
+	return true;
+}
+
+bool CoaxRosControl::setTargetPosition(coax_ros_control::SetTargetPosition::Request &req, coax_ros_control::SetTargetPosition::Response &out)
+{
+
+	if (req.x < -2) {
+		target_pose[0] = -2;
+	} else if (req.x > 2) {
+		target_pose[0] = 2;
+	} else {
+		target_pose[0] = req.x;
+	}
+	if (req.y < -2) {
+		target_pose[1] = -2;
+	} else if (req.y > 2) {
+		target_pose[1] = 2;
+	} else {
+		target_pose[1] = req.x;
+	}
+	if (req.z < 0.1) {
+		target_pose[2] = 0.1;
+	} else if (req.z > 4) {
+		target_pose[2] = 4;
+	} else {
+		target_pose[2] = req.x;
+	}
+	target_pose[3] = req.orientation;
+	
+	while (target_pose[3] > M_PI) {
+		target_pose[3] -= 2*M_PI;
+	}
+	while (target_pose[3] < -M_PI) {
+		target_pose[3] += 2*M_PI;
+	}
+
 	return true;
 }
 

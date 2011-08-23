@@ -10,6 +10,14 @@
 #define CONTROL_TRAJECTORY 5 // Follow Trajectory
 #define CONTROL_LANDING 6 // Landing maneuver
 
+#define TRAJECTORY_SPIRAL 0
+#define TRAJECTORY_ROTINPLACE 1
+#define TRAJECTORY_VERTOSCIL 2
+#define TRAJECTORY_LYINGCIRCLE 3
+#define TRAJECTORY_STANDINGCIRCLE 4
+#define TRAJECTORY_YAWOSCIL 5
+#define TRAJECTORY_HORZLINE 6
+
 typedef struct
 {
 	double mass;
@@ -55,6 +63,8 @@ public:
 	void rawControlPublisher(unsigned int rate);
 	
 	bool setControlMode(coax_ros_control::SetControlMode::Request &req, coax_ros_control::SetControlMode::Response &out);
+	bool setTrajectoryType(coax_ros_control::SetTrajectoryType::Request &req, coax_ros_control::SetTrajectoryType::Response &out);
+	bool setTargetPosition(coax_ros_control::SetTargetPosition::Request &req, coax_ros_control::SetTargetPosition::Response &out);
 	
 	void SetPlatform(int CoaX);
 	void SetMass(double mass);
@@ -85,6 +95,8 @@ private:
 	ros::Subscriber coax_state_sub;
 	
 	std::vector<ros::ServiceServer> set_control_mode;
+	std::vector<ros::ServiceServer> set_trajectory_type;
+	std::vector<ros::ServiceServer> set_target_position;
 	
 	model_params_t model_params;
 	control_params_t control_params;
@@ -99,6 +111,10 @@ private:
 	bool FIRST_HOVER;
 	bool FIRST_TRAJECTORY;
 	bool FIRST_LANDING;
+	bool FIRST_GOTOPOS;
+	bool SERVICE_LANDING;
+	bool SERVICE_TRAJECTORY;
+	
 	double roll_trim;
 	double pitch_trim;
 	double motor_up;
@@ -124,6 +140,21 @@ private:
 	double RISE_TIME;
 	double RISE_VELOCITY;
 	double START_HEIGHT;
+	double prev_motor_up;
+	double prev_motor_lo;
+	double gotopos_time;
+	double initial_gotopos_position[3];
+	double initial_gotopos_orientation;
+	double gotopos_direction[3];
+	double gotopos_duration;
+	double GOTOPOS_VELOCITY;
+	double gotopos_position[3];
+	double gotopos_orientation;
+	double SINK_VELOCITY;
+	double SINK_TIME;
+	double landing_time;
+	int TRAJECTORY_TYPE;
+	double target_pose[4];
 
 };
 
