@@ -31,10 +31,11 @@ TRAJECTORY_VERTOSCIL = 2;
 TRAJECTORY_LYINGCIRCLE = 3;
 TRAJECTORY_STANDINGCIRCLE = 4;
 TRAJECTORY_YAWOSCIL = 5;
+TRAJECTORY_HORZLINE = 6;
 
 % Start Maneuver
-START_HEIGHT = 0.3;
-RISE_VELOCITY = 0.05; % [m/s];
+START_HEIGHT = 1;
+RISE_VELOCITY = 0.1; % [m/s];
 RISE_TIME = START_HEIGHT/RISE_VELOCITY;
 IDLE_TIME = 3;
 
@@ -45,11 +46,11 @@ AUTO_TRIM = 0; % enable/disable trim after takeoff
 servo_trim = zeros(2,1);
 
 % Land Maneuver
-SINK_VELOCITY = 0.05; % [m/s] positive!
+SINK_VELOCITY = 0.1; % [m/s] positive!
 SINK_TIME = START_HEIGHT/SINK_VELOCITY;
 
 % Gotopos Maneuver
-GOTOPOS_VELOCITY = 0.05;
+GOTOPOS_VELOCITY = 0.1;
 
 % Filtering
 pqr_filter = zeros(3,1);
@@ -59,9 +60,9 @@ filt_window = 1*ones(1,1);
 
 % Initial Values
 run parameter
-% load ../system_identification/nlgr_vel
-% id_param = cell2mat(getpar(nlgr));
-% param = set_model_param(id_param); % set identified parameters
+load ../system_identification/nlgr_vel_ocf
+id_param = cell2mat(getpar(nlgr));
+param = set_model_param(id_param); % set identified parameters
 
 run control_parameter
 run normalize_linearize
@@ -441,16 +442,18 @@ switch CONTROL_MODE
         dt_gotopos = etime(time, gotopos_time);
         if (dt_gotopos < gotopos_duration)
             desPosition = initial_gotopos_position + GOTOPOS_VELOCITY*dt_gotopos*gotopos_direction;
-            trajectory = [desPosition' GOTOPOS_VELOCITY*gotopos_direction' 0 0 0 gotopos_orientation 0]';
+            trajectory = [desPosition' GOTOPOS_VELOCITY*gotopos_direction' 0 0 0 dt/duration*(end_orientation-start_orientation)+start_orientation (end_orientation-start_orientation)/duration]';
             [motor_up, motor_lo, servo1, servo2, e_i, trim_values] = control_function(coax_state, Rb2w, trajectory, e_i, dt, param, contr_param);
         else
             if (SERVICE_LANDING)
                 CONTROL_MODE = CONTROL_LANDING;
+                SERVICE_LANDING = 0;
                 desPosition = START_POSITION + [0 0 START_HEIGHT]';
                 trajectory = [desPosition' 0 0 0 0 0 0 gotopos_orientation 0]';
                 [motor_up, motor_lo, servo1, servo2, e_i, trim_values] = control_function(coax_state, Rb2w, trajectory, e_i, dt, param, contr_param);
             elseif (SERVICE_TRAJECTORY)
                 CONTROL_MODE = CONTROL_TRAJECTORY;
+                SERVICE_TRAJECTORY = 0;
                 desPosition = coax_state(1:3);
                 trajectory = [desPosition' 0 0 0 0 0 0 gotopos_orientation 0]';
                 [motor_up, motor_lo, servo1, servo2, e_i, trim_values] = control_function(coax_state, Rb2w, trajectory, e_i, dt, param, contr_param);
@@ -618,7 +621,7 @@ if (~isempty(TimeStamps))
     Data.trajectory = Trajectory;
     % Data.trim = Trims;
 
-    save ViconData_osccirclefast Data
+    % save ViconData_osccirclefast Data
 end
 %%%%%%%%%
 

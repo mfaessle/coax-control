@@ -34,8 +34,8 @@ while 1%i<500
         motor_up = 0.35;
         motor_lo = 0.35;
     else
-        motor_up = 0.511;
-        motor_lo = 0.541;
+        motor_up = 0.5055;
+        motor_lo = 0.5377;
     end
     
     

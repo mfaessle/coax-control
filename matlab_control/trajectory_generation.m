@@ -68,11 +68,11 @@ switch TYPE
         omega_vert = 2*omega;
         vert_amp   = 0.2;
         
-        initial_pose = [0.5 0 0.5 pi]';
+        initial_pose = [0.5 0 1 -pi/2]';
         
         x_ref      = radius*cos(omega*t) - radius + initial_pose(1);
-        y_ref      = radius*sin(omega*t);
-        z_ref      = initial_pose(3) + vert_amp + vert_amp*sin(omega_vert*t);
+        y_ref      = radius*sin(omega*t) + initial_pose(2);
+        z_ref      = initial_pose(3) + vert_amp*sin(omega_vert*t);
         xdot_ref   = -radius*omega*sin(omega*t);
         ydot_ref   = radius*omega*cos(omega*t);
         zdot_ref   = omega_vert*vert_amp*cos(omega_vert*t);
@@ -119,7 +119,39 @@ switch TYPE
         zddot_ref  = 0;
         psi_ref    = initial_pose(4) + amplitude*sin(omega*t);
         psidot_ref = amplitude*omega*cos(omega*t);
-            
+        
+    case 6 % horizontal line
+        
+        length = 1;
+        vel = 0.15;
+        
+        initial_pose = [0.5 0 1 pi]';
+        
+        if (t < length/vel) 
+            x_ref      = initial_pose(1) - t*vel;
+            y_ref      = initial_pose(2);
+            z_ref      = initial_pose(3);
+            xdot_ref   = -vel;
+            ydot_ref   = 0;
+            zdot_ref   = 0;
+            xddot_ref  = 0;
+            yddot_ref  = 0;
+            zddot_ref  = 0;
+            psi_ref    = initial_pose(4);
+            psidot_ref = 0;
+        else
+            x_ref      = initial_pose(1) - length;
+            y_ref      = initial_pose(2);
+            z_ref      = initial_pose(3);
+            xdot_ref   = 0;
+            ydot_ref   = 0;
+            zdot_ref   = 0;
+            xddot_ref  = 0;
+            yddot_ref  = 0;
+            zddot_ref  = 0;
+            psi_ref    = initial_pose(4);
+            psidot_ref = 0;
+        end
 end
 
 trajectory = [x_ref y_ref z_ref xdot_ref ydot_ref zdot_ref ...
