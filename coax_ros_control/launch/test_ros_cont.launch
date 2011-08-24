@@ -58,6 +58,8 @@
       <remap from="/coax_ros_control/set_timeout" to="/set_timeout"/>
 
       <remap from="/coax_ros_control/set_control_mode" to="/set_control_mode"/>
+      <remap from="/coax_ros_control/set_target_position" to="/set_target_position"/>
+      <remap from="/coax_ros_control/set_trajectory_type" to="/set_trajectory_type"/>
 
       <param name="frequency" value="100"/>
       <param name="CoaX" value="56"/>

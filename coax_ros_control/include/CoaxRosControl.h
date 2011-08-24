@@ -34,7 +34,6 @@ typedef struct
 	double zeta_mup, zeta_bup;
 	double zeta_mlo, zeta_blo;
 	double max_SPangle;
-	double acc[3];
 } model_params_t;
 
 typedef struct
@@ -58,13 +57,14 @@ public:
 	
 	void controlFunction(double* control, arma::colvec coax_state, arma::mat Rb2w, 
 						 arma::colvec trajectory, model_params_t model_params, control_params_t control_params);
+	arma::colvec trajectoryGeneration(double time, int TYPE, double* init_traj_pose);
 	void setControls(double* control);
 	
 	void rawControlPublisher(unsigned int rate);
 	
 	bool setControlMode(coax_ros_control::SetControlMode::Request &req, coax_ros_control::SetControlMode::Response &out);
 	bool setTrajectoryType(coax_ros_control::SetTrajectoryType::Request &req, coax_ros_control::SetTrajectoryType::Response &out);
-	bool setTargetPosition(coax_ros_control::SetTargetPosition::Request &req, coax_ros_control::SetTargetPosition::Response &out);
+	bool setTargetPose(coax_ros_control::SetTargetPose::Request &req, coax_ros_control::SetTargetPose::Response &out);
 	
 	void SetPlatform(int CoaX);
 	void SetMass(double mass);
@@ -96,17 +96,12 @@ private:
 	
 	std::vector<ros::ServiceServer> set_control_mode;
 	std::vector<ros::ServiceServer> set_trajectory_type;
-	std::vector<ros::ServiceServer> set_target_position;
+	std::vector<ros::ServiceServer> set_target_pose;
 	
 	model_params_t model_params;
 	control_params_t control_params;
 	
-	double battery_voltage;
-	int coax_state_age;
-	int coax_nav_mode;
-	int raw_control_age;
 	bool LOW_POWER_DETECTED;
-	int CONTROL_MODE;
 	bool FIRST_START;
 	bool FIRST_HOVER;
 	bool FIRST_TRAJECTORY;
@@ -114,6 +109,23 @@ private:
 	bool FIRST_GOTOPOS;
 	bool SERVICE_LANDING;
 	bool SERVICE_TRAJECTORY;
+	bool FIRST_RUN;
+	
+	int COAX;
+	int CONTROL_MODE;
+	int TRAJECTORY_TYPE;
+	
+	int coax_state_age;
+	int coax_nav_mode;
+	int raw_control_age;
+	
+	double IDLE_TIME;
+	double RISE_TIME;
+	double RISE_VELOCITY;
+	double START_HEIGHT;
+	double GOTOPOS_VELOCITY;
+	double SINK_VELOCITY;
+	double SINK_TIME;
 	
 	double roll_trim;
 	double pitch_trim;
@@ -121,40 +133,36 @@ private:
 	double motor_lo;
 	double servo_roll;
 	double servo_pitch;
-	int COAX;
+	
 	double hover_position[3];
 	double hover_orientation;
+	double start_position[3];
+	double start_orientation;
+	double gotopos_position[3];
+	double gotopos_orientation;
+	double initial_gotopos_position[3];
+	double initial_gotopos_orientation;
+	double gotopos_rot_distance;
+	double gotopos_direction[3];
+	double gotopos_duration;
+	double target_pose[4];
+	
 	double time_now;
 	double time_prev;
-	bool FIRST_RUN;
+	double start_time;
+	double gotopos_time;
+	double trajectory_time;
+	double landing_time;
+	
+	double battery_voltage;
 	double Omega_up;
 	double Omega_lo;
 	double prev_Omega_up;
 	double prev_Omega_lo;
 	double z_bar[3];
 	double prev_z_bar[3];
-	double start_position[3];
-	double start_orientation;
-	double start_time;
-	double IDLE_TIME;
-	double RISE_TIME;
-	double RISE_VELOCITY;
-	double START_HEIGHT;
 	double prev_motor_up;
 	double prev_motor_lo;
-	double gotopos_time;
-	double initial_gotopos_position[3];
-	double initial_gotopos_orientation;
-	double gotopos_direction[3];
-	double gotopos_duration;
-	double GOTOPOS_VELOCITY;
-	double gotopos_position[3];
-	double gotopos_orientation;
-	double SINK_VELOCITY;
-	double SINK_TIME;
-	double landing_time;
-	int TRAJECTORY_TYPE;
-	double target_pose[4];
 
 };
 
