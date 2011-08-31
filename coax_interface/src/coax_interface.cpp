@@ -23,6 +23,7 @@ protected:
 	
 	ros::Publisher raw_control_pub;
 	ros::Publisher coax_info_pub;
+	ros::Publisher coax_imu_pub;
 	ros::Publisher control_mode_pub;
 	
 	ros::Subscriber coax_state_sub;
@@ -52,12 +53,13 @@ public:
 		
 		raw_control_pub = n.advertise<coax_msgs::CoaxRawControl>("rawcontrol",1);
 		coax_info_pub = n.advertise<geometry_msgs::Quaternion>("info",1);
+		coax_imu_pub = n.advertise<geometry_msgs::Quaternion>("imu",1);
 		control_mode_pub = n.advertise<geometry_msgs::Quaternion>("control_mode",1);
 		
-		coax_state_sub = n.subscribe("state", 10, &CoaxInterface::coaxStateCallback, this);
-		matlab_trim_sub = n.subscribe("trim", 10, &CoaxInterface::matlabTrimCallback, this);
-		matlab_nav_mode_sub = n.subscribe("nav_mode", 10, &CoaxInterface::matlabNavModeCallback, this);
-		matlab_raw_control_sub = n.subscribe("raw_control", 10, &CoaxInterface::matlabRawControlCallback, this);
+		coax_state_sub = n.subscribe("state", 5, &CoaxInterface::coaxStateCallback, this);
+		matlab_trim_sub = n.subscribe("trim", 5, &CoaxInterface::matlabTrimCallback, this);
+		matlab_nav_mode_sub = n.subscribe("nav_mode", 5, &CoaxInterface::matlabNavModeCallback, this);
+		matlab_raw_control_sub = n.subscribe("raw_control", 1, &CoaxInterface::matlabRawControlCallback, this);
 		
 		set_control_mode.push_back(n.advertiseService("set_control_mode", &CoaxInterface::setControlMode, this));
 		
@@ -134,14 +136,16 @@ public:
 		coax_info.z = 0;
 		coax_info.w = 0;
 		
-		//if ((message->mode.navigation == 0) && (desired_nav_mode == 1)) {
-		//	ROS_INFO("Lost Zigbee connection for too long!!!");
-		//	desired_nav_mode = 0;
-		//}
+		geometry_msgs::Quaternion coax_imu;
+		coax_imu.x = message->gyro[0];
+		coax_imu.y = -message->gyro[1];
+		coax_imu.z = -message->gyro[2];
+		coax_imu.w = 0;
 		
 		coax_state_age = 0;
 		
 		coax_info_pub.publish(coax_info);
+		coax_imu_pub.publish(coax_imu);
 	}
 	
 	void matlabTrimCallback(const geometry_msgs::Quaternion::ConstPtr & message)
@@ -298,7 +302,7 @@ int main(int argc, char** argv)
 	n.param("simulation", simulation, 0);
 	if (!simulation) {
 		ros::Duration(1.5).sleep(); // make sure coax_server has enough time to boot up
-		api.configureComm(10, SBS_MODES | SBS_BATTERY); // configuration of sending back data from CoaX
+		api.configureComm(100, SBS_MODES | SBS_TIMESTAMP | SBS_BATTERY | SBS_GYRO);// | SBS_ACCEL); // configuration of sending back data from CoaX
 		api.setTimeout(500, 5000);
 	} else {
 		ROS_INFO("CoaX Interface in Simulation Mode");
