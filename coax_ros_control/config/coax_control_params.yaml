@@ -1,0 +1,7 @@
+heave_yaw:
+  force:
+    proportional: 6.04
+    differential: 3.02
+  moment:
+    proportional: 0.013893
+    differential: 0.00166716

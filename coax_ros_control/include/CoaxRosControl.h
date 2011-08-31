@@ -38,6 +38,11 @@ typedef struct
 
 typedef struct
 {
+	double Kp_Fz;
+	double Kd_Fz;
+	double Kp_Mz;
+	double Kd_Mz;
+	
 	double K_lqr[4][16];
 } control_params_t;
 
@@ -81,7 +86,9 @@ public:
 	void SetUpperPhaseLag(double zeta_mup, double zeta_bup);
 	void SetLowerPhaseLag(double zeta_mlo, double zeta_blo);
 	void SetMaximumSwashPlateAngle(double max_SPangle);
+	void SetHeaveYawGains(double Kp_Fz, double Kd_Fz, double Kp_Mz, double Kd_Mz);
 	void load_model_params(ros::NodeHandle &n);
+	void load_control_params(ros::NodeHandle &n);
 	
 private:
 	
@@ -163,6 +170,10 @@ private:
 	double prev_z_bar[3];
 	double prev_motor_up;
 	double prev_motor_lo;
+	
+	double imu_p;
+	double imu_q;
+	double imu_r;
 
 };
 

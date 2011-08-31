@@ -66,6 +66,10 @@ CoaxRosControl::CoaxRosControl(ros::NodeHandle & n)
 	SINK_VELOCITY = 0.1; // [m/s] positive!
 	SINK_TIME = START_HEIGHT/SINK_VELOCITY;
 	
+	imu_p = 0;
+	imu_q = 0;
+	imu_r = 0;	
+	
 }
 CoaxRosControl::~CoaxRosControl()
 {
@@ -120,6 +124,10 @@ void CoaxRosControl::coaxStateCallback(const coax_msgs::CoaxState::ConstPtr & me
 		LOW_POWER_DETECTED = true;
 	}
 	
+	imu_p = message->gyro[0];
+	imu_q = -message->gyro[1];
+	imu_r = -message->gyro[2];
+	
 	coax_state_age = 0;
 }
 
@@ -168,7 +176,7 @@ void CoaxRosControl::coaxOdomCallback(const nav_msgs::Odometry::ConstPtr & messa
 
 	double p = message->twist.twist.angular.x;
 	double q = message->twist.twist.angular.y;
-	double r = message->twist.twist.angular.z;
+	double r = imu_r;//message->twist.twist.angular.z;
 	
 	z_bar[0] = prev_z_bar[0] + (r*prev_z_bar[1] - q*prev_z_bar[2] + b_z_bardot(0))*delta_t;
 	z_bar[1] = prev_z_bar[1] + (-r*prev_z_bar[0] + p*prev_z_bar[2] + b_z_bardot(1))*delta_t;
@@ -278,10 +286,6 @@ void CoaxRosControl::coaxOdomCallback(const nav_msgs::Odometry::ConstPtr & messa
 				hover_orientation = atan2(Rb2w(1,0),Rb2w(0,0));
 				FIRST_HOVER = 0;
 			}
-			if (LOW_POWER_DETECTED) {
-				CONTROL_MODE = CONTROL_LANDING;
-				FIRST_LANDING = 1;
-			}
 			
 			// compose trajectory
 			trajectory(0) = hover_position[0];
@@ -291,6 +295,11 @@ void CoaxRosControl::coaxOdomCallback(const nav_msgs::Odometry::ConstPtr & messa
 			
 			// compute control commands
 			controlFunction(control, coax_state, Rb2w, trajectory, model_params, control_params);
+			
+			if (LOW_POWER_DETECTED) {
+				CONTROL_MODE = CONTROL_LANDING;
+				FIRST_LANDING = true;
+			}
 			
 			break;
 		
@@ -321,10 +330,6 @@ void CoaxRosControl::coaxOdomCallback(const nav_msgs::Odometry::ConstPtr & messa
 				gotopos_duration = gotopos_distance/GOTOPOS_VELOCITY;
 				FIRST_GOTOPOS = false;
 			}
-			if (LOW_POWER_DETECTED){
-				CONTROL_MODE = CONTROL_HOVER;
-				FIRST_HOVER = true;
-			}
 			
 			dt_gotopos = time_now - gotopos_time;
 			if (dt_gotopos < gotopos_duration){
@@ -346,9 +351,9 @@ void CoaxRosControl::coaxOdomCallback(const nav_msgs::Odometry::ConstPtr & messa
 					SERVICE_LANDING = false;
 					
 					// compose trajectory
-					trajectory(0) = start_position[0];
-					trajectory(1) = start_position[1];
-					trajectory(2) = start_position[2] + START_HEIGHT;
+					trajectory(0) = coax_state(0);
+					trajectory(1) = coax_state(1);
+					trajectory(2) = coax_state(2);
 					trajectory(9) = gotopos_orientation;
 					
 					// compute control commands
@@ -374,7 +379,7 @@ void CoaxRosControl::coaxOdomCallback(const nav_msgs::Odometry::ConstPtr & messa
 					
 					if (position_error > 0.1){
 						CONTROL_MODE = CONTROL_GOTOPOS;
-						FIRST_GOTOPOS = 1;
+						FIRST_GOTOPOS = true;
 					}else{
 						CONTROL_MODE = CONTROL_HOVER; // in the end if manually entered goto position
 						hover_position[0] = target_pose[0];
@@ -393,7 +398,12 @@ void CoaxRosControl::coaxOdomCallback(const nav_msgs::Odometry::ConstPtr & messa
 					controlFunction(control, coax_state, Rb2w, trajectory, model_params, control_params);
 				}
 			}
-													  
+			
+			if (LOW_POWER_DETECTED && !SERVICE_LANDING){
+				CONTROL_MODE = CONTROL_HOVER;
+				FIRST_HOVER = true;
+			}
+			
 			break;
 			
 		case CONTROL_TRAJECTORY:
@@ -409,8 +419,8 @@ void CoaxRosControl::coaxOdomCallback(const nav_msgs::Odometry::ConstPtr & messa
 				
 				if (position_error > 0.1){
 					CONTROL_MODE = CONTROL_GOTOPOS;
-					FIRST_GOTOPOS = 1;
-					SERVICE_TRAJECTORY = 1;
+					FIRST_GOTOPOS = true;
+					SERVICE_TRAJECTORY = true;
 					gotopos_position[0] = init_traj_pose[0];
 					gotopos_position[1] = init_traj_pose[1];
 					gotopos_position[2] = init_traj_pose[2];
@@ -436,7 +446,7 @@ void CoaxRosControl::coaxOdomCallback(const nav_msgs::Odometry::ConstPtr & messa
 			
 			if (LOW_POWER_DETECTED){
 				CONTROL_MODE = CONTROL_HOVER;
-				FIRST_HOVER = 1;
+				FIRST_HOVER = true;
 			}
 			
 			break;
@@ -450,8 +460,8 @@ void CoaxRosControl::coaxOdomCallback(const nav_msgs::Odometry::ConstPtr & messa
 			if (FIRST_LANDING){
 				if (position_error > 0.1){
 					CONTROL_MODE = CONTROL_GOTOPOS;
-					FIRST_GOTOPOS = 1;
-					SERVICE_LANDING = 1;
+					FIRST_GOTOPOS = true;
+					SERVICE_LANDING = true;
 					gotopos_position[0] = start_position[0];
 					gotopos_position[1] = start_position[1];
 					gotopos_position[2] = start_position[2] + START_HEIGHT;
@@ -531,6 +541,11 @@ void CoaxRosControl::controlFunction(double* control, arma::colvec coax_state, a
 									 arma::colvec trajectory, model_params_t model_params, control_params_t control_params)
 {
 	
+	double z = coax_state(2);
+	double zdot = coax_state(5);
+	double yaw = coax_state(8);
+	double r = coax_state(11);
+	
 	// rotor speeds
 	double Omega_up = coax_state(12);
 	double Omega_lo = coax_state(13);
@@ -570,6 +585,11 @@ void CoaxRosControl::controlFunction(double* control, arma::colvec coax_state, a
 	double max_SPangle = model_params.max_SPangle;
 	
 	// Control Parameters
+	double Kp_Fz = control_params.Kp_Fz;
+	double Kd_Fz = control_params.Kd_Fz;
+	double Kp_Mz = control_params.Kp_Mz;
+	double Kd_Mz = control_params.Kd_Mz;
+	
 	double K_lqr[4][16] = {};
 	K_lqr[0][2] = 3.3377;
 	K_lqr[0][5] = 1.4157;
@@ -647,7 +667,7 @@ void CoaxRosControl::controlFunction(double* control, arma::colvec coax_state, a
 	error[15] = b_up;
 	
 	if (error[8] > M_PI){
-		error[8] -= - 2*M_PI;
+		error[8] -= 2*M_PI;
 	}else if (error[8] < -M_PI){
 		error[8] += 2*M_PI;
 	}
@@ -665,8 +685,8 @@ void CoaxRosControl::controlFunction(double* control, arma::colvec coax_state, a
 	}
 
 	// feed forward on rotor speeds
-	control[0] = inputs[0] + (Omega_up0 - rs_bup)/rs_mup;
-	control[1] = inputs[1] + (Omega_lo0 - rs_blo)/rs_mlo;
+	//control[0] = inputs[0] + (Omega_up0 - rs_bup)/rs_mup;
+	//control[1] = inputs[1] + (Omega_lo0 - rs_blo)/rs_mlo;
 	
 	// correct for phase lag of servo inputs
 	double a_SP = inputs[2]*max_SPangle;
@@ -709,6 +729,25 @@ void CoaxRosControl::controlFunction(double* control, arma::colvec coax_state, a
 	
 	control[2] = a_lo_des/max_SPangle;
 	control[3] = b_lo_des/max_SPangle;
+	
+	// New heave-yaw control
+	double Fz_des = -Kp_Fz*(z-trajectory(2)) - Kd_Fz*(zdot-trajectory(5)) + m*trajectory(8);
+	double ori_error = yaw - trajectory(9);
+	while (ori_error > M_PI){
+		ori_error = ori_error - 2*M_PI;
+	}
+	while (ori_error < -M_PI){
+		ori_error = ori_error + 2*M_PI;
+	}
+	double Mz_des = -Kp_Mz*ori_error - Kd_Mz*(r-trajectory(10));
+	
+	double A = k_Tup/k_Mup*Mz_des*(arma::as_scalar(Rb2w.row(2)*z_Tup));
+	double B = k_Tup/k_Mup*k_Mlo*(arma::as_scalar(Rb2w.row(2)*z_Tup)) + k_Tlo*(arma::as_scalar(Rb2w.row(2)*z_Tlo));
+	
+	double Omega_lo_des = sqrt((m*g + A + Fz_des)/B);
+	double Omega_up_des = sqrt((k_Mlo*Omega_lo_des*Omega_lo_des - Mz_des)/k_Mup);
+	control[0] = (Omega_up_des - rs_bup)/rs_mup;
+	control[1] = (Omega_lo_des - rs_blo)/rs_mlo;
 	
 }
 
@@ -987,7 +1026,6 @@ bool CoaxRosControl::setControlMode(coax_ros_control::SetControlMode::Request &r
 					// switch to start procedure
 					CONTROL_MODE = CONTROL_START;
 					FIRST_START = true;
-					ROS_INFO("switch to control mode 1");
 				} else {
 					ROS_INFO("Battery Low!!! (%f V) Start denied",battery_voltage);
 					LOW_POWER_DETECTED = true;
@@ -995,6 +1033,7 @@ bool CoaxRosControl::setControlMode(coax_ros_control::SetControlMode::Request &r
 				}
 			} else {
 				ROS_INFO("Start can only be executed from mode CONTROL_LANDED");
+				out.result = -1;
 			}
 
 			break;
@@ -1004,6 +1043,7 @@ bool CoaxRosControl::setControlMode(coax_ros_control::SetControlMode::Request &r
 				CONTROL_MODE = CONTROL_HOVER;
 			FIRST_HOVER = true;
 			} else {
+				ROS_INFO("Hover mode can only be reached manually from mode CONTROL_GOTOPOS or CONTROL_TRAJECTORY");
 				out.result = -1;
 			}
 			break;
@@ -1017,6 +1057,7 @@ bool CoaxRosControl::setControlMode(coax_ros_control::SetControlMode::Request &r
 				gotopos_position[2] = target_pose[2];
 				gotopos_orientation = target_pose[3];
 			} else {
+				ROS_INFO("Gotopos mode can only be reached manually from mode CONTROL_HOVER");
 				out.result = -1;
 			}
 			break;
@@ -1026,15 +1067,17 @@ bool CoaxRosControl::setControlMode(coax_ros_control::SetControlMode::Request &r
 				CONTROL_MODE = CONTROL_TRAJECTORY;
 				FIRST_TRAJECTORY = true;
 			} else {
+				ROS_INFO("Trajectory mode can only be reached manually from mode CONTROL_HOVER or CONTROL_GOTOPOS");
 				out.result = -1;
 			}
 			break;
 		
 		case 6:
-			if (CONTROL_MODE == CONTROL_HOVER){
+			if ((CONTROL_MODE == CONTROL_HOVER) || (CONTROL_MODE == CONTROL_GOTOPOS)){
 				CONTROL_MODE = CONTROL_LANDING;
 				FIRST_LANDING = true;
 			} else {
+				ROS_INFO("Landing mode can only be reached manually from mode CONTROL_HOVER or CONTROL_GOTOPOS");
 				out.result = -1;
 			}
 			break;
@@ -1053,7 +1096,7 @@ bool CoaxRosControl::setControlMode(coax_ros_control::SetControlMode::Request &r
 			break;
 		
 		default:
-			ROS_INFO("Non existent or non valid state request!");
+			ROS_INFO("Non existent control mode request!");
 			out.result = -1;
 	}
 	
@@ -1201,6 +1244,14 @@ void CoaxRosControl::SetMaximumSwashPlateAngle(double max_SPangle)
 	model_params.max_SPangle = max_SPangle;
 }
 
+void CoaxRosControl::SetHeaveYawGains(double Kp_Fz, double Kd_Fz, double Kp_Mz, double Kd_Mz)
+{
+	control_params.Kp_Fz = Kp_Fz;
+	control_params.Kd_Fz = Kd_Fz;
+	control_params.Kp_Mz = Kp_Mz;
+	control_params.Kd_Mz = Kd_Mz;
+}
+
 void CoaxRosControl::load_model_params(ros::NodeHandle &n)
 {
 	
@@ -1275,6 +1326,18 @@ void CoaxRosControl::load_model_params(ros::NodeHandle &n)
 	return;
 }
 
+void CoaxRosControl::load_control_params(ros::NodeHandle &n)
+{
+	double Kp_Fz;
+	double Kd_Fz;
+	double Kp_Mz;
+	double Kd_Mz;
+	n.getParam("heave_yaw/force/proportional",Kp_Fz);
+	n.getParam("heave_yaw/force/differential",Kd_Fz);
+	n.getParam("heave_yaw/moment/proportional",Kp_Mz);
+	n.getParam("heave_yaw/moment/differential",Kd_Mz);
+	SetHeaveYawGains(Kp_Fz, Kd_Fz, Kp_Mz, Kd_Mz);
+}
 
 
 
@@ -1287,7 +1350,7 @@ int main(int argc, char** argv)
 	CoaxRosControl api(n);
 	
 	ros::Duration(1.5).sleep(); // make sure coax_server has enough time to boot up
-	api.configureComm(10, SBS_MODES | SBS_BATTERY); // configuration of sending back data from CoaX
+	api.configureComm(100, SBS_MODES | SBS_BATTERY | SBS_GYRO); // configuration of sending back data from CoaX
 	api.setTimeout(500, 5000);
 	
 	int CoaX;
@@ -1295,6 +1358,8 @@ int main(int argc, char** argv)
 	api.SetPlatform(CoaX);
 	
 	api.load_model_params(n);
+	
+	api.load_control_params(n);
 	
 	int frequency;
 	n.param("frequency", frequency, 100);
