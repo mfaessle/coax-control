@@ -151,3 +151,15 @@ contr_param.K_lqr = K_lqr;
 contr_param.T_inv_lqr = T_inv; 
 contr_param.W_lqr = W; 
 
+%%% decoupled heave yaw control
+Ahy = zeros(4,4);
+Ahy(1,2) = 1;
+Ahy(3,4) = 1;
+Bhy = [0 0; 2*k_Tup/m*Omega_up0 k_Tlo/m*Omega_lo0; 0 0; -2*k_Mup/Izz*Omega_up0 2*k_Mlo/Izz*Omega_lo0];
+
+Phy = [-5.5 -5 -5.5 -5]';
+
+K_hy = place(Ahy,Bhy,Phy);
+K_hy(:,4) = [0 0]';
+
+contr_param.K_hy = K_hy;

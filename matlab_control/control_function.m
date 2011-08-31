@@ -77,6 +77,7 @@ K_omegaz = contr_param.K_omegaz;
 K_lqr = contr_param.K_lqr;
 T_inv = contr_param.T_inv_lqr; 
 W = contr_param.W_lqr;
+K_hy = contr_param.K_hy;
 
 %=================================
 %%% Control inputs
@@ -263,6 +264,45 @@ b_lo_des     = asin(z_SP(1));
 a_lo_des     = asin(-z_SP(2)/cos(b_lo_des));
 servo1       = a_lo_des/(max_SPangle);
 servo2       = b_lo_des/(max_SPangle);
+
+%%% Test new heave-yaw control
+
+Kp_F = 20*m;
+Kd_F = 10*m;
+Kp_M = 50*Izz;
+Kd_M = 6*Izz;
+
+Fz_des = -Kp_F*(z-z_T) - Kd_F*(zdot-zdot_T) + m*zddot_T;
+ori_error = yaw-psi_T;
+while (ori_error > pi)
+    ori_error = ori_error - 2*pi;
+end
+while (ori_error < -pi)
+    ori_error = ori_error + 2*pi;
+end
+Mz_des = -Kp_M*ori_error - Kd_M*(r-psidot_T);
+
+A = k_Tup/k_Mup*Mz_des*Rb2w(3,:)*z_Tup;
+B = k_Tup/k_Mup*k_Mlo*Rb2w(3,:)*z_Tup + k_Tlo*Rb2w(3,:)*z_Tlo;
+
+Omega_lo_des = sqrt((m*g + A + Fz_des)/B);
+Omega_up_des = sqrt((k_Mlo*Omega_lo_des^2 - Mz_des)/k_Mup);
+motor_up = (Omega_up_des - rs_bup)/rs_mup;
+motor_lo = (Omega_lo_des - rs_blo)/rs_mlo;
+
+%%%%%%%%%%%
+
+% hy_error = [z-z_T zdot-zdot_T yaw-psi_T r-psidot_T]';
+% while (hy_error(3) > pi)
+%     hy_error(3) = hy_error(3) - 2*pi;
+% end
+% while (hy_error(3) < -pi)
+%     hy_error(3) = hy_error(3) + 2*pi;
+% end
+% rotor_speeds = -K_hy*hy_error;
+% 
+% motor_up = (rotor_speeds(1)+Omega_up0 - rs_bup)/rs_mup;
+% motor_lo = (rotor_speeds(2)+Omega_lo0 - rs_blo)/rs_mlo;
 
 trim_values = zeros(4,1);
 

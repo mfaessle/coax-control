@@ -68,7 +68,7 @@ switch TYPE
         omega_vert = 2*omega;
         vert_amp   = 0.2;
         
-        initial_pose = [0.5 0 1 -pi/2]';
+        initial_pose = [0.5 0 1 pi]';
         
         x_ref      = radius*cos(omega*t) - radius + initial_pose(1);
         y_ref      = radius*sin(omega*t) + initial_pose(2);

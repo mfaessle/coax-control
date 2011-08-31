@@ -3,6 +3,7 @@ COAX56 = 1;
 if (COAX56)
     pid = nav_msgs_Odometry('connect','subscriber','odom56','odom56');
     iid = geometry_msgs_Quaternion('connect','subscriber','coax_info56','coax_info56');
+    imuid = geometry_msgs_Quaternion('connect','subscriber','coax_imu56','coax_imu56');
     tid = geometry_msgs_Quaternion('connect','publisher','trim56','trim56');
     mid = std_msgs_Bool('connect','publisher','nav_mode56','nav_mode56');
     cid = geometry_msgs_Quaternion('connect','publisher','raw_control56','raw_control56');
@@ -34,7 +35,7 @@ TRAJECTORY_YAWOSCIL = 5;
 TRAJECTORY_HORZLINE = 6;
 
 % Start Maneuver
-START_HEIGHT = 1;
+START_HEIGHT = 0.3;
 RISE_VELOCITY = 0.1; % [m/s];
 RISE_TIME = START_HEIGHT/RISE_VELOCITY;
 IDLE_TIME = 3;
@@ -93,6 +94,7 @@ Angtwists = [];
 Inputs = [];
 Trajectory = [];
 Trims = [];
+Imu_r = [];
 servo1 = 0;
 servo2 = 0;
 volt_compUp = 0;
@@ -220,6 +222,11 @@ Rb2w     = [1-2*qy^2-2*qz^2 2*qx*qy-2*qz*qw 2*qx*qz+2*qy*qw; ...
             2*qx*qy+2*qz*qw 1-2*qx^2-2*qz^2 2*qy*qz-2*qx*qw; ...
             2*qx*qz-2*qy*qw 2*qy*qz+2*qx*qw 1-2*qx^2-2*qy^2];
 
+imu = geometry_msgs_Quaternion('read',imuid,1);
+if (~isempty(imu))
+    imu_r = imu.z;
+end
+
 
 %% Time
 time = clock;
@@ -330,7 +337,7 @@ prev_Omega_lo = Omega_lo;
 roll = atan2(2*(qw*qx+qy*qz),1-2*(qx^2+qy^2));
 pitch = asin(2*(qw*qy-qz*qx));
 yaw = atan2(2*(qw*qz+qx*qy),1-2*(qy^2+qz^2));
-coax_state = [x y z  xdot ydot zdot  roll pitch yaw  p q r  Omega_up Omega_lo  z_bar']';
+coax_state = [x y z  xdot ydot zdot  roll pitch yaw  p q imu_r  Omega_up Omega_lo  z_bar']';
 
 
 %% Control According to Control Mode
@@ -342,8 +349,7 @@ switch CONTROL_MODE
         
         if (FIRST_START)
             START_POSITION = coax_state(1:3);
-            x_proj = Rb2w(:,1) - [0 0 Rb2w(3,1)]';
-            START_ORIENTATION = atan2(x_proj(2),x_proj(1));
+            START_ORIENTATION = atan2(Rb2w(2,1),Rb2w(1,1));
             START_TIME = time;
             
             FIRST_START = 0;
@@ -410,8 +416,7 @@ switch CONTROL_MODE
         
         if (FIRST_HOVER)
             hover_position = coax_state(1:3);
-            x_proj = Rb2w(:,1) - [0 0 Rb2w(3,1)]';
-            hover_orientation = atan2(x_proj(2),x_proj(1));
+            hover_orientation = atan2(Rb2w(2,1),Rb2w(1,1));
             FIRST_HOVER = 0;
         end
         if (LOW_POWER_DETECTED)
@@ -428,13 +433,21 @@ switch CONTROL_MODE
         
         if (FIRST_GOTOPOS)
             initial_gotopos_position = coax_state(1:3);
+            initial_gotopos_orientation = atan2(Rb2w(2,1),Rb2w(1,1));
             gotopos_time = time;
             gotopos_distance = norm(gotopos_position - initial_gotopos_position);
             gotopos_direction = (gotopos_position - initial_gotopos_position)/gotopos_distance;
             gotopos_duration = gotopos_distance/GOTOPOS_VELOCITY;
+            gotopos_rot_distance = gotopos_orientation - atan2(Rb2w(2,1),Rb2w(1,1));
+            while (gotopos_rot_distance > pi)
+				gotopos_rot_distance = gotopos_rot_distance - 2*pi;
+            end
+            while (gotopos_rot_distance < -pi)
+				gotopos_rot_distance = gotopos_rot_distance + 2*pi;
+            end            
             FIRST_GOTOPOS = 0;
         end
-        if (LOW_POWER_DETECTED)
+        if (LOW_POWER_DETECTED && ~SERVICE_LANDING)
             CONTROL_MODE = CONTROL_HOVER;
             FIRST_HOVER = 1;
         end
@@ -442,7 +455,7 @@ switch CONTROL_MODE
         dt_gotopos = etime(time, gotopos_time);
         if (dt_gotopos < gotopos_duration)
             desPosition = initial_gotopos_position + GOTOPOS_VELOCITY*dt_gotopos*gotopos_direction;
-            trajectory = [desPosition' GOTOPOS_VELOCITY*gotopos_direction' 0 0 0 dt/duration*(end_orientation-start_orientation)+start_orientation (end_orientation-start_orientation)/duration]';
+            trajectory = [desPosition' GOTOPOS_VELOCITY*gotopos_direction' 0 0 0 dt_gotopos/gotopos_duration*gotopos_rot_distance+initial_gotopos_orientation gotopos_rot_distance/gotopos_duration]';
             [motor_up, motor_lo, servo1, servo2, e_i, trim_values] = control_function(coax_state, Rb2w, trajectory, e_i, dt, param, contr_param);
         else
             if (SERVICE_LANDING)
@@ -489,8 +502,7 @@ switch CONTROL_MODE
             end
             dt_traj = 0; % only for data acquisition needed
             desPosition = coax_state(1:3);
-            x_proj = Rb2w(:,1) - [0 0 Rb2w(3,1)]';
-            trajectory = [desPosition' 0 0 0 0 0 0 atan2(x_proj(2),x_proj(1)) 0]';
+            trajectory = [desPosition' 0 0 0 0 0 0 atan2(Rb2w(2,1),Rb2w(1,1)) 0]';
             [motor_up, motor_lo, servo1, servo2, e_i, trim_values] = control_function(coax_state, Rb2w, trajectory, e_i, dt, param, contr_param);
         else
             dt_traj = etime(time, trajectory_time);
@@ -582,8 +594,8 @@ geometry_msgs_Quaternion('send',cid,raw_control);
 prev_time = time;
 
 %%%%%%%%%
-if (CONTROL_MODE == CONTROL_TRAJECTORY)
-    if ((dt_traj > 10) && (dt_traj < 70))
+if (CONTROL_MODE == CONTROL_HOVER)
+    if 1%((dt_traj > 10) && (dt_traj < 70))
         pos = [odom.pose.pose.position.x odom.pose.pose.position.y odom.pose.pose.position.z]';
         ori = [odom.pose.pose.orientation.x odom.pose.pose.orientation.y odom.pose.pose.orientation.z odom.pose.pose.orientation.w]';
         lintwist = [odom.twist.twist.linear.x odom.twist.twist.linear.y odom.twist.twist.linear.z]';
@@ -596,6 +608,7 @@ if (CONTROL_MODE == CONTROL_TRAJECTORY)
         Angtwists(:,i) = angtwist;
         Inputs(:,i) = [motor_up-volt_compUp motor_lo-volt_compLo servo1 servo2]';
         Trajectory(:,i) = trajectory';
+        Imu_r(i) = imu_r;
     %     if (CONTROL_MODE == CONTROL_HOVER)
     %         Trims(:,i) = trim_values;
     %     else
@@ -620,13 +633,15 @@ if (~isempty(TimeStamps))
     Data.inputs = Inputs;
     Data.trajectory = Trajectory;
     % Data.trim = Trims;
+    Data.imu_r = Imu_r;
 
-    % save ViconData_osccirclefast Data
+    save ViconData_yaw Data
 end
 %%%%%%%%%
 
 nav_msgs_Odometry('disconnect',pid);
 geometry_msgs_Quaternion('disconnect',iid);
+geometry_msgs_Quaternion('disconnect',imuid);
 geometry_msgs_Quaternion('disconnect',tid);
 std_msgs_Bool('disconnect',mid);
 geometry_msgs_Quaternion('disconnect',cid);
