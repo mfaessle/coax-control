@@ -6,7 +6,7 @@
   </node>
 
 <!-- CoaX 56 -->
-<!--
+
   <node pkg="vicon_calibrate"
         name="vicon_calibrate"
         type="vicon_calibrate"
@@ -20,9 +20,9 @@
     <param name="reference"
            value="$(find coax_vsk)/reference/CoaxCalib.xml"/>
   </node>
--->
-<!-- CoaX 57 -->
 
+<!-- CoaX 57 -->
+<!--
   <node pkg="vicon_calibrate"
         name="vicon_calibrate"
         type="vicon_calibrate"
@@ -36,6 +36,6 @@
     <param name="reference"
            value="$(find coax_vsk)/reference/CoaxCalib.xml"/>
   </node>
-
+-->
 
 </launch>
