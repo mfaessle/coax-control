@@ -131,18 +131,18 @@ Bd           = sysd.B;
 
 % Q            = 0.01*diag([5 5 10 0.5 0.5 0.5 2 2 2 0.01 0.01 0.01 0.1 0.1 1 1]);
 % Q            = 0.01*diag([5.5 5.5 80  10 10 1  0.01 0.01 0.08  0.07 0.07 0.01  0.1 0.1 1 1]);
-Q            = 0.01*diag([200 200 5000  20 20 30  0.1 0.1 50  0.1 0.1 0.01  0.1 0.1 1 1]);
+Q            = 0.01*diag([200 200 5000  20 20 30  20 20 50  0.1 0.1 0.01  0.1 0.1 1 1]);
 R            = eye(4);
 
 K_lqr        = dlqr(Ad,Bd,Q,R);
 
 % knock out feedback from roll/pitch
-K_lqr(3:4,7:8) = zeros(2,2);
-%K_lqr(3:4,7:8) = -0.3*K_lqr(3:4,7:8);
+%K_lqr(3:4,7:8) = zeros(2,2);
+K_lqr(3:4,7:8) = -0.3*K_lqr(3:4,7:8);
 % knock out feedback from a_up/b_up
 K_lqr(3:4,15:16) = zeros(2,2);
 % knock out feedback from p/q
-K_lqr(3:4,10:11) = zeros(2,2);
+%K_lqr(3:4,10:11) = zeros(2,2);
 % knock out feedback from r
 K_lqr(1:2,12) = zeros(2,1);
 
@@ -150,16 +150,3 @@ K_lqr(1:2,12) = zeros(2,1);
 contr_param.K_lqr = K_lqr;
 contr_param.T_inv_lqr = T_inv; 
 contr_param.W_lqr = W; 
-
-%%% decoupled heave yaw control
-Ahy = zeros(4,4);
-Ahy(1,2) = 1;
-Ahy(3,4) = 1;
-Bhy = [0 0; 2*k_Tup/m*Omega_up0 k_Tlo/m*Omega_lo0; 0 0; -2*k_Mup/Izz*Omega_up0 2*k_Mlo/Izz*Omega_lo0];
-
-Phy = [-5.5 -5 -5.5 -5]';
-
-K_hy = place(Ahy,Bhy,Phy);
-K_hy(:,4) = [0 0]';
-
-contr_param.K_hy = K_hy;

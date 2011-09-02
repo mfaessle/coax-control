@@ -27,14 +27,11 @@ protected:
 	ros::Publisher control_mode_pub;
 	
 	ros::Subscriber coax_state_sub;
-	ros::Subscriber matlab_trim_sub;
 	ros::Subscriber matlab_nav_mode_sub;
 	ros::Subscriber matlab_raw_control_sub;
 	
 	std::vector<ros::ServiceServer> set_control_mode;
 	
-	float roll_trim;
-	float pitch_trim;
 	float motor1;
 	float motor2;
 	float servo1;
@@ -57,14 +54,11 @@ public:
 		control_mode_pub = n.advertise<geometry_msgs::Quaternion>("control_mode",1);
 		
 		coax_state_sub = n.subscribe("state", 5, &CoaxInterface::coaxStateCallback, this);
-		matlab_trim_sub = n.subscribe("trim", 5, &CoaxInterface::matlabTrimCallback, this);
 		matlab_nav_mode_sub = n.subscribe("nav_mode", 5, &CoaxInterface::matlabNavModeCallback, this);
 		matlab_raw_control_sub = n.subscribe("raw_control", 1, &CoaxInterface::matlabRawControlCallback, this);
 		
 		set_control_mode.push_back(n.advertiseService("set_control_mode", &CoaxInterface::setControlMode, this));
 		
-		roll_trim = 0;
-		pitch_trim = 0;
 		motor1 = 0;
 		motor2 = 0;
 		servo1 = 0;
@@ -148,12 +142,6 @@ public:
 		coax_imu_pub.publish(coax_imu);
 	}
 	
-	void matlabTrimCallback(const geometry_msgs::Quaternion::ConstPtr & message)
-	{
-		roll_trim = message->x;
-		pitch_trim = message->y;
-	}
-	
 	void matlabNavModeCallback(const std_msgs::Bool::ConstPtr & message)
 	{
 		motor1 = 0;
@@ -206,8 +194,8 @@ public:
 			if (matlab_rawcontrol_age < 20) {
 				raw_control.motor1 = motor1;
 				raw_control.motor2 = motor2;
-				raw_control.servo1 = servo1 + roll_trim;
-				raw_control.servo2 = servo2 + pitch_trim;
+				raw_control.servo1 = servo1;
+				raw_control.servo2 = servo2;
 			} else { // if matlab does not send any commands for too long send zero inputs
 				raw_control.motor1 = 0;
 				raw_control.motor2 = 0;

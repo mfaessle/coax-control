@@ -4,17 +4,19 @@ if (COAX56)
     pid = nav_msgs_Odometry('connect','subscriber','odom56','odom56');
     iid = geometry_msgs_Quaternion('connect','subscriber','coax_info56','coax_info56');
     imuid = geometry_msgs_Quaternion('connect','subscriber','coax_imu56','coax_imu56');
-    tid = geometry_msgs_Quaternion('connect','publisher','trim56','trim56');
     mid = std_msgs_Bool('connect','publisher','nav_mode56','nav_mode56');
     cid = geometry_msgs_Quaternion('connect','publisher','raw_control56','raw_control56');
     cmid = geometry_msgs_Quaternion('connect','subscriber','control_mode56','control_mode56');
+    roll_trim = 0.0285;
+    pitch_trim = 0.0921;
 else
     pid = nav_msgs_Odometry('connect','subscriber','odom57','odom57');
     iid = geometry_msgs_Quaternion('connect','subscriber','coax_info57','coax_info57');
-    tid = geometry_msgs_Quaternion('connect','publisher','trim57','trim57');
     mid = std_msgs_Bool('connect','publisher','nav_mode57','nav_mode57');
     cid = geometry_msgs_Quaternion('connect','publisher','raw_control57','raw_control57');
     cmid = geometry_msgs_Quaternion('connect','subscriber','control_mode57','control_mode57');
+    roll_trim = 0;
+    pitch_trim = 0;
 end
 
 % General Constants
@@ -33,6 +35,7 @@ TRAJECTORY_LYINGCIRCLE = 3;
 TRAJECTORY_STANDINGCIRCLE = 4;
 TRAJECTORY_YAWOSCIL = 5;
 TRAJECTORY_HORZLINE = 6;
+TRAJECTORY_STEP = 7;
 
 % Start Maneuver
 START_HEIGHT = 0.3;
@@ -99,6 +102,9 @@ servo1 = 0;
 servo2 = 0;
 volt_compUp = 0;
 volt_compLo = 0;
+imu_p = 0;
+imu_q = 0;
+imu_r = 0;
 
 fprintf('Ready to Rock \n');
 
@@ -125,16 +131,6 @@ if (~isempty(mode) && (int8(mode.x)~=last_ctrl_mode_request))
                         nav_mode.data = 1;
                         std_msgs_Bool('send',mid,nav_mode); % switch to NAV_RAW_MODE
                     end
-                    % set initial trim
-                    trim = geometry_msgs_Quaternion('empty');
-                    if (COAX56)
-                        trim.x = 0.0285;
-                        trim.y = 0.0921;
-                    else
-                        trim.x = 0;
-                        trim.y = 0;
-                    end
-                    geometry_msgs_Quaternion('send',tid,trim);
                     % switch to start procedure
                     CONTROL_MODE = CONTROL_START;
                     FIRST_START = 1;
@@ -211,9 +207,9 @@ z        = odom.pose.pose.position.z;
 xdot     = odom.twist.twist.linear.x;
 ydot     = odom.twist.twist.linear.y;
 zdot     = odom.twist.twist.linear.z;
-p        = odom.twist.twist.angular.x;
-q        = odom.twist.twist.angular.y;
-r        = odom.twist.twist.angular.z;
+p        = -odom.twist.twist.angular.x;
+q        = -odom.twist.twist.angular.y;
+r        = -odom.twist.twist.angular.z;
 qx       = odom.pose.pose.orientation.x;
 qy       = odom.pose.pose.orientation.y;
 qz       = odom.pose.pose.orientation.z;
@@ -224,6 +220,8 @@ Rb2w     = [1-2*qy^2-2*qz^2 2*qx*qy-2*qz*qw 2*qx*qz+2*qy*qw; ...
 
 imu = geometry_msgs_Quaternion('read',imuid,1);
 if (~isempty(imu))
+    imu_p = imu.x;
+    imu_q = imu.y;
     imu_r = imu.z;
 end
 
@@ -399,10 +397,8 @@ switch CONTROL_MODE
             CONTROL_MODE = CONTROL_HOVER;
             e_i(1:2) = [0 0]';
             mean_trim = mean(servo_trim,2);
-            trim = geometry_msgs_Quaternion('empty');
-            trim.x = mean_trim(1);
-            trim.y = mean_trim(2);
-            geometry_msgs_Quaternion('send',tid,trim);
+            roll_trim = mean_trim(1);
+            pitch_trim = mean_trim(2);
         elseif(dt_trim > 0.75*TRIM_DURATION)
             servo_trim(:,trim_incr) = trim_values(3:4);
             trim_incr = trim_incr + 1;
@@ -508,10 +504,10 @@ switch CONTROL_MODE
             dt_traj = etime(time, trajectory_time);
             trajectory = trajectory_generation(dt_traj,TRAJECTORY_TYPE);
             [motor_up, motor_lo, servo1, servo2, e_i, trim_values] = control_function(coax_state, Rb2w, trajectory, e_i, dt, param, contr_param);
-%             if (dt_traj > 60)
-%                 CONTROL_MODE = CONTROL_LANDING;
-%                 FIRST_LANDING = 1;
-%             end
+            if (dt_traj > 20)
+                CONTROL_MODE = CONTROL_LANDING;
+                FIRST_LANDING = 1;
+            end
         end
         
         if (LOW_POWER_DETECTED)
@@ -587,15 +583,15 @@ end
 raw_control = geometry_msgs_Quaternion('empty');
 raw_control.x = motor_up;
 raw_control.y = motor_lo;
-raw_control.z = servo1;
-raw_control.w = servo2;
+raw_control.z = servo1 + roll_trim;
+raw_control.w = servo2 + pitch_trim;
 geometry_msgs_Quaternion('send',cid,raw_control);
 
 prev_time = time;
 
 %%%%%%%%%
-if (CONTROL_MODE == CONTROL_HOVER)
-    if 1%((dt_traj > 10) && (dt_traj < 70))
+if (CONTROL_MODE == CONTROL_TRAJECTORY)
+    if (dt_traj > 0) %((dt_traj > 10) && (dt_traj < 70))
         pos = [odom.pose.pose.position.x odom.pose.pose.position.y odom.pose.pose.position.z]';
         ori = [odom.pose.pose.orientation.x odom.pose.pose.orientation.y odom.pose.pose.orientation.z odom.pose.pose.orientation.w]';
         lintwist = [odom.twist.twist.linear.x odom.twist.twist.linear.y odom.twist.twist.linear.z]';
@@ -608,7 +604,7 @@ if (CONTROL_MODE == CONTROL_HOVER)
         Angtwists(:,i) = angtwist;
         Inputs(:,i) = [motor_up-volt_compUp motor_lo-volt_compLo servo1 servo2]';
         Trajectory(:,i) = trajectory';
-        Imu_r(i) = imu_r;
+        Imu_rrates(:,i) = [imu_p imu_q imu_r]';
     %     if (CONTROL_MODE == CONTROL_HOVER)
     %         Trims(:,i) = trim_values;
     %     else
@@ -633,16 +629,15 @@ if (~isempty(TimeStamps))
     Data.inputs = Inputs;
     Data.trajectory = Trajectory;
     % Data.trim = Trims;
-    Data.imu_r = Imu_r;
+    Data.imu_rates = Imu_rates;
 
-    save ViconData_yaw Data
+    save ViconData_hover Data
 end
 %%%%%%%%%
 
 nav_msgs_Odometry('disconnect',pid);
 geometry_msgs_Quaternion('disconnect',iid);
 geometry_msgs_Quaternion('disconnect',imuid);
-geometry_msgs_Quaternion('disconnect',tid);
 std_msgs_Bool('disconnect',mid);
 geometry_msgs_Quaternion('disconnect',cid);
 geometry_msgs_Quaternion('disconnect',cmid);

@@ -63,7 +63,6 @@
       <remap from="/coax_interface/control_mode" to="/Coax56/control_mode"/>
 
       <remap from="/coax_interface/state" to="/Coax56/state"/>
-      <remap from="/coax_interface/trim" to="/Coax56/matlab_trim"/>
       <remap from="/coax_interface/nav_mode" to="/Coax56/matlab_nav_mode"/>
       <remap from="/coax_interface/raw_control" to="/Coax56/matlab_raw_control"/>
 
@@ -82,14 +81,6 @@
           output="screen">
       <remap from="~topic" to="/Coax56/coax_info"/>
       <param name="message" value="coax_info56"/>
-    </node>
-
-    <node pkg="ipc_geometry_msgs"
-          name="Quaternion_trim_subscriber"
-          type="geometry_msgs_Quaternion_subscriber"
-          output="screen">
-      <remap from="~topic" to="/Coax56/matlab_trim"/>
-      <param name="message" value="trim56"/>
     </node>
 
     <node pkg="ipc_std_msgs"
