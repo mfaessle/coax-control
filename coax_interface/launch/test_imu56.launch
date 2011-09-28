@@ -60,6 +60,7 @@
 	  output="screen">
       <remap from="/coax_interface/info" to="/Coax56/coax_info"/>
       <remap from="/coax_interface/imu" to="/Coax56/coax_imu"/>
+      <remap from="/coax_interface/euler" to="/Coax56/coax_euler"/>
       <remap from="/coax_interface/rawcontrol" to="/Coax56/rawcontrol"/>
       <remap from="/coax_interface/control_mode" to="/Coax56/control_mode"/>
 
@@ -90,6 +91,14 @@
           output="screen">
       <remap from="~topic" to="/Coax56/coax_imu"/>
       <param name="message" value="coax_imu56"/>
+    </node>
+
+    <node pkg="ipc_geometry_msgs"
+          name="Quaternion_coax_euler_publisher"
+          type="geometry_msgs_Quaternion_publisher"
+          output="screen">
+      <remap from="~topic" to="/Coax56/coax_euler"/>
+      <param name="message" value="coax_euler56"/>
     </node>
 
     <node pkg="ipc_std_msgs"

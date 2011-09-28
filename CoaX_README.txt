@@ -43,7 +43,7 @@ rosrun coax_server coax_server /dev/tty.usbserial-A700eExt:1    (for Coax57)
 
 
 ================
-Run Experiment:
+Run Matlab Controller:
 ================
 
 1. Requirements
@@ -64,6 +64,27 @@ Run Experiment:
 
 5. Call ROS service to switch between control modes of the FSM in Coax_Control.m
 	e.g. run "rosservice call /Coax56/set_control_mode 1" to start the CoaX and go into hover
+
+
+================
+Run ROS Controller:
+================
+
+1. Requirements
+	1.1 Same as in "Run Matlab Controller"
+
+2. Start CoaX
+        2.1 Switch RC on
+        2.2 Switch CoaX on
+        2.3 Release "kill switch" by moving yaw stick on the RC to the lower left corner and release it
+
+3. Run "roslaunch coax_ros_control coax_ros_cont_cable56.launch"
+
+4. Call ROS services
+   	4.1 Set target pose: Run "rosservice call /set_target_pose -- x_des y_des z_des yaw_des"
+	    (Run "rosservice call /set_control_mode 4" to actually go to that position
+	4.2 Set trajectory type: "rosservice call /set_trajectory_type 1" (check number of desired trajectory)
+	4.3 Set Control Mode: "rosservice call /set_control_mode 1" (to make the CoaX take off and go to hover)
 
 
 ================
@@ -98,7 +119,7 @@ Charging:
 	Typically used charging current: 3A
 
 3. Charging RC batteries: (RCX Transmitter Li-Polymer Battery 11.1V 1800mAh)
-	Recommended charging current: 0.9A - 1.8A
+	Recommended charging current: 0.5A - 1.0A
 	
 
 

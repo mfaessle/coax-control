@@ -98,6 +98,8 @@ Inputs = [];
 Trajectory = [];
 Trims = [];
 Imu_r = [];
+Body_z = [];
+SB = [];
 servo1 = 0;
 servo2 = 0;
 volt_compUp = 0;
@@ -214,9 +216,13 @@ qx       = odom.pose.pose.orientation.x;
 qy       = odom.pose.pose.orientation.y;
 qz       = odom.pose.pose.orientation.z;
 qw       = odom.pose.pose.orientation.w;
-Rb2w     = [1-2*qy^2-2*qz^2 2*qx*qy-2*qz*qw 2*qx*qz+2*qy*qw; ...
-            2*qx*qy+2*qz*qw 1-2*qx^2-2*qz^2 2*qy*qz-2*qx*qw; ...
-            2*qx*qz-2*qy*qw 2*qy*qz+2*qx*qw 1-2*qx^2-2*qy^2];
+Rb2w     = [qw^2+qx^2-qy^2-qz^2 2*qx*qy-2*qz*qw 2*qx*qz+2*qy*qw; ...
+            2*qx*qy+2*qz*qw qw^2-qx^2+qy^2-qz^2 2*qy*qz-2*qx*qw; ...
+            2*qx*qz-2*qy*qw 2*qy*qz+2*qx*qw qw^2-qx^2-qy^2+qz^2];
+
+roll = atan2(Rb2w(3,2),Rb2w(3,3));
+pitch = asin(-Rb2w(3,1));
+yaw = atan2(Rb2w(2,1),Rb2w(1,1));
 
 imu = geometry_msgs_Quaternion('read',imuid,1);
 if (~isempty(imu))
@@ -243,6 +249,8 @@ if (FIRST_RUN)
     prev_velocity = velocity;
     prev_rotmat = rotmat;
     prev_bodyrates = bodyrates;
+    z_barxy = [0 0]';
+    z_barz = 1;
     prev_z_bar = [0 0 1]';
     FIRST_RUN = 0;
 end
@@ -317,6 +325,9 @@ z_bar = prev_z_bar + (A_k*prev_z_bar + b_z_bardot)*dt;
 z_bar = z_bar/norm(z_bar);
 prev_z_bar = z_bar;
 
+%z_bar = Rb2w'*[z_barxy' z_barz]';
+
+
 % Rotor speeds
 prev_Omega_up_des = rs_mup*motor_up + rs_bup;
 prev_Omega_lo_des = rs_mlo*motor_lo + rs_blo;
@@ -332,11 +343,11 @@ end
 prev_Omega_up = Omega_up;
 prev_Omega_lo = Omega_lo;
 
-roll = atan2(2*(qw*qx+qy*qz),1-2*(qx^2+qy^2));
-pitch = asin(2*(qw*qy-qz*qx));
-yaw = atan2(2*(qw*qz+qx*qy),1-2*(qy^2+qz^2));
 coax_state = [x y z  xdot ydot zdot  roll pitch yaw  p q imu_r  Omega_up Omega_lo  z_bar']';
 
+% stabilizer bar orientation update for next step
+% z_barz = cos(acos((Rb2w*z_bar)'*Rb2w(:,3))*exp(-dt/Tf_up));
+% z_barxy = z_bar(1:2)/norm(z_bar(1:2))*sqrt(1-z_barz^2);
 
 %% Control According to Control Mode
 switch CONTROL_MODE
@@ -505,8 +516,8 @@ switch CONTROL_MODE
             trajectory = trajectory_generation(dt_traj,TRAJECTORY_TYPE);
             [motor_up, motor_lo, servo1, servo2, e_i, trim_values] = control_function(coax_state, Rb2w, trajectory, e_i, dt, param, contr_param);
             if (dt_traj > 20)
-                CONTROL_MODE = CONTROL_LANDING;
-                FIRST_LANDING = 1;
+                CONTROL_MODE = CONTROL_HOVER;
+                FIRST_HOVER = 1;
             end
         end
         
@@ -590,8 +601,8 @@ geometry_msgs_Quaternion('send',cid,raw_control);
 prev_time = time;
 
 %%%%%%%%%
-if (CONTROL_MODE == CONTROL_TRAJECTORY)
-    if (dt_traj > 0) %((dt_traj > 10) && (dt_traj < 70))
+if (CONTROL_MODE == CONTROL_HOVER)
+    if 1%((dt_traj > 0.5) && (dt_traj < 40))
         pos = [odom.pose.pose.position.x odom.pose.pose.position.y odom.pose.pose.position.z]';
         ori = [odom.pose.pose.orientation.x odom.pose.pose.orientation.y odom.pose.pose.orientation.z odom.pose.pose.orientation.w]';
         lintwist = [odom.twist.twist.linear.x odom.twist.twist.linear.y odom.twist.twist.linear.z]';
@@ -604,7 +615,9 @@ if (CONTROL_MODE == CONTROL_TRAJECTORY)
         Angtwists(:,i) = angtwist;
         Inputs(:,i) = [motor_up-volt_compUp motor_lo-volt_compLo servo1 servo2]';
         Trajectory(:,i) = trajectory';
-        Imu_rrates(:,i) = [imu_p imu_q imu_r]';
+        Imu_rates(:,i) = [imu_p imu_q imu_r]';
+        Body_z(:,i) = Rb2w(:,3);
+        SB(:,i) = Rb2w*z_bar;
     %     if (CONTROL_MODE == CONTROL_HOVER)
     %         Trims(:,i) = trim_values;
     %     else
@@ -630,8 +643,10 @@ if (~isempty(TimeStamps))
     Data.trajectory = Trajectory;
     % Data.trim = Trims;
     Data.imu_rates = Imu_rates;
+    Data.bodyz = Body_z;
+    Data.bar = SB;
 
-    save ViconData_hover Data
+    %save ViconData_testsmoother Data
 end
 %%%%%%%%%
 
@@ -641,5 +656,4 @@ geometry_msgs_Quaternion('disconnect',imuid);
 std_msgs_Bool('disconnect',mid);
 geometry_msgs_Quaternion('disconnect',cid);
 geometry_msgs_Quaternion('disconnect',cmid);
-
 clear

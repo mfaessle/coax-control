@@ -103,7 +103,8 @@ end
 e_i(4) = real(e_i_prev(4) + e_psi*dt);
 e_omegaz = r - [0 0 1]*Rw2b*[0 0 psidot_T]';
 
-F_des = -K_p*e_p - K_v*e_v - K_i*e_i(1:3,1) - Rb2w*K_pq*e_pq + m*[xddot_T yddot_T zddot_T]' + m*g*[0 0 1]';
+F_des = -K_p*e_p - K_v*e_v - K_i*e_i(1:3,1) - Rb2w*K_pq*e_pq + m*[xddot_T yddot_T zddot_T]';% + m*g*[0 0 1]';
+F_des(3) = 0;
 Mz_des = -K_psi*e_psi - K_psi_i*e_i(4) - K_omegaz*e_omegaz;
 
 %==================
@@ -191,54 +192,98 @@ zeta = zeta_mup*Omega_up + zeta_bup;
 RzT = [cos(zeta) -sin(zeta) 0; sin(zeta) cos(zeta) 0; 0 0 1];
 z_Tup = RzT*z_Tup;
 
-Omega_lo0 = sqrt(m*g/(k_Tup*k_Mlo/k_Mup + k_Tlo));
-Omega_up0 = sqrt(k_Mlo/k_Mup*Omega_lo0^2);
+% Omega_lo0 = sqrt(m*g/(k_Tup*k_Mlo/k_Mup + k_Tlo));
+% Omega_up0 = sqrt(k_Mlo/k_Mup*Omega_lo0^2);
+% 
+% a_up = -asin(z_Tup(2));
+% b_up = asin(z_Tup(1)/cos(a_up));
+% 
+% error = [state(1:14); a_up; b_up] - [x_T y_T z_T xdot_T ydot_T zdot_T 0 0 psi_T 0 0 psidot_T Omega_up0 Omega_lo0 0 0]';
+% error(1:3) = Rw2b*error(1:3);
+% error(4:6) = Rw2b*error(4:6);
+% if (error(9) > pi)
+%     error(9) = error(9) - 2*pi;
+% elseif (error(9) < -pi)
+%     error(9) = error(9) + 2*pi;
+% end
+% inputs = -W*K_lqr*T_inv*error;
+% 
+% % feed forward on rotor speeds
+% motor_up = inputs(1) + (Omega_up0 - rs_bup)/rs_mup;
+% motor_lo = inputs(2) + (Omega_lo0 - rs_blo)/rs_mlo;
+% % correct for phase lag of servo inputs
+% a_SP = inputs(3)*max_SPangle;
+% b_SP = inputs(4)*max_SPangle;
+% z_SP = [sin(b_SP) -sin(a_SP)*cos(b_SP) cos(a_SP)*cos(b_SP)]';
+% z_Tloz = cos(l_lo*acos(z_SP(3)));
+% if (z_Tloz < 1)
+%     temp = sqrt((1-z_Tloz^2)/(z_SP(1)^2 + z_SP(2)^2));
+%     z_Tlo = [z_SP(1)*temp z_SP(2)*temp z_Tloz]';
+% else
+%     z_Tlo = [0 0 1]';
+% end
+% zeta = zeta_mlo*Omega_lo + zeta_blo;
+% RzT = [cos(zeta) -sin(zeta) 0; sin(zeta) cos(zeta) 0; 0 0 1];
+% z_Tlo = RzT*z_Tlo;
+% 
+% z_SPz = cos(1/l_lo*acos(z_Tlo(3)));
+% if (z_SPz < 1)
+%     temp = sqrt((1-z_SPz^2)/(z_Tlo(1)^2 + z_Tlo(2)^2));
+%     z_SP = [z_Tlo(1)*temp z_Tlo(2)*temp z_SPz]';
+% else
+%     z_SP = [0 0 1]';
+% end
+% b_lo_des = asin(z_SP(1));
+% a_lo_des = asin(-z_SP(2)/cos(b_lo_des));
+% servo1 = a_lo_des/max_SPangle;
+% servo2 = b_lo_des/max_SPangle;
 
-a_up = -asin(z_Tup(2));
-b_up = asin(z_Tup(1)/cos(a_up));
+%%% Test new lateral control
 
-error = [state(1:14); a_up; b_up] - [x_T y_T z_T xdot_T ydot_T zdot_T 0 0 psi_T 0 0 psidot_T Omega_up0 Omega_lo0 0 0]';
-error(1:3) = Rw2b*error(1:3);
-error(4:6) = Rw2b*error(4:6);
-if (error(9) > pi)
-    error(9) = error(9) - 2*pi;
-elseif (error(9) < -pi)
-    error(9) = error(9) + 2*pi;
-end
-inputs = -W*K_lqr*T_inv*error;
+% rhs = (F_des(1:2) - k_Tup*Omega_up^2*Rb2w(1:2,:)*z_Tup)/(k_Tlo*Omega_lo^2);
+% z_Tloz = 1;
+% tol = 1e-8;
+% while 1
+%     z_Tloxy = Rb2w(1:2,1:2)\(rhs-z_Tloz*Rb2w(1:2,3));
+%     norm_z_Tlo = norm([z_Tloxy' z_Tloz]);
+%     
+%     if (abs(norm_z_Tlo - 1) < tol)
+%         break;
+%     elseif (norm_z_Tlo < 1)
+%         z_Tloz = z_Tloz + abs(norm_z_Tlo - 1);
+%     else
+%         z_Tloz = z_Tloz - abs(norm_z_Tlo - 1);
+%     end
+% end
+% 
+% % saturation
+% if (z_Tloz < cos(max_SPangle*l_lo))
+%     z_Tloz = cos(max_SPangle*l_lo);
+%     z_Tloxy = z_Tloxy/norm(z_Tloxy)*sqrt(1-z_Tloz^2);
+% end
+% z_Tlo = [z_Tloxy' z_Tloz]';
 
-% feed forward on rotor speeds
-motor_up = inputs(1) + (Omega_up0 - rs_bup)/rs_mup;
-motor_lo = inputs(2) + (Omega_lo0 - rs_blo)/rs_mlo;
-% correct for phase lag of servo inputs
-a_SP = inputs(3)*max_SPangle;
-b_SP = inputs(4)*max_SPangle;
-z_SP = [sin(b_SP) -sin(a_SP)*cos(b_SP) cos(a_SP)*cos(b_SP)]';
-z_Tloz = cos(l_lo*acos(z_SP(3)));
-if (z_Tloz < 1)
-    temp = sqrt((1-z_Tloz^2)/(z_SP(1)^2 + z_SP(2)^2));
-    z_Tlo = [z_SP(1)*temp z_SP(2)*temp z_Tloz]';
-else
-    z_Tlo = [0 0 1]';
-end
+z_Tlo_x = 1/(k_Tlo*Omega_lo^2)*(Rw2b(1,:)*F_des);% - k_Tup*Omega_up^2*z_Tup(1));
+z_Tlo_y = 1/(k_Tlo*Omega_lo^2)*(Rw2b(2,:)*F_des);% - k_Tup*Omega_up^2*z_Tup(2));
+z_Tlo = [z_Tlo_x z_Tlo_y sqrt(1-z_Tlo_x^2-z_Tlo_y^2)]';
+
 zeta = zeta_mlo*Omega_lo + zeta_blo;
 RzT = [cos(zeta) -sin(zeta) 0; sin(zeta) cos(zeta) 0; 0 0 1];
-z_Tlo = RzT*z_Tlo;
+z_Tlo_p = RzT*z_Tlo;
 
-z_SPz = cos(1/l_lo*acos(z_Tlo(3)));
+z_SPz = cos(1/l_lo*acos(z_Tlo_p(3)));
 if (z_SPz < 1)
     temp = sqrt((1-z_SPz^2)/(z_Tlo(1)^2 + z_Tlo(2)^2));
-    z_SP = [z_Tlo(1)*temp z_Tlo(2)*temp z_SPz]';
+    z_SP = [z_Tlo_p(1)*temp z_Tlo_p(2)*temp z_SPz]';
 else
     z_SP = [0 0 1]';
 end
 b_lo_des = asin(z_SP(1));
 a_lo_des = asin(-z_SP(2)/cos(b_lo_des));
-servo1 = a_lo_des/max_SPangle;
-servo2 = b_lo_des/max_SPangle;
+servo1 = a_lo_des/(max_SPangle);
+servo2 = b_lo_des/(max_SPangle);
 
 %%% Test new heave-yaw control
-
 Kp_F = 20*m;
 Kd_F = 10*m;
 Kp_M = 50*Izz;

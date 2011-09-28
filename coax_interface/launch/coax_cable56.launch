@@ -28,14 +28,23 @@
       <remap from="~pose" to="/Coax56/vicon_calibrate/pose"/>
       <remap from="~odom" to="/Coax56/vicon2odometry/odom"/>
       <param name="vsk" value="$(find coax_vsk)/vsk/Coax56.vsk"/>
+      <param name="history" value="1"/>
+    </node>
 
+    <node pkg="odometry_smoother"
+          name="odometry_smoother"
+          type="odometry_smoother"
+          output="screen">
+      <remap from="~odom_in" to="/Coax56/vicon2odometry/odom"/>
+      <remap from="~odom_out" to="/Coax56/odom_smooth"/>
+      <rosparam file="$(find odometry_smoother)/config/noise.yaml"/>
     </node>
 
     <node pkg="ipc_nav_msgs"
           name="nav_msgs_Odometry_publisher"
           type="nav_msgs_Odometry_publisher"
           output="screen">
-      <remap from="~topic" to="/Coax56/vicon2odometry/odom"/>
+      <remap from="~topic" to="/Coax56/odom_smooth"/>
       <param name="message" value="odom56"/>
     </node>
 
@@ -60,6 +69,7 @@
 	  output="screen">
       <remap from="/coax_interface/info" to="/Coax56/coax_info"/>
       <remap from="/coax_interface/imu" to="/Coax56/coax_imu"/>
+      <remap from="/coax_interface/euler" to="/Coax56/coax_euler"/>
       <remap from="/coax_interface/rawcontrol" to="/Coax56/rawcontrol"/>
       <remap from="/coax_interface/control_mode" to="/Coax56/control_mode"/>
 
@@ -90,6 +100,14 @@
           output="screen">
       <remap from="~topic" to="/Coax56/coax_imu"/>
       <param name="message" value="coax_imu56"/>
+    </node>
+
+    <node pkg="ipc_geometry_msgs"
+          name="Quaternion_coax_euler_publisher"
+          type="geometry_msgs_Quaternion_publisher"
+          output="screen">
+      <remap from="~topic" to="/Coax56/coax_euler"/>
+      <param name="message" value="coax_euler56"/>
     </node>
 
     <node pkg="ipc_std_msgs"

@@ -1,4 +1,4 @@
-load ViconData_step_yaw
+load ViconData_heaveyaw
 
 time = Data.time;
 position = Data.position;

@@ -5,13 +5,13 @@
 
 % K_p      = diag([0.05 0.05 0.2]);
 % K_v      = diag([0.25 0.25 0.5]);
-K_p      = diag([0.2 0.2 6]);
+K_p      = diag([0.7 0.7 6]);
 K_v      = diag([0.4 0.4 3]);
 K_i      = zeros(3,3);%diag([0.005 0.005 0.001]);
-K_pq     = 0.06*diag([1 -1 0]);
+K_pq     = 0.04*diag([1 -1 0]);
 K_psi    = 0.0139;
 K_psi_i  = 0;%0.001;
-K_omegaz = 0.0017;
+K_omegaz = 0.005;
 
 contr_param.K_p = K_p;
 contr_param.K_v = K_v;

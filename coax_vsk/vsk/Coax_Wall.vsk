@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
+<KinematicModel VERSION="2.4">
+
+  <Parameters>
+    <Parameter HIDDEN="1" NAME="Coax_Wall_Unlabeled44171_x" PRIOR="159.195251464844" SD="1.00000002004088e+020" VALUE="159.195251464844"/>
+    <Parameter HIDDEN="1" NAME="Coax_Wall_Unlabeled44171_y" PRIOR="-251.342895507813" SD="1.00000002004088e+020" VALUE="-251.342895507813"/>
+    <Parameter HIDDEN="1" NAME="Coax_Wall_Unlabeled44171_z" PRIOR="0.247787162661552" SD="1.00000002004088e+020" VALUE="0.247787162661552"/>
+    <Parameter HIDDEN="1" NAME="Coax_Wall_Unlabeled44152_x" PRIOR="559.247741699219" SD="1.00000002004088e+020" VALUE="559.247741699219"/>
+    <Parameter HIDDEN="1" NAME="Coax_Wall_Unlabeled44152_y" PRIOR="50.6312675476074" SD="1.00000002004088e+020" VALUE="50.6312675476074"/>
+    <Parameter HIDDEN="1" NAME="Coax_Wall_Unlabeled44152_z" PRIOR="-0.85514098405838" SD="1.00000002004088e+020" VALUE="-0.85514098405838"/>
+    <Parameter HIDDEN="1" NAME="Coax_Wall_Unlabeled44432_x" PRIOR="472.641906738281" SD="1.00000002004088e+020" VALUE="472.641906738281"/>
+    <Parameter HIDDEN="1" NAME="Coax_Wall_Unlabeled44432_y" PRIOR="179.673690795898" SD="1.00000002004088e+020" VALUE="179.673690795898"/>
+    <Parameter HIDDEN="1" NAME="Coax_Wall_Unlabeled44432_z" PRIOR="-1.11485993862152" SD="1.00000002004088e+020" VALUE="-1.11485993862152"/>
+    <Parameter HIDDEN="1" NAME="Coax_Wall_Unlabeled44221_x" PRIOR="-323.894073486328" SD="1.00000002004088e+020" VALUE="-323.894073486328"/>
+    <Parameter HIDDEN="1" NAME="Coax_Wall_Unlabeled44221_y" PRIOR="159.303329467773" SD="1.00000002004088e+020" VALUE="159.303329467773"/>
+    <Parameter HIDDEN="1" NAME="Coax_Wall_Unlabeled44221_z" PRIOR="-0.372738212347031" SD="1.00000002004088e+020" VALUE="-0.372738212347031"/>
+    <Parameter HIDDEN="1" NAME="Coax_Wall_Unlabeled43344_x" PRIOR="-466.610473632813" SD="1.00000002004088e+020" VALUE="-466.610473632813"/>
+    <Parameter HIDDEN="1" NAME="Coax_Wall_Unlabeled43344_y" PRIOR="44.1837959289551" SD="1.00000002004088e+020" VALUE="44.1837959289551"/>
+    <Parameter HIDDEN="1" NAME="Coax_Wall_Unlabeled43344_z" PRIOR="0.788166701793671" SD="1.00000002004088e+020" VALUE="0.788166701793671"/>
+    <Parameter HIDDEN="1" NAME="Coax_Wall_Unlabeled44202_x" PRIOR="-400.580352783203" SD="1.00000002004088e+020" VALUE="-400.580352783203"/>
+    <Parameter HIDDEN="1" NAME="Coax_Wall_Unlabeled44202_y" PRIOR="-182.449188232422" SD="1.00000002004088e+020" VALUE="-182.449188232422"/>
+    <Parameter HIDDEN="1" NAME="Coax_Wall_Unlabeled44202_z" PRIOR="1.30678522586823" SD="1.00000002004088e+020" VALUE="1.30678522586823"/>
+  </Parameters>
+
+  <Skeleton>
+    <Segment BOUNDS="-50 -50 -50 50 50 50" CONTEXT="General" INERTIA="0 0 0" MASS="0" MASS-CENTRE="0 0 0" NAME="Coax_Wall" RGB="255 164 0">
+      <JointFree BOUNDS="0 0 0 0 0 0 0 0 0 0 0 0" COVARIANCE="2.46490001678467 0 0 0 0 0  0 2.46490001678467 0 0 0 0  0 0 246.490005493164 0 0 0  0 0 0 1000000 0 0  0 0 0 0 1000000 0  0 0 0 0 0 1000000  " MEAN="0 0 0 0 0 0" NAME="World_Coax_Wall" POST-ORIENTATION="0 0 0" POST-POSITION="0 0 0" PRE-ORIENTATION="0 0 0" PRE-POSITION="0 0 0" SIGNS="+ + + + + + " T="* * * * * * ">
+        <JointTemplate COVARIANCE="2.46490001678467 0 0 0 0 0  0 2.46490001678467 0 0 0 0  0 0 246.490005493164 0 0 0  0 0 0 1000000 0 0  0 0 0 0 1000000 0  0 0 0 0 0 1000000  " MEAN="0 0 0 0 0 0" POST-ORIENTATION="0 0 0" POST-POSITION="0 0 0" PRE-ORIENTATION="0 0 0" PRE-POSITION="0 0 0" TPOSE-COVARIANCE="0 0 0 0 0 0  0 0 0 0 0 0  0 0 0 0 0 0  0 0 0 0 0 0  0 0 0 0 0 0  0 0 0 0 0 0  " TPOSE-MEAN="0 0 0 0 0 0"/>
+      </JointFree>
+    </Segment>
+  </Skeleton>
+
+  <MarkerSet>
+    <Markers>
+      <Marker COVARIANCE="1 0 0 0 1 0 0 0 1 " NAME="Unlabeled44171" POSITION="159.195 -251.343 0.247787" RADIUS="12.5" RGB="255 164 0" SEGMENT="Coax_Wall" STATUS="required">
+        <MarkerTemplate COVARIANCE="1 0 0 0 1 0 0 0 1 " PLACEMENT-COVARIANCE="1 0 0 0 1 0 0 0 1 " POSITION="'Coax_Wall_Unlabeled44171_x' 'Coax_Wall_Unlabeled44171_y' 'Coax_Wall_Unlabeled44171_z'"/>
+      </Marker>
+      <Marker COVARIANCE="1 0 0 0 1 0 0 0 1 " NAME="Unlabeled44152" POSITION="559.248 50.6313 -0.855141" RADIUS="12.5" RGB="255 164 0" SEGMENT="Coax_Wall" STATUS="optional">
+        <MarkerTemplate COVARIANCE="1 0 0 0 1 0 0 0 1 " PLACEMENT-COVARIANCE="1 0 0 0 1 0 0 0 1 " POSITION="'Coax_Wall_Unlabeled44152_x' 'Coax_Wall_Unlabeled44152_y' 'Coax_Wall_Unlabeled44152_z'"/>
+      </Marker>
+      <Marker COVARIANCE="1 0 0 0 1 0 0 0 1 " NAME="Unlabeled44432" POSITION="472.642 179.674 -1.11486" RADIUS="12.5" RGB="255 164 0" SEGMENT="Coax_Wall" STATUS="optional">
+        <MarkerTemplate COVARIANCE="1 0 0 0 1 0 0 0 1 " PLACEMENT-COVARIANCE="1 0 0 0 1 0 0 0 1 " POSITION="'Coax_Wall_Unlabeled44432_x' 'Coax_Wall_Unlabeled44432_y' 'Coax_Wall_Unlabeled44432_z'"/>
+      </Marker>
+      <Marker COVARIANCE="1 0 0 0 1 0 0 0 1 " NAME="Unlabeled44221" POSITION="-323.894 159.303 -0.372738" RADIUS="12.5" RGB="255 164 0" SEGMENT="Coax_Wall" STATUS="optional">
+        <MarkerTemplate COVARIANCE="1 0 0 0 1 0 0 0 1 " PLACEMENT-COVARIANCE="1 0 0 0 1 0 0 0 1 " POSITION="'Coax_Wall_Unlabeled44221_x' 'Coax_Wall_Unlabeled44221_y' 'Coax_Wall_Unlabeled44221_z'"/>
+      </Marker>
+      <Marker COVARIANCE="1 0 0 0 1 0 0 0 1 " NAME="Unlabeled43344" POSITION="-466.61 44.1838 0.788167" RADIUS="12.5" RGB="255 164 0" SEGMENT="Coax_Wall" STATUS="optional">
+        <MarkerTemplate COVARIANCE="1 0 0 0 1 0 0 0 1 " PLACEMENT-COVARIANCE="1 0 0 0 1 0 0 0 1 " POSITION="'Coax_Wall_Unlabeled43344_x' 'Coax_Wall_Unlabeled43344_y' 'Coax_Wall_Unlabeled43344_z'"/>
+      </Marker>
+      <Marker COVARIANCE="1 0 0 0 1 0 0 0 1 " NAME="Unlabeled44202" POSITION="-400.58 -182.449 1.30679" RADIUS="12.5" RGB="255 164 0" SEGMENT="Coax_Wall" STATUS="optional">
+        <MarkerTemplate COVARIANCE="1 0 0 0 1 0 0 0 1 " PLACEMENT-COVARIANCE="1 0 0 0 1 0 0 0 1 " POSITION="'Coax_Wall_Unlabeled44202_x' 'Coax_Wall_Unlabeled44202_y' 'Coax_Wall_Unlabeled44202_z'"/>
+      </Marker>
+    </Markers>
+    <Sticks>
+      <Stick MARKER1="Unlabeled44171" MARKER2="Unlabeled44152" RGB="255 164 0"/>
+      <Stick MARKER1="Unlabeled44171" MARKER2="Unlabeled44432" RGB="255 164 0"/>
+      <Stick MARKER1="Unlabeled44171" MARKER2="Unlabeled44221" RGB="255 164 0"/>
+      <Stick MARKER1="Unlabeled44171" MARKER2="Unlabeled43344" RGB="255 164 0"/>
+      <Stick MARKER1="Unlabeled44171" MARKER2="Unlabeled44202" RGB="255 164 0"/>
+      <Stick MARKER1="Unlabeled44152" MARKER2="Unlabeled44432" RGB="255 164 0"/>
+      <Stick MARKER1="Unlabeled44152" MARKER2="Unlabeled44221" RGB="255 164 0"/>
+      <Stick MARKER1="Unlabeled44152" MARKER2="Unlabeled43344" RGB="255 164 0"/>
+      <Stick MARKER1="Unlabeled44152" MARKER2="Unlabeled44202" RGB="255 164 0"/>
+      <Stick MARKER1="Unlabeled44432" MARKER2="Unlabeled44221" RGB="255 164 0"/>
+      <Stick MARKER1="Unlabeled44432" MARKER2="Unlabeled43344" RGB="255 164 0"/>
+      <Stick MARKER1="Unlabeled44432" MARKER2="Unlabeled44202" RGB="255 164 0"/>
+      <Stick MARKER1="Unlabeled44221" MARKER2="Unlabeled43344" RGB="255 164 0"/>
+      <Stick MARKER1="Unlabeled44221" MARKER2="Unlabeled44202" RGB="255 164 0"/>
+      <Stick MARKER1="Unlabeled43344" MARKER2="Unlabeled44202" RGB="255 164 0"/>
+    </Sticks>
+  </MarkerSet>
+
+  <Alignment/>
+
+</KinematicModel>
