@@ -39,7 +39,6 @@ protected:
 	float servo2;
 	int matlab_rawcontrol_age;
 	int coax_state_age;
-	int desired_nav_mode;
 	
 public:
 	
@@ -67,7 +66,6 @@ public:
 		servo2 = 0;
 		matlab_rawcontrol_age = 0;
 		coax_state_age = 0;
-		desired_nav_mode = 0;
 	}
 	~CoaxInterface(){
 	}
@@ -161,7 +159,6 @@ public:
 
 		if (message->data) {
 			result = reachNavState(SB_NAV_RAW, 0.5); // Navigation raw mode
-			desired_nav_mode = 1;
 			if (result) {
 				// reachNavState not successful -> send error state 8 to matlab
 				geometry_msgs::Quaternion control_mode;
@@ -174,7 +171,6 @@ public:
 			
 		} else {
 			reachNavState(SB_NAV_STOP, 0.5); // Navigation stop mode
-			desired_nav_mode = 0;
 		}
 	}
 	
@@ -247,7 +243,6 @@ public:
 			
 			if (req.mode == 9) {
 				reachNavState(SB_NAV_STOP,0.5);
-				desired_nav_mode = 0;
 			}
 		}else {
 			ROS_INFO("Cannot manually call control mode 8");
