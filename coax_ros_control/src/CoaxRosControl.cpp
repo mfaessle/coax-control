@@ -27,7 +27,7 @@ CoaxRosControl::CoaxRosControl(ros::NodeHandle & n)
 		
 	set_control_mode.push_back(n.advertiseService("set_control_mode", &CoaxRosControl::setControlMode, this));
 	set_trajectory_type.push_back(n.advertiseService("set_trajectory_type", &CoaxRosControl::setTrajectoryType, this));
-	set_target_pose.push_back(n.advertiseService("set_target_position", &CoaxRosControl::setTargetPose, this));
+	set_target_pose.push_back(n.advertiseService("set_target_pose", &CoaxRosControl::setTargetPose, this));
 	
 	CONTROL_MODE = CONTROL_LANDED;
 	LOW_POWER_DETECTED = false;
@@ -176,7 +176,7 @@ void CoaxRosControl::coaxOdomCallback(const nav_msgs::Odometry::ConstPtr & messa
 
 	double p = message->twist.twist.angular.x;
 	double q = message->twist.twist.angular.y;
-	double r = imu_r;//message->twist.twist.angular.z;
+	double r = imu_r;
 	
 	z_bar[0] = prev_z_bar[0] + (r*prev_z_bar[1] - q*prev_z_bar[2] + b_z_bardot(0))*delta_t;
 	z_bar[1] = prev_z_bar[1] + (-r*prev_z_bar[0] + p*prev_z_bar[2] + b_z_bardot(1))*delta_t;
@@ -543,7 +543,8 @@ void CoaxRosControl::controlFunction(double* control, arma::colvec coax_state, a
 	
 	double z = coax_state(2);
 	double zdot = coax_state(5);
-	double yaw = coax_state(8);
+	double p = coax_state(9);
+	double q = coax_state(10);
 	double r = coax_state(11);
 	
 	// rotor speeds
@@ -585,33 +586,38 @@ void CoaxRosControl::controlFunction(double* control, arma::colvec coax_state, a
 	double max_SPangle = model_params.max_SPangle;
 	
 	// Control Parameters
+	double Kp_Fx = control_params.Kp_Fx;
+	double Kp_Fy = control_params.Kp_Fy;
 	double Kp_Fz = control_params.Kp_Fz;
+	double Kd_Fx = control_params.Kd_Fx;
+	double Kd_Fy = control_params.Kd_Fy;
 	double Kd_Fz = control_params.Kd_Fz;
 	double Kp_Mz = control_params.Kp_Mz;
 	double Kd_Mz = control_params.Kd_Mz;
+	double Kpq_roll = control_params.Kpq_roll;
+	double Kpq_pitch = control_params.Kpq_pitch;
 	
-	double K_lqr[4][16] = {};
-	K_lqr[0][2] = 3.3377;
-	K_lqr[0][5] = 1.4157;
-	K_lqr[0][8] = -0.3600;
-	K_lqr[0][12] = 0.0230;
-	K_lqr[0][13] = -0.0005;
-	K_lqr[1][2] = 3.0077;
-	K_lqr[1][5] = 1.2103;
-	K_lqr[1][8] = 0.2658;
-	K_lqr[1][12] = -0.0006;
-	K_lqr[1][13] = 0.0177;
-	K_lqr[2][1] = -1.3719;
-	K_lqr[2][4] = -0.9622;
-	K_lqr[3][0] = 1.3720;
-	K_lqr[3][3] = 0.9630;
-	//for (int k=0; k<4; k++) {
-	//	printf("\n");
-	//	for (int l=0; l<16; l++) {
-	//		printf("%4.4f  ",K_lqr[k][l]);
-	//	}
-	//}
-	//printf("\n");
+	// Desired Forces
+	arma::colvec kpxy(2);
+	arma::colvec kdxy(2);
+	arma::colvec kpq(2);
+	kpxy(0) = Kp_Fx;
+	kpxy(1) = Kp_Fy;
+	kdxy(0) = Kd_Fx;
+	kdxy(1) = Kd_Fy;
+	kpq(0) = Kpq_pitch;
+	kpq(1) = Kpq_roll;
+	
+	arma::colvec pos_error(2);
+	arma::colvec vel_error(2);
+	arma::colvec pq_error(2);
+	pos_error = coax_state.subvec(0, 1) - trajectory.subvec(0, 1);
+	vel_error = coax_state.subvec(3, 4) - trajectory.subvec(3, 4);
+	pq_error(0) = q;
+	pq_error(1) = p;
+	
+	arma::colvec Fxy_des(2);
+	Fxy_des = -arma::diagmat(kpxy)*pos_error - arma::diagmat(kdxy)*vel_error - Rb2w.submat(0,0,1,1)*arma::diagmat(kpq)*pq_error + m*trajectory.subvec(6, 7);
 	
 	// Upper thrust vector direction
 	double z_Tupz = cos(l_up*acos(z_barz));
@@ -632,87 +638,27 @@ void CoaxRosControl::controlFunction(double* control, arma::colvec coax_state, a
 	z_Tup(0) = cos(zeta)*z_Tup_p(0) - sin(zeta)*z_Tup_p(1);
 	z_Tup(1) = sin(zeta)*z_Tup_p(0) + cos(zeta)*z_Tup_p(1);
 	z_Tup(2) = z_Tup_p(2);
-	
-	double a_up = -asin(z_Tup(1));
-	double b_up = asin(z_Tup(0)/cos(a_up));
-	
-	
-	double Omega_lo0 = sqrt(m*g/(k_Tup*k_Mlo/k_Mup + k_Tlo));
-	double Omega_up0 = sqrt(k_Mlo/k_Mup*Omega_lo0*Omega_lo0);
-	
-	arma::colvec pos_error(3);
-	arma::colvec vel_error(3);
-	
-	pos_error = coax_state.subvec(0, 2) - trajectory.subvec(0, 2);
-	vel_error = coax_state.subvec(3, 5) - trajectory.subvec(3, 5);
-	pos_error = strans(Rb2w)*pos_error;
-	vel_error = strans(Rb2w)*vel_error;
-	
-	double error[16];
-	error[0] = pos_error(0);
-	error[1] = pos_error(1);
-	error[2] = pos_error(2);
-	error[3] = vel_error(0);
-	error[4] = vel_error(1);
-	error[5] = vel_error(2);
-	error[6] = coax_state(6);
-	error[7] = coax_state(7);
-	error[8] = coax_state(8) - trajectory(9);
-	error[9] = coax_state(9);
-	error[10] = coax_state(10);
-	error[11] = coax_state(11) - trajectory(10);
-	error[12] = coax_state(12) - Omega_up0;
-	error[13] = coax_state(13) - Omega_lo0;
-	error[14] = a_up;
-	error[15] = b_up;
-	
-	if (error[8] > M_PI){
-		error[8] -= 2*M_PI;
-	}else if (error[8] < -M_PI){
-		error[8] += 2*M_PI;
-	}
-	
-	//for (int k=0; k<16; k++) {
-	//	printf("%3.3f  ",error[k]);
-	//}
-	//printf("\n\n");
-	
-	double inputs[4] = {0,0,0,0};
-	for (int i=0; i<4; i++) {
-		for (int j=0; j<16; j++) {
-			inputs[i] -= K_lqr[i][j]*error[j];
-		}
-	}
 
-	// feed forward on rotor speeds
-	//control[0] = inputs[0] + (Omega_up0 - rs_bup)/rs_mup;
-	//control[1] = inputs[1] + (Omega_lo0 - rs_blo)/rs_mlo;
-	
-	// correct for phase lag of servo inputs
-	double a_SP = inputs[2]*max_SPangle;
-	double b_SP = inputs[3]*max_SPangle;
-	arma::colvec z_SP(3);
-	z_SP(0) = sin(b_SP);
-	z_SP(1) = -sin(a_SP)*cos(b_SP);
-	z_SP(2) = cos(a_SP)*cos(b_SP);
-	double z_Tloz = cos(l_lo*acos(z_SP(2)));
+	// Lower thrust vector direction
 	arma::colvec z_Tlo(3);
-	if (z_Tloz < 1){
-		temp = sqrt((1-z_Tloz*z_Tloz)/(z_SP(0)*z_SP(0) + z_SP(1)*z_SP(1)));
-		z_Tlo(0) = z_SP(0)*temp;
-		z_Tlo(1) = z_SP(1)*temp;
-		z_Tlo(2) = z_Tloz;
-	}else{
+	if (Omega_lo < 10) {
 		z_Tlo(0) = 0;
 		z_Tlo(1) = 0;
 		z_Tlo(2) = 1;
+	} else {
+		z_Tlo(0) = 1/(k_Tlo*Omega_lo*Omega_lo)*(Rb2w(0,0)*Fxy_des(0) + Rb2w(1,0)*Fxy_des(1));
+		z_Tlo(1) = 1/(k_Tlo*Omega_lo*Omega_lo)*(Rb2w(0,1)*Fxy_des(0) + Rb2w(1,1)*Fxy_des(1));
+		z_Tlo(2) = sqrt(1-z_Tlo(0)*z_Tlo(0)-z_Tlo(1)*z_Tlo(1));
 	}
+	
+	// correct for phase lag of servo inputs
 	zeta = zeta_mlo*Omega_lo + zeta_blo;
 	arma::colvec z_Tlo_p(3);
 	z_Tlo_p(0) = cos(zeta)*z_Tlo(0) - sin(zeta)*z_Tlo(1);
 	z_Tlo_p(1) = sin(zeta)*z_Tlo(0) + cos(zeta)*z_Tlo(1);
 	z_Tlo_p(2) = z_Tlo(2);
-		
+	
+	arma::colvec z_SP(3);
 	double z_SPz = cos(1/l_lo*acos(z_Tlo_p(2)));
 	if (z_SPz < 1){
 		temp = sqrt((1-z_SPz*z_SPz)/(z_Tlo_p(0)*z_Tlo_p(0) + z_Tlo_p(1)*z_Tlo_p(1)));
@@ -732,14 +678,14 @@ void CoaxRosControl::controlFunction(double* control, arma::colvec coax_state, a
 	
 	// New heave-yaw control
 	double Fz_des = -Kp_Fz*(z-trajectory(2)) - Kd_Fz*(zdot-trajectory(5)) + m*trajectory(8);
-	double ori_error = yaw - trajectory(9);
+	double ori_error = atan2(Rb2w(1,0),Rb2w(0,0)) - trajectory(9);
 	while (ori_error > M_PI){
 		ori_error = ori_error - 2*M_PI;
 	}
 	while (ori_error < -M_PI){
 		ori_error = ori_error + 2*M_PI;
 	}
-	double Mz_des = -Kp_Mz*ori_error - Kd_Mz*(r-trajectory(10));
+	double Mz_des = -Kp_Mz*ori_error - Kd_Mz*(r-Rb2w(2,2)*trajectory(10));
 	
 	double A = k_Tup/k_Mup*Mz_des*(arma::as_scalar(Rb2w.row(2)*z_Tup));
 	double B = k_Tup/k_Mup*k_Mlo*(arma::as_scalar(Rb2w.row(2)*z_Tup)) + k_Tlo*(arma::as_scalar(Rb2w.row(2)*z_Tlo));
@@ -1252,6 +1198,16 @@ void CoaxRosControl::SetHeaveYawGains(double Kp_Fz, double Kd_Fz, double Kp_Mz, 
 	control_params.Kd_Mz = Kd_Mz;
 }
 
+void CoaxRosControl::SetLateralGains(double Kp_Fx, double Kp_Fy, double Kd_Fx, double Kd_Fy, double Kpq_roll, double Kpq_pitch)
+{
+	control_params.Kp_Fx = Kp_Fx;
+	control_params.Kp_Fy = Kp_Fy;
+	control_params.Kd_Fx = Kd_Fx;
+	control_params.Kd_Fy = Kd_Fy;
+	control_params.Kpq_roll = Kpq_roll;
+	control_params.Kpq_pitch = Kpq_pitch;
+}
+
 void CoaxRosControl::load_model_params(ros::NodeHandle &n)
 {
 	
@@ -1328,15 +1284,28 @@ void CoaxRosControl::load_model_params(ros::NodeHandle &n)
 
 void CoaxRosControl::load_control_params(ros::NodeHandle &n)
 {
+	double Kp_Fx;
+	double Kp_Fy;
 	double Kp_Fz;
+	double Kd_Fx;
+	double Kd_Fy;
 	double Kd_Fz;
 	double Kp_Mz;
 	double Kd_Mz;
+	double Kpq_roll;
+	double Kpq_pitch;
+	n.getParam("lateral/proportional/x",Kp_Fx);
+	n.getParam("lateral/proportional/y",Kp_Fy);
 	n.getParam("heave_yaw/force/proportional",Kp_Fz);
+	n.getParam("lateral/differential/x",Kd_Fx);
+	n.getParam("lateral/differential/y",Kd_Fy);
 	n.getParam("heave_yaw/force/differential",Kd_Fz);
 	n.getParam("heave_yaw/moment/proportional",Kp_Mz);
 	n.getParam("heave_yaw/moment/differential",Kd_Mz);
+	n.getParam("pq_damping/roll",Kpq_roll);
+	n.getParam("pq_damping/pitch",Kpq_pitch);
 	SetHeaveYawGains(Kp_Fz, Kd_Fz, Kp_Mz, Kd_Mz);
+	SetLateralGains(Kp_Fx, Kp_Fy, Kd_Fx, Kd_Fy, Kpq_roll, Kpq_pitch);
 }
 
 

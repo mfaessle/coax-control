@@ -10,26 +10,26 @@ offset:
   lower: 0.103
 
 linkage_factor:
-  upper: 0.6130
-  lower: 0.5176
+  upper: 0.659294
+  lower: 0.631363
 
 spring_constant:
-  upper: 0.0542
-  lower: 0.2139
+  upper: 0.074306
+  lower: 0.190327
 
 thrust_factor:
-  upper: 2.2607e-5
-  lower: 3.1531e-5
+  upper: 2.03195e-5
+  lower: 3.69007e-5
 
 moment_factor:
-  upper: 9.9708e-7
-  lower: 8.9737e-7
+  upper: 1.0169e-6
+  lower: 8.94525e-7
 
 following_time:
-  bar: 1.6
+  bar: 1.78956
   motors:
-    upper: 0.185
-    lower: 0.115
+    upper: 0.192567
+    lower: 0.115429
 
 speed_conversion:
   slope:
@@ -41,10 +41,10 @@ speed_conversion:
 
 phase_lag:
   slope:
-    upper: -0.001282
-    lower: 0.001282
+    upper: -0.00206728
+    lower: 0.00181741
   offset:
-    upper: 0.1789
-    lower: -0.0094
+    upper: 0.176401
+    lower: 0.0145523
 
 max_swashplate_angle: 0.26

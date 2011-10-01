@@ -12,7 +12,6 @@
   <depend package="armadillo"/>
   <depend package="nav_msgs"/>
   <depend package="coax_msgs"/>
-  <depend package="coax_interface"/>
   <depend package="coax_server"/>
 
 </package>
