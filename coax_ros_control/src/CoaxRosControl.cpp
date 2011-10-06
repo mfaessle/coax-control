@@ -140,7 +140,7 @@ void CoaxRosControl::coaxOdomCallback(const nav_msgs::Odometry::ConstPtr & messa
 	time_now = ros::Time::now().toSec();
 	if (FIRST_RUN){
 		time_prev = time_now;
-		FIRST_RUN = 0;
+		FIRST_RUN = false;
 	}
 	double delta_t = time_now - time_prev;
 	

@@ -6,14 +6,6 @@ heave_yaw:
     proportional: 0.013893
     differential: 0.00166716
 
-lateral:
-  proportional:
-    x: 0.7
-    y: 0.7
-  differential:
-    x: 0.4
-    y: 0.4
-
-pq_damping:
+rate_damping:
   roll: -0.04
   pitch: 0.04
