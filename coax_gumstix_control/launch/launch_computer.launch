@@ -1,0 +1,87 @@
+<launch>
+
+    <node pkg="vicon"
+          name="vicon"
+          type="vicon"
+          output="screen">
+    </node>
+
+    <node pkg="vicon_calibrate"
+          name="vicon_calibrate"
+          type="vicon_calibrate"
+          output="screen"
+          clear_params="true">
+      <remap from="~values" to="/vicon/values"/>
+      <remap from="~names" to="/vicon/names"/>
+      <param name="calibration" value="$(find coax_vsk)/calibration/Coax56.xml"/>
+    </node>
+
+    <node pkg="vicon2odometry"
+          name="vicon2odometry"
+          type="vicon2odometry"       
+          output="screen">
+      <remap from="~names" to="/vicon/names"/>
+      <remap from="~values" to="/vicon/values"/>
+      <remap from="~pose" to="/vicon_calibrate/pose"/>
+      <remap from="~odom" to="/vicon2odometry/odom"/>
+      <param name="vsk" value="$(find coax_vsk)/vsk/Coax56.vsk"/>
+    </node>
+
+    <node pkg="odometry_smoother"
+          name="odometry_smoother"
+          type="odometry_smoother"
+          output="screen">
+      <remap from="~odom_in" to="/vicon2odometry/odom"/>
+      <remap from="~odom_out" to="/odom_smooth"/>
+      <rosparam file="$(find odometry_smoother)/config/noise.yaml"/>
+    </node>
+
+    <node pkg="ipc_nav_msgs"
+          name="nav_msgs_Odometry_publisher"
+          type="nav_msgs_Odometry_publisher"
+          output="screen">
+      <remap from="~topic" to="/odom_smooth"/>
+      <param name="message" value="odom56"/>
+    </node>
+
+    <node pkg="ipc_std_msgs"
+          name="Bool_nav_mode_subscriber"
+          type="std_msgs_Bool_subscriber"
+          output="screen">
+      <remap from="~topic" to="/matlab_nav_mode"/>
+      <param name="message" value="nav_mode56"/>
+    </node>
+
+    <node pkg="ipc_geometry_msgs"
+          name="Quaternion_fmdes_subscriber"
+          type="geometry_msgs_Quaternion_subscriber"
+          output="screen">
+      <remap from="~topic" to="/fmdes"/>
+      <param name="message" value="FM_des56"/>
+    </node>
+
+    <node pkg="ipc_geometry_msgs"
+          name="Quaternion_control_mode_publisher"
+          type="geometry_msgs_Quaternion_publisher"
+          output="screen">
+      <remap from="~topic" to="/control_mode"/>
+      <param name="message" value="control_mode56"/>
+    </node>
+
+    <node pkg="ipc_geometry_msgs"
+          name="Quaternion_coax_info_publisher"
+          type="geometry_msgs_Quaternion_publisher"
+          output="screen">
+      <remap from="~topic" to="/coax_info"/>
+      <param name="message" value="coax_info56"/>
+    </node>
+
+    <node pkg="ipc_geometry_msgs"
+          name="Quaternion_coax_imu_publisher"
+          type="geometry_msgs_Quaternion_publisher"
+          output="screen">
+      <remap from="~topic" to="/coax_imu"/>
+      <param name="message" value="coax_imu56"/>
+    </node>
+
+</launch>
