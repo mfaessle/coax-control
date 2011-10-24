@@ -35,10 +35,10 @@ public:
 		coax_data.position.x = message->gyro[0];
 		coax_data.position.y = -message->gyro[1];
 		coax_data.position.z = -message->gyro[2];
-		coax_data.orientation.x = message->rcChannel[0];
-		coax_data.orientation.y = message->rcChannel[2];
-		coax_data.orientation.z = message->rcChannel[4];
-		coax_data.orientation.w = message->rcChannel[6];
+		coax_data.orientation.x = message->o_attitude[2]; // upper motor
+		coax_data.orientation.y = message->o_altitude; // lower motor
+		coax_data.orientation.z = message->o_attitude[0]; // roll servo
+		coax_data.orientation.w = message->o_attitude[1]; // pitch servo
 
 		coax_data_pub.publish(coax_data);
 	}

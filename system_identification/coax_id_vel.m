@@ -3,8 +3,8 @@
 % u Inputs
 % load ViconData
 load ViconData_lyingcircle
-Nstart = 1;
-Nstop = size(Data.lintwist,2);
+Nstart = 2000;
+Nstop = 4000;%size(Data.lintwist,2);
 Time = Data.time(Nstart:Nstop)';
 
 % single measurements must be in rows!
