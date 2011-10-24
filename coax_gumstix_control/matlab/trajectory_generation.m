@@ -66,11 +66,11 @@ switch TYPE
     case 3 % LYINGCIRCLE
 
         radius     = 0.5;
-        omega      = 2*pi/10;
+        omega      = 2*pi/5;
         omega_vert = 2*omega;
-        vert_amp   = 0.2;
+        vert_amp   = 0;
         
-        initial_pose = [0.5 0 0.6 -pi]';
+        initial_pose = [0.5 0 1.0 -pi]';
         
         x_ref      = radius*cos(omega*t) - radius + initial_pose(1);
         y_ref      = radius*sin(omega*t) + initial_pose(2);

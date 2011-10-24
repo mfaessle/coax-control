@@ -21,8 +21,14 @@ typedef struct
 
 typedef struct
 {
+	double Kp_Fx;
+	double Kp_Fy;
 	double Kp_Fz;
+	
+	double Kd_Fx;
+	double Kd_Fy;
 	double Kd_Fz;
+	
 	double Kp_Mz;
 	double Kd_Mz;
 	
@@ -70,7 +76,8 @@ public:
 	void SetUpperPhaseLag(double zeta_mup, double zeta_bup);
 	void SetLowerPhaseLag(double zeta_mlo, double zeta_blo);
 	void SetMaximumSwashPlateAngle(double max_SPangle);
-	void SetHeaveYawGains(double Kp_Fz, double Kd_Fz, double Kp_Mz, double Kd_Mz);
+	void SetForceGains(double Kp_Fx, double Kp_Fy, double Kp_Fz, double Kd_Fx, double Kd_Fy, double Kd_Fz);
+	void SetYawMomentGains(double Kp_Mz, double Kd_Mz);
 	void SetRateDampingGains(double K_pq_roll, double K_pq_pitch);
 	void load_model_params(ros::NodeHandle &n);
 	void load_control_params(ros::NodeHandle &n);
@@ -105,6 +112,7 @@ private:
 	int coax_state_age;
 	int coax_nav_mode;
 	int raw_control_age;
+	int matlab_FM_age;
 	
 	double roll_trim;
 	double pitch_trim;
@@ -134,6 +142,9 @@ private:
 	double yaw_rate;
 	double Rb2w[3][3];
 	double FM_des[4];
+	double position[3];
+	double last_matactive_pos[3];
+	double last_matactive_ori;
 
 };
 

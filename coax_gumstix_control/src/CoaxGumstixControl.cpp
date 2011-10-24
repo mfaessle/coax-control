@@ -39,6 +39,7 @@ CoaxGumstixControl::CoaxGumstixControl(ros::NodeHandle & n)
 	coax_state_age = 0;
 	coax_nav_mode = 0;
 	raw_control_age = 0;
+	matlab_FM_age = 0;
 	
 	roll_trim = 0;
 	pitch_trim = 0;
@@ -65,6 +66,8 @@ CoaxGumstixControl::CoaxGumstixControl(ros::NodeHandle & n)
 	FM_des[1] = 0;
 	FM_des[2] = 0;
 	FM_des[3] = 0;
+	
+	position[0] = position[1] = position[2] = 0;
 	
 }
 CoaxGumstixControl::~CoaxGumstixControl()
@@ -116,6 +119,7 @@ void CoaxGumstixControl::coaxStateCallback(const coax_msgs::CoaxState::ConstPtr 
 	coax_nav_mode = message->mode.navigation;
 	
 	if ((battery_voltage < 10.80) && !LOW_POWER_DETECTED){
+		ROS_INFO("Battery Low!!! (%fV)",battery_voltage);
 		LOW_POWER_DETECTED = true;
 	}
 	
@@ -147,13 +151,14 @@ void CoaxGumstixControl::coaxStateCallback(const coax_msgs::CoaxState::ConstPtr 
 void CoaxGumstixControl::coaxOdomCallback(const nav_msgs::Odometry::ConstPtr & message)
 {
 	
-	// getting current time
-	time_now = ros::Time::now().toSec();
-	if (FIRST_RUN){
-		time_prev = time_now;
-		FIRST_RUN = false;
-	}
-	double delta_t = time_now - time_prev;
+	position[0] = message->pose.pose.position.x;
+	position[1] = message->pose.pose.position.y;
+	position[2] = message->pose.pose.position.z;
+	
+	double velocity[3];
+	velocity[0] = message->twist.twist.linear.x;
+	velocity[1] = message->twist.twist.linear.y;
+	velocity[2] = message->twist.twist.linear.z;
 	
 	// Get orientation quaternion
 	double qx = message->pose.pose.orientation.x;
@@ -170,7 +175,19 @@ void CoaxGumstixControl::coaxOdomCallback(const nav_msgs::Odometry::ConstPtr & m
 	Rb2w[1][2] = 2*qy*qz-2*qx*qw;
 	Rb2w[2][0] = 2*qx*qz-2*qy*qw;
 	Rb2w[2][1] = 2*qy*qz+2*qx*qw;
-	Rb2w[2][2] = 1-2*qx*qx-2*qy*qy;
+	Rb2w[2][2] = 1-2*qx*qx-2*qy*qy;	
+	
+	// getting current time
+	time_now = ros::Time::now().toSec();
+	if (FIRST_RUN){
+		time_prev = time_now;
+		last_matactive_pos[0] = position[0];
+		last_matactive_pos[1] = position[1];
+		last_matactive_pos[2] = position[2];
+		last_matactive_ori = atan2(Rb2w[1][0],Rb2w[0][0]);
+		FIRST_RUN = false;
+	}
+	double delta_t = time_now - time_prev;
 	
 	// body rates
 	roll_rate = message->twist.twist.angular.x;
@@ -205,7 +222,8 @@ void CoaxGumstixControl::coaxOdomCallback(const nav_msgs::Odometry::ConstPtr & m
 	prev_z_bar[1] = z_bar[1];
 	prev_z_bar[2] = z_bar[2];
 	
-	double control[4];
+	double control[4] = {};
+	double ori_error;
 	
 	// roll/pitch damping
 	double FM_des_damp[4];
@@ -240,11 +258,22 @@ void CoaxGumstixControl::coaxOdomCallback(const nav_msgs::Odometry::ConstPtr & m
 			// control =
 			// set control commands
 			//setControls(control);
-		} else {
+		} else if (coax_nav_mode != 0) {
 			//stabilizing control ...
-			// control = 
-			// set control commands
-			//setControls(control);
+			FM_des_damp[0] = -control_params.Kp_Fx*(position[0]-last_matactive_pos[0]) - control_params.Kd_Fx*(velocity[0]) - Rb2w[0][0]*FD_body[0] - Rb2w[0][1]*FD_body[1];
+			FM_des_damp[1] = -control_params.Kp_Fy*(position[1]-last_matactive_pos[1]) - control_params.Kd_Fy*(velocity[1]) - Rb2w[1][0]*FD_body[0] - Rb2w[1][1]*FD_body[1];
+			FM_des_damp[2] = -control_params.Kp_Fz*(position[2]-last_matactive_pos[2]) - control_params.Kd_Fz*(velocity[2]) + model_params.mass*9.81;
+			
+			ori_error = atan2(Rb2w[1][0],Rb2w[0][0]) - last_matactive_ori;
+			while (ori_error > M_PI) {
+				ori_error = ori_error - 2*M_PI;
+			}
+			while (ori_error < -M_PI) {
+				ori_error = ori_error + 2*M_PI;
+			}
+			FM_des_damp[3] = -control_params.Kp_Mz*ori_error - control_params.Kd_Mz*r;
+						
+			controlFunction(control, FM_des_damp, z_bar, model_params);
 		}
 	}
 
@@ -269,6 +298,12 @@ void CoaxGumstixControl::coaxFMCallback(const geometry_msgs::Quaternion::ConstPt
 	FM_des[2] = message->z;
 	FM_des[3] = message->w;
 	
+	last_matactive_pos[0] = position[0];
+	last_matactive_pos[1] = position[1];
+	last_matactive_pos[2] = position[2];
+	last_matactive_ori = atan2(Rb2w[1][0],Rb2w[0][0]);
+	
+	matlab_FM_age = 0;
 	MATLAB_ACTIVE = true;
 }
 
@@ -457,17 +492,32 @@ void CoaxGumstixControl::rawControlPublisher(unsigned int rate)
 			raw_control.motor2 = motor_lo;
 			raw_control.servo1 = servo_roll + roll_trim;
 			raw_control.servo2 = servo_pitch + pitch_trim;
-		} else if (raw_control_age < 21) {// if we do not get new control_values for too long -> stabilizing control
-			MATLAB_ACTIVE = false;
+		} else {// no more new Odometry information from Vicon
+			raw_control.motor1 = 0;
+			raw_control.motor2 = 0;
+			raw_control.servo1 = 0;
+			raw_control.servo2 = 0;
 		}
 		
 		if ((coax_state_age > 0.5*rate) && (coax_state_age <= 0.5*rate + 1)) {
 			ROS_INFO("No more Data from CoaX Board!!!");
 		}
 		
+		if (matlab_FM_age > 10 && MATLAB_ACTIVE) { // Matlab not active anymore -> switch to oboard hover control
+			MATLAB_ACTIVE = false;
+			ROS_INFO("Matlab is not active!!!");
+		}
+		
 		raw_control_pub.publish(raw_control);
-		raw_control_age += 1;
-		coax_state_age += 1;
+		if (raw_control_age < 1000) {
+			raw_control_age += 1;
+		}
+		if (coax_state_age < 1000) {
+			coax_state_age += 1;
+		}
+		if (matlab_FM_age < 1000) {
+			matlab_FM_age += 1;
+		}
 		
 		// Estimate rotor speeds (do that here to have the same frequency as we apply inputs)
 		double prev_Omega_up_des = model_params.rs_mup*prev_motor_up + model_params.rs_bup;
@@ -599,10 +649,19 @@ void CoaxGumstixControl::SetMaximumSwashPlateAngle(double max_SPangle)
 	model_params.max_SPangle = max_SPangle;
 }
 
-void CoaxGumstixControl::SetHeaveYawGains(double Kp_Fz, double Kd_Fz, double Kp_Mz, double Kd_Mz)
+void CoaxGumstixControl::SetForceGains(double Kp_Fx, double Kp_Fy, double Kp_Fz, double Kd_Fx, double Kd_Fy, double Kd_Fz)
 {
+	control_params.Kp_Fx = Kp_Fx;
+	control_params.Kp_Fy = Kp_Fy;
 	control_params.Kp_Fz = Kp_Fz;
+	
+	control_params.Kd_Fx = Kd_Fx;
+	control_params.Kd_Fy = Kd_Fy;
 	control_params.Kd_Fz = Kd_Fz;
+}
+
+void CoaxGumstixControl::SetYawMomentGains(double Kp_Mz, double Kd_Mz)
+{
 	control_params.Kp_Mz = Kp_Mz;
 	control_params.Kd_Mz = Kd_Mz;
 }
@@ -689,19 +748,32 @@ void CoaxGumstixControl::load_model_params(ros::NodeHandle &n)
 
 void CoaxGumstixControl::load_control_params(ros::NodeHandle &n)
 {
+	double Kp_Fx;
+	double Kp_Fy;
 	double Kp_Fz;
+	
+	double Kd_Fx;
+	double Kd_Fy;
 	double Kd_Fz;
+	
 	double Kp_Mz;
 	double Kd_Mz;
 	double K_pq_roll;
 	double K_pq_pitch;
-	n.getParam("heave_yaw/force/proportional",Kp_Fz);
-	n.getParam("heave_yaw/force/differential",Kd_Fz);
-	n.getParam("heave_yaw/moment/proportional",Kp_Mz);
-	n.getParam("heave_yaw/moment/differential",Kd_Mz);
+	n.getParam("force/proportional/x",Kp_Fx);
+	n.getParam("force/proportional/y",Kp_Fy);
+	n.getParam("force/proportional/z",Kp_Fz);
+	
+	n.getParam("force/differential/x",Kd_Fx);
+	n.getParam("force/differential/y",Kd_Fy);
+	n.getParam("force/differential/z",Kd_Fz);
+	
+	n.getParam("yawmoment/proportional",Kp_Mz);
+	n.getParam("yawmoment/differential",Kd_Mz);
 	n.getParam("rate_damping/roll",K_pq_roll);
 	n.getParam("rate_damping/pitch",K_pq_pitch);
-	SetHeaveYawGains(Kp_Fz, Kd_Fz, Kp_Mz, Kd_Mz);
+	SetForceGains(Kp_Fx, Kp_Fy, Kp_Fz, Kd_Fx, Kd_Fy, Kd_Fz);
+	SetYawMomentGains(Kp_Mz, Kd_Mz);
 	SetRateDampingGains(K_pq_roll,K_pq_pitch);
 }
 

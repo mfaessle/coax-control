@@ -1,3 +1,5 @@
+function [param] = parameter()
+
 %=================================
 %%% Constant model parameters
 %=================================
@@ -52,7 +54,6 @@ max_SBangle   = 15/360*2*pi;     % maximum stabilizer bar tilt angle [rad]
 max_SPangle   = 15/360*2*pi;     % maximum swash plate tilt angle [rad]
 max_Sspeed    = 9.5/4;           % maximum swash plate tilting speed [rad/s]
 
-%% Handle for control_function
 
 param.m = m;
 param.g = g;
@@ -82,4 +83,6 @@ param.zeta_mlo = zeta_mlo;
 param.zeta_blo = zeta_blo;
 param.max_SPangle = max_SPangle;
 param.Omega_max = Omega_max;
+
+end
 

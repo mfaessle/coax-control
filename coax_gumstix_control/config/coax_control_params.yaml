@@ -1,10 +1,16 @@
-heave_yaw:
-  force:
-    proportional: 4
-    differential: 2
-  moment:
-    proportional: 0.013893
-    differential: 0.00166716
+force:
+  proportional:
+    x: 0.7 
+    y: 0.7
+    z: 4
+  differential:
+    x: 0.4
+    y: 0.4
+    z: 2
+
+yawmoment:
+  proportional: 0.013893
+  differential: 0.00166716
 
 rate_damping:
   roll: -0.04

@@ -1,3 +1,11 @@
+function [mpc_mat] = mpc_matrices(Ts_highlevel,N,Q,R,m)
+%UNTITLED Summary of this function goes here
+%   Detailed explanation goes here
+
+n = 6; % number of states
+p = 3; % number of inputs
+g = 9.81;
+
 A = diag([1 1 1],3);
 B = [zeros(p); 1/m*eye(p)];
 C = eye(n);
@@ -6,9 +14,6 @@ D = zeros(n,p);
 sysd = c2d(ss(A,B,C,D),Ts_highlevel,'zoh');
 Ad = sysd.A;
 Bd = sysd.B;
-
-Q = diag([1 1 10 2 2 10]);
-R = eye(p);
 
 [~,P]   = dlqr(Ad,Bd,Q,R);
 
@@ -32,8 +37,8 @@ H = B_tilde'*Q_tilde*B_tilde + R_tilde;
 H = (H+H')/2; %Just to prevent Warning from Matlab
 
 % max force constraints
-F_max = [0.1 0.1 2]';
-F_min = [-0.1 -0.1 -m*g]';
+F_max = [0.2 0.2 2]';
+F_min = [-0.2 -0.2 -m*g]';
 A_ineq_f = [eye(p*N); -eye(p*N)];
 b_ineq_f = [repmat(F_max,N,1); repmat(-F_min,N,1)];
 
@@ -47,7 +52,13 @@ b_ineq_df = [repmat(dF_max,N-1,1); repmat(dF_max,N-1,1)];
 A_ineq = [A_ineq_f; A_ineq_df];
 b_ineq = [b_ineq_f; b_ineq_df];
 
-% cont_param.F = F;
-% cont_param.H = H;
-% cont_param.A_ineq = A_ineq;
-% cont_param.b_ineq = b_ineq;
+mpc_mat.F = F;
+mpc_mat.H = H;
+mpc_mat.A_ineq = A_ineq;
+mpc_mat.b_ineq = b_ineq;
+mpc_mat.Q_tilde = Q_tilde;
+mpc_mat.B_tilde = B_tilde;
+mpc_mat.R_tilde = R_tilde;
+
+end
+
