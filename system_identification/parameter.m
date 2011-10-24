@@ -34,7 +34,7 @@ zeta_bup      = 0.1789;          % offset of phase lag function upper rotor [rad
 zeta_mlo      = 0.001282;        % slope of phase lag function lower rotor [s] (Skybotix)
 zeta_blo      = -0.0094;         % offset of phase lag function lower rotor [rad] (Skybotix)
 
-max_SPangle   = 15/360*2*pi;     % maximum swash plate tilt angle [rad]
+max_SPangle   = 14/360*2*pi;     % maximum swash plate tilt angle [rad]
 Omega_max     = 320;             % maximum rotor speed [rad/s]
 
 param.m = m;

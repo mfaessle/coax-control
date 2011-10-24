@@ -2,9 +2,9 @@
 % y Outputs
 % u Inputs
 % load ViconData
-load ViconDatacircle
-Nstart = 3000;
-Nstop = 7000;
+load ViconData_lyingcircle
+Nstart = 1;
+Nstop = size(Data.lintwist,2);
 Time = Data.time(Nstart:Nstop)';
 
 % single measurements must be in rows!
@@ -13,23 +13,24 @@ u = Data.inputs(:,Nstart:Nstop)';
 
 %% load parameters
 run parameter
-
+load nlgr_hy
 
 %% create IDDATA object with CoaX data
 z = iddata(y, u, [], 'SamplingInstants', Time);%, 'Name', 'CoaX_data');
 set(z, 'InputName', {'Motor up' 'Motor lo' 'Servo roll' 'Servo pitch'}, ...
        'InputUnit', {'-' '-' '-' '-'});
-set(z, 'OutputName', {'x pos' 'y pos' 'z pos' 'roll' 'pitch' 'yaw'}, ...
-       'OutputUnit', {'m' 'm' 'm' 'rad' 'rad' 'rad'});
+set(z, 'OutputName', {'x vel' 'y vel' 'z vel' 'p' 'q' 'r'}, ...
+       'OutputUnit', {'m/s' 'm/s' 'm/s' 'rad/s' 'rad/s' 'rad/s'});
 set(z, 'TimeUnit', 's');
 
 %% creating a CoaX IDNLGREY model object
 FileName      = 'CoaX_grey_box_vel'; % File describing the model structure.
 Order         = [6 4 17]; % Model orders [ny nu nx].
-Parameters    = {m; g; Ixx; Iyy; Izz; d_up; d_lo; k_springup; k_springlo; ...
-                l_up; l_lo; k_Tup; k_Tlo; k_Mup; k_Mlo; Tf_motup; Tf_motlo; ...
-                Tf_up; rs_mup; rs_bup; rs_mlo; rs_blo; zeta_mup; zeta_bup; ...
-                zeta_mlo; zeta_blo; max_SPangle}; % Initial parameters.
+Parameters    = getpar(nlgr);
+% Parameters    = {m; g; Ixx; Iyy; Izz; d_up; d_lo; k_springup; k_springlo; ...
+%                 l_up; l_lo; k_Tup; k_Tlo; k_Mup; k_Mlo; Tf_motup; Tf_motlo; ...
+%                 Tf_up; rs_mup; rs_bup; rs_mlo; rs_blo; zeta_mup; zeta_bup; ...
+%                 zeta_mlo; zeta_blo; max_SPangle}; % Initial parameters.
 Omega_lo0 = sqrt(m*g/(k_Tup*k_Mlo/k_Mup + k_Tlo));
 Omega_up0 = sqrt(k_Mlo/k_Mup*Omega_lo0^2);
 InitialStates = [0 0 0  y(1,1:3)  0 0 0  y(1,4:6)  Omega_up0 Omega_lo0  0 0 1]'; % Initial initial states.
@@ -37,8 +38,8 @@ Ts            = 0;                     % Time-continuous system.
 nlgr = idnlgrey(FileName, Order, Parameters, InitialStates, Ts, 'Name', 'CoaX');
 set(nlgr, 'InputName', {'Motor up' 'Motor lo' 'Servo roll' 'Servo pitch'}, ...
           'InputUnit', {'-' '-' '-' '-'}, ...
-          'OutputName', {'x pos' 'y pos' 'z pos' 'roll' 'pitch' 'yaw'}, ...
-          'OutputUnit', {'m' 'm' 'm' 'rad' 'rad' 'rad'}, ...
+          'OutputName', {'x vel' 'y vel' 'z vel' 'p' 'q' 'r'}, ...
+          'OutputUnit', {'m/s' 'm/s' 'm/s' 'rad/s' 'rad/s' 'rad/s'}, ...
           'TimeUnit', 's');
 
 setinit(nlgr, 'Name', {'x-position' 'y-position' 'z-position' 'x-velocity' ...
@@ -67,7 +68,7 @@ setpar(nlgr, 'Name', {'helicopter mass' ...
                       'moment factor lower rotor' ...
                       'rise time upper motor' ...
                       'rise time lower motor' ...
-                      'upper rotor rise time' ...
+                      'stabilizer bar rise time' ...
                       'slope of input to upper rotor speed conversion' ...
                       'offset of input to upper rotor speed conversion' ...
                       'slope of input to lower rotor speed conversion' ...
@@ -101,12 +102,12 @@ nlgr.Parameters(7).Fixed  = true; % d_lo
 % nlgr.Parameters(9).Fixed  = true; % k_springlo
 % nlgr.Parameters(10).Fixed = true; % l_up
 % nlgr.Parameters(11).Fixed = true; % l_lo
-% nlgr.Parameters(12).Fixed = true; % k_Tup
-% nlgr.Parameters(13).Fixed = true; % k_Tlo
-% nlgr.Parameters(14).Fixed = true; % k_Mup
-% nlgr.Parameters(15).Fixed = true; % k_Mlo
-% nlgr.Parameters(16).Fixed = true; % Tf_motup
-% nlgr.Parameters(17).Fixed = true; % Tf_motlo
+nlgr.Parameters(12).Fixed = true; % k_Tup
+nlgr.Parameters(13).Fixed = true; % k_Tlo
+nlgr.Parameters(14).Fixed = true; % k_Mup
+nlgr.Parameters(15).Fixed = true; % k_Mlo
+nlgr.Parameters(16).Fixed = true; % Tf_motup
+nlgr.Parameters(17).Fixed = true; % Tf_motlo
 % nlgr.Parameters(18).Fixed = true; % Tf_up
 nlgr.Parameters(19).Fixed = true; % rs_mup
 nlgr.Parameters(20).Fixed = true; % rs_bup

@@ -1,0 +1,81 @@
+<launch>
+
+  <node pkg="vicon"
+        name="vicon"
+        type="vicon"
+        output="screen">
+  </node>
+
+    <node pkg="vicon_calibrate"
+          name="vicon_calibrate"
+          type="vicon_calibrate"
+          output="screen"
+          clear_params="true">
+      <remap from="~values" to="/vicon/values"/>
+      <remap from="~names" to="/vicon/names"/>
+      <param name="calibration" value="$(find coax_vsk)/calibration/Coax56.xml"/>
+    </node>
+
+    <node pkg="vicon2odometry"
+          name="vicon2odometry"
+          type="vicon2odometry"       
+          output="screen">
+      <remap from="~names" to="/vicon/names"/>
+      <remap from="~values" to="/vicon/values"/>
+      <remap from="~pose" to="/vicon_calibrate/pose"/>
+      <remap from="~odom" to="/vicon2odometry/odom"/>
+      <param name="vsk" value="$(find coax_vsk)/vsk/Coax56.vsk"/>
+      <param name="history" value="1"/>
+    </node>
+
+    <node pkg="odometry_smoother"
+          name="odometry_smoother"
+          type="odometry_smoother"
+          output="screen">
+      <remap from="~odom_in" to="/vicon2odometry/odom"/>
+      <remap from="~odom_out" to="/odom_smooth"/>
+      <rosparam file="$(find odometry_smoother)/config/noise.yaml"/>
+    </node>
+
+    <node pkg="ipc_nav_msgs"
+          name="nav_msgs_Odometry_publisher"
+          type="nav_msgs_Odometry_publisher"
+          output="screen">
+      <remap from="~topic" to="/odom_smooth"/>
+      <param name="message" value="odom56"/>
+    </node>
+
+    <node pkg="coax_server"
+          name="coax"
+          type="coax_server"
+          output="screen"
+          args="/dev/tty.usbserial-A800f3Zv:1">
+      <remap from="/coax_server/state" to="/state"/>
+      <remap from="/coax_server/configure_comm" to="/configure_comm"/>
+    </node>
+
+    <node pkg="coax_interface"
+          name="coax_interface"
+          type="coax_interface"
+          output="screen">
+      <remap from="/coax_interface/configure_comm" to="/configure_comm"/>
+      <param name="frequency" value="100"/>
+    </node>
+
+    <node pkg="manual_sysid"
+          name="manual_sysid"
+          type="manual_sysid"
+          output="screen">
+      <remap from="/manual_sysid/state" to="/state"/>
+      <remap from="/manual_sysid/coax_data" to="/coax_data"/>
+    </node>
+
+    <node pkg="ipc_geometry_msgs"
+          name="Pose_coaxdata_publisher"
+          type="geometry_msgs_Pose_publisher"
+          output="screen">
+      <remap from="~topic" to="/coax_data"/>
+      <param name="message" value="coax_data"/>
+    </node>
+
+</launch>

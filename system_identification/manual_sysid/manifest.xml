@@ -1,0 +1,19 @@
+<package>
+  <description brief="manual_sysid">
+
+     manual_sysid
+
+  </description>
+  <author>Matthias Faessler</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/manual_sysid</url>
+  <depend package="roscpp"/>
+  <depend package="nav_msgs"/>
+  <depend package="geometry_msgs"/>
+  <depend package="coax_msgs"/>
+  <depend package="coax_server"/>
+
+</package>
+
+
