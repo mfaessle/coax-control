@@ -6,12 +6,12 @@ force:
   differential:
     x: 0.4
     y: 0.4
-    z: 2
+    z: 2.5
 
 yawmoment:
   proportional: 0.013893
   differential: 0.00166716
 
 rate_damping:
-  roll: -0.04
-  pitch: 0.04
+  roll: -0.02
+  pitch: 0.02

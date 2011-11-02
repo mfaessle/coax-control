@@ -41,8 +41,8 @@ CoaxGumstixControl::CoaxGumstixControl(ros::NodeHandle & n)
 	raw_control_age = 0;
 	matlab_FM_age = 0;
 	
-	roll_trim = 0;
-	pitch_trim = 0;
+	roll_trim = 0.08;
+	pitch_trim = 0.1;
 	motor_up = prev_motor_up = 0;
 	motor_lo = prev_motor_lo = 0;
 	servo_roll = 0;
@@ -204,9 +204,9 @@ void CoaxGumstixControl::coaxOdomCallback(const nav_msgs::Odometry::ConstPtr & m
 		b_z_bardot[2] = b_z_bardotz;
 	}
 	
-	double p = message->twist.twist.angular.x;
-	double q = message->twist.twist.angular.y;
-	double r = imu_r;
+	double p = roll_rate;
+	double q = pitch_rate;
+	double r = yaw_rate;
 	
 	double z_bar[3];
 	z_bar[0] = prev_z_bar[0] + (r*prev_z_bar[1] - q*prev_z_bar[2] + b_z_bardot[0])*delta_t;
@@ -389,6 +389,7 @@ void CoaxGumstixControl::controlFunction(double* control, double* FM_des, double
 	z_Tup[1] = sin(zeta)*z_Tup_p[0] + cos(zeta)*z_Tup_p[1];
 	z_Tup[2] = z_Tup_p[2];
 	
+	
 	// Lower thrust vector direction
 	double z_Tlo[3];
 	if (Omega_lo < 10) {
@@ -400,6 +401,14 @@ void CoaxGumstixControl::controlFunction(double* control, double* FM_des, double
 		z_Tlo[1] = 1/(k_Tlo*Omega_lo*Omega_lo)*(Rb2w[0][1]*FM_des[0] + Rb2w[1][1]*FM_des[1]);
 		z_Tlo[2] = sqrt(1-z_Tlo[0]*z_Tlo[0]-z_Tlo[1]*z_Tlo[1]);
 	}
+	/*
+	double c = 0.45;
+	double a_lo = -c*(Rb2w[0][1]*FM_des[0] + Rb2w[1][1]*FM_des[1]);
+	double b_lo = c*(Rb2w[0][0]*FM_des[0] + Rb2w[1][0]*FM_des[1]);
+	z_Tlo[0] = cos(a_lo)*sin(b_lo);
+	z_Tlo[1] = -sin(a_lo);
+	z_Tlo[2] = cos(a_lo)*cos(b_lo);
+	*/
 	
 	// correct for phase lag of servo inputs
 	zeta = zeta_mlo*Omega_lo + zeta_blo;
@@ -788,7 +797,10 @@ int main(int argc, char** argv)
 	CoaxGumstixControl api(n);
 	
 	ros::Duration(1.5).sleep(); // make sure coax_server has enough time to boot up
-	api.configureComm(100, SBS_MODES | SBS_BATTERY | SBS_GYRO); // configuration of sending back data from CoaX
+	
+	int comm_freq;
+	n.param("comm_freq", comm_freq, 100);
+	api.configureComm(comm_freq, SBS_MODES | SBS_BATTERY | SBS_GYRO); // configuration of sending back data from CoaX
 	api.setTimeout(500, 5000);
 	
 	int CoaX;
@@ -799,10 +811,10 @@ int main(int argc, char** argv)
 	
 	api.load_control_params(n);
 	
-	int frequency;
-	n.param("frequency", frequency, 100);
+	int pub_freq;
+	n.param("pub_freq", pub_freq, 100);
 	
-	api.rawControlPublisher(frequency);
+	api.rawControlPublisher(pub_freq);
 
 	return(0);
 }

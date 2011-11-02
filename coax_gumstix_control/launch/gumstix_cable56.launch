@@ -71,7 +71,8 @@
       <remap from="/coax_gumstix_control/set_timeout" to="/set_timeout"/>
       <remap from="/coax_gumstix_control/set_control_mode" to="/set_control_mode"/>
 
-      <param name="frequency" value="100"/>
+      <param name="comm_freq" value="100"/>
+      <param name="pub_freq" value="100"/>
       <param name="CoaX" value="56"/>
 
       <rosparam file="$(find coax_gumstix_control)/config/coax_parameters.yaml"/>

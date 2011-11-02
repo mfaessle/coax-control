@@ -79,7 +79,7 @@ e_v = [xdot ydot zdot]' - [xdot_T ydot_T zdot_T]';
 e_i(1:3,1) = e_i_prev(1:3,1) + e_p*dt; % anti windup?
 
 
-F_des = -K_p*e_p - K_v*e_v - K_i*e_i(1:3,1) + m*[xddot_T yddot_T zddot_T]' + m*g*[0 0 1]';
+F_des = -K_p*e_p - K_v*e_v - K_i*e_i(1:3,1) + 0.3*m*[xddot_T yddot_T zddot_T]' + m*g*[0 0 1]';
 
 ori_error = atan2(Rb2w(2,1),Rb2w(1,1)) - psi_T;
 while (ori_error > pi)
