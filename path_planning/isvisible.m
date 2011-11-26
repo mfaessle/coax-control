@@ -38,34 +38,30 @@ if size(A,1) ~= sum(n)
 end
 
 nobst = length(n);
-occluding = zeros(nobst,1);
+n_constr = sum(n);
 
+% create inequality matrices
+Aineq = zeros(n_constr+3*nobst,nobst*2);
+bineq = zeros(n_constr+3*nobst,1);
 for j = 1:nobst
     Aj = A(sum(n(1:j-1))+1:sum(n(1:j)),:);
     bj = b(sum(n(1:j-1))+1:sum(n(1:j)));
-    if (sum(Aj*x <= bj) == n(j) || sum(Aj*y <= bj) == n(j)) % check if any poitn is inside the obstacle
-        visibility = 0;
-        if (nargout == 2)
-            occluding(j) = 1;
-        else
-            break;
-        end
-    else
-        Aineq = [-ones(n(j),1) Aj*(y-x); -1 0; 0 1; 0 -1];
-        bineq = [bj - Aj*x; 0; 1; 0];
-        f = [1 0]';
-        c = linprog(f,Aineq,bineq,[],[],[],[],[],optimset('LargeScale','off','Display','off'));
+    
+    Aineq(sum(n(1:j-1))+1:sum(n(1:j)),(j-1)*2+1:j*2) = [-ones(n(j),1) Aj*(y-x)];
+    bineq(sum(n(1:j-1))+1:sum(n(1:j))) = bj - Aj*x;
+    
+    Aineq(n_constr+(j-1)*3+1:n_constr+j*3,(j-1)*2+1:j*2) = [-1 0; 0 1; 0 -1];
+    bineq(n_constr+(j-1)*3+1:n_constr+j*3) = [0 1 0]';
+end
 
-        if (c(1) < 1e-4)
-            visibility = 0;
-            if (nargout == 2)
-                occluding(j) = 1;
-            else
-                break;
-            end
-        end
-    end
+% solve linear program
+f = repmat([1 0]',nobst,1);
+c = linprog(f,Aineq,bineq,[],[],[],[],[],optimset('LargeScale','off','Display','off'));
+
+occluding = (c(1:2:end) < 1e-4);
+
+if (sum(occluding) > 0)
+    visibility = 0;
 end
 
 end
-

@@ -45,6 +45,8 @@ if n<4+kc
     error('poly_trajectory:Input', 'n must be larger or equal to 4+kc.');
 end
 
+new_fact = [1 cumprod(1:n)];
+
 %% Initialize some Values
 dim = size(Waypoints,2);
 start_velaccel = zeros(dim,2);
@@ -78,7 +80,8 @@ for d = 1:dim
         H_basis = zeros(n-h+1);
         for i = 0:terms-1
             for j = 0:terms-1
-                num = factorial(n-i)/factorial(n-i-h)*factorial(n-j)/factorial(n-j-h);
+                num = new_fact(n-i+1)/new_fact(n-i-h+1)*new_fact(n-j+1)/new_fact(n-j-h+1);
+                % num = factorial(n-i)/factorial(n-i-h)*factorial(n-j)/factorial(n-j-h);
                 denom = 2*(n-h) + 1 - i - j;
                 H_basis(i+1,j+1) = num/denom;
             end
@@ -131,7 +134,8 @@ for d = 1:dim
     % Derivatives of Position
     for k = 1:kc
         ind = (n:-1:k);
-        factors = factorial(ind)./factorial(ind-k);
+        factors = new_fact(ind+1)./new_fact(ind-k+1);
+        % factors = factorial(ind)./factorial(ind-k);
         Ak = zeros(m+1,(n+1)*m);
         for j = 1:m
             if (j > 1)
@@ -155,7 +159,8 @@ for d = 1:dim
         % acceleration
         A2 = zeros(2,(n+1)*m);
         ind = (n:-1:2);
-        factors = factorial(ind)./factorial(ind-2);
+        factors = new_fact(ind+1)./new_fact(ind-2+1);
+        % factors = factorial(ind)./factorial(ind-2);
         A2(1,1:n-1) = (times(1).^(n-2:-1:0)).*factors;
         A2(2,end-n:end-2) = (times(end).^(n-2:-1:0)).*factors;
         A = [A; A2];
@@ -165,7 +170,7 @@ for d = 1:dim
         b = [b; b2];
         if (kc < 1)
             % velocity
-            A1 = zeros(6,3*(n+1)*m);
+            A1 = zeros(2,(n+1)*m);
             factors = (n:-1:1);
             A1(1,1:n) = (times(1).^(n-1:-1:0)).*factors;
             A1(2,end-n:end-1) = (times(end).^(n-1:-1:0)).*factors;
