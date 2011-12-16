@@ -31,7 +31,7 @@ boarders = Obstacles.boarders;
 
 O = length(n_constr);
 m = length(times) - 1;
-N = 1000;
+N = 100;
 hit_in = 0;
 obstacle = 0;
 

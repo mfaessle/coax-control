@@ -17,8 +17,6 @@ function [traj_param, times, Pathpoints] = plan_trajectory(Waypoints, duration, 
 %   Matthias Fässler 2011
 
 %%
-Points = [Obstacles.Vertices; Waypoints];
-
 n_poly = Polynomial.n_poly;
 kr = Polynomial.kr;
 weights = Polynomial.weights;
@@ -32,32 +30,58 @@ if (~check_feasibility(Waypoints,Obstacles))
 end
 
 %% Compute shortest feasible path
-p = size(Points,1);
-W = zeros(p,p);
+p = size(Obstacles.Vertices,1);
+W_V = zeros(p,p);
 for i = 1:p
     for j = i+1:p
-        W(i,j) = norm(Points(i,:)-Points(j,:));
-    end
-end
-W = W + W'; % make weigths symmetric
-feasible = 0;
-while feasible == 0
-    path = shortest_path(Obstacles.Vertices, Waypoints, W);
-    % check feasibility
-    feasible = 1;
-    for j = 1:length(path)-1
-        x = Points(path(j),:)';
-        y = Points(path(j+1),:)';
-        if (isvisible(x,y,Obstacles) == 0)
-            feasible = 0;
-            W(path(j),path(j+1)) = inf;
-            W(path(j+1),path(j)) = inf;
-        end
+        W_V(i,j) = norm(Obstacles.Vertices(i,:)-Obstacles.Vertices(j,:));
     end
 end
 
+path = [];
+Pathpoints = [];
+for i = 1:size(Waypoints,1)-1
+    % Create weight matrix of current path segment
+    Start = Waypoints(i,:);
+    End = Waypoints(i+1,:);
+    W = zeros(p+2,p+2);
+    W(2:p+1,2:p+1) = W_V;
+    W(i,p+2) = norm(Start - End);
+    for j = 1:p
+        W(1,j+1) = norm(Start - Obstacles.Vertices(j,:));
+        W(j+1,p+2) = norm(Obstacles.Vertices(j,:) - End);
+    end
+    W = W + W'; % make weigths symmetric
+    
+    % find feasible path segment
+    Seg_Points = [Start; Obstacles.Vertices; End];
+    feasible = 0;
+    while feasible == 0
+        seg_path = shortest_path(Seg_Points, W);
+        % check feasibility
+        feasible = 1;
+        for j = 1:length(seg_path)-1
+            x = Seg_Points(seg_path(j),:)';
+            y = Seg_Points(seg_path(j+1),:)';
+            if (isvisible(x,y,Obstacles) == 0)
+                feasible = 0;
+                W(seg_path(j),seg_path(j+1)) = inf;
+                W(seg_path(j+1),seg_path(j)) = inf;
+            end
+        end
+    end
+    
+    % Compose full path
+    if (i < size(Waypoints,1)-1)
+        path = [path seg_path(1:end-1)];
+        Pathpoints = [Pathpoints; Seg_Points(seg_path(1:end-1),:)];
+    else
+        path = [path seg_path];
+        Pathpoints = [Pathpoints; Seg_Points(seg_path,:)];
+    end    
+end
+
 %% Compute Polynomial Trajectory
-Pathpoints = Points(path,:);
 npp = size(Pathpoints,1);
 segmentLength = zeros(npp-1,1);
 for i = 1:npp-1

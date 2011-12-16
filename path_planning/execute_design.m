@@ -1,11 +1,12 @@
 %%
 clear
 close all
+warning off all
 clc
 
 %% Create Trajectory
-% Waypoints = [0 -1 1; 1.5 0 0; 0 1 1; -0.5 -1 1];
-Waypoints = [2 -1 1; 1.5 0 1.8; 2 1 1];
+Waypoints = [0 -1 1; 1.5 0 0; 0 1 1; -0.5 -1 1];
+% Waypoints = [2 -1 1; 1.5 0 1.8; 2 1 1];
 
 duration = 10;
 boarders = [-2 2 -2 2 -0.6 4];
@@ -15,6 +16,7 @@ extend_obst = 0.2;
 extend_points = 0.01;
 
 Obstacles = create_obstacles(n_inter,extend_obst,extend_points,boarders);
+
 Polynomial = polynomial_config();
 
 [traj_param, times, Pathpoints] = plan_trajectory(Waypoints,duration,Obstacles,Polynomial);
@@ -55,7 +57,7 @@ xlabel('$x [m]$')
 ylabel('$y [m]$')
 zlabel('$z [m]$')
 title(horzcat('$Parameters: n = ',num2str(Polynomial.n_poly),',  k_r = ',num2str(Polynomial.kr),',  k_c = ',num2str(Polynomial.kc),'$'))
-grid on;
+%grid on;
 hold off;
 
 t = [];
@@ -86,14 +88,14 @@ end
 figure(2)
 subplot(3,1,1)
 plot(t,x,'LineWidth',1.3)
-ylabel('Position [m]')
-legend('x','y','z')
+ylabel('Position $[m]$')
+legend('x','y','z',4)
 
 subplot(3,1,2)
 plot(t,v,'LineWidth',1.3)
-ylabel('Velocity [m/s]')
+ylabel('Velocity $[m/s]$')
 
 subplot(3,1,3)
 plot(t,a,'LineWidth',1.3)
-ylabel('Acceleration [m/s^2]')
-xlabel('time [s]')
+ylabel('Acceleration $[m/s2]$')
+xlabel('time $[s]$')

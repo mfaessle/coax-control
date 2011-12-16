@@ -26,41 +26,41 @@ function [Obstacles] = create_obstacles(n_inter, extend, extend_points, boarders
 %   Matthias Fässler 2011
 
 %% Obstacles
-% A1 = kron(eye(3),[1 -1]');
-% b1 = [1.5 -1 1 -0.5 0.2 0]';
-% n1 = size(A1,1);
-% 
-% A2 = kron(eye(3),[1 -1]');
-% b2 = [1.2 -0.8 0.5 -0.2 0.3 -0.1]';
-% n2 = size(A2,1);
-% 
-% A3 = kron(eye(3),[1 -1]');
-% b3 = [1.5 0 1.2 -1 0.4 0]';
-% n3 = size(A3,1);
-% 
-% A4 = kron(eye(3),[1 -1]');
-% b4 = [0.6 -0.2 0.6 -0.2 0.4 -0.25]';
-% n4 = size(A4,1);
-% 
-% A5 = kron(eye(3),[1 -1]');
-% b5 = [1 1 0.31 0.31 1.32 -0]';
-% n5 = size(A5,1);
-% 
-% % summarize obstacles
-% A = [A1; A5];
-% b = [b1; b5];
-% n = [n1 n5]; % number of constraints from obstacles
-
-%% Obstacles
 A1 = kron(eye(3),[1 -1]');
-b1 = [2.5 -1.5 0.4 0.4 1.5 -0]';
+b1 = [1.5 -1 1 -0.5 0.2 0]';
 n1 = size(A1,1);
 
+A2 = kron(eye(3),[1 -1]');
+b2 = [1.2 -0.8 0.5 -0.2 0.3 -0.1]';
+n2 = size(A2,1);
+
+A3 = kron(eye(3),[1 -1]');
+b3 = [1.5 0 1.2 -1 0.4 0]';
+n3 = size(A3,1);
+
+A4 = kron(eye(3),[1 -1]');
+b4 = [0.6 -0.2 0.6 -0.2 0.4 -0.25]';
+n4 = size(A4,1);
+
+A5 = kron(eye(3),[1 -1]');
+b5 = [1 1 0.31 0.31 1.32 -0]';
+n5 = size(A5,1);
+
 % summarize obstacles
-A = [A1];
-b = [b1];
-n = [n1]; % number of constraints from obstacles
-O = length(n); % number of obstacles
+A = [A1; A5];
+b = [b1; b5];
+n = [n1 n5]; % number of constraints from obstacles
+
+% %% Obstacles
+% A1 = kron(eye(3),[1 -1]');
+% b1 = [2.5 -1.5 0.4 0.4 1.5 -0]';
+% n1 = size(A1,1);
+% 
+% % summarize obstacles
+% A = [A1];
+% b = [b1];
+% n = [n1]; % number of constraints from obstacles
+% O = length(n); % number of obstacles
 
 %% Extend Obstacles
 if (~isempty(A))

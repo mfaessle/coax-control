@@ -122,8 +122,31 @@ Charging:
 	Recommended charging current: 0.5A - 1.0A
 	
 
+================
+Reprogramm IMU:
+================
+
+1. Requirements
+	1.1 CoaX programming board (http://www.skybotix.com/support/wiki/index.php/File:Pb_top.jpg)
+	1.2 MPLAB ICD 3 device
+	1.3 Install MPLAB IDE software (Windows)
+
+2. Connecting
+	2.1 Start MPLAB IDE software and make sure CoaX is turned off
+	2.2 Plug CoaX programming board onto CoaX board
+	2.3 Connect MPLAB ICD 3 to computer and IMU Jack of CoaX programming board (Make sure that it is the IMU Jack otherwise the bootloader on the main dsPIC gets erased!)
+	2.4 Switch CoaX on
+
+3. Reprogramming (In MPLAB IDE)
+	3.1 Select Programmer: Programmer -> Select Programmer -> MPLAB ICD 3
+	3.2 Configure Device: Configure -> Select Device -> dsPIC33FJ256GP506
+	3.3 Import File: File -> Import -> ASL_IMU.hex (download at http://support.skybotix.com/downloads.php)
+	3.4 Erase PIC: Programmer -> Erase Flash Device
+	3.5 Programm PIC: Programmer -> Program
 
 
+================
+Rotor Blades:
+================
 
-
-
+New rotor blades can be ordered on http://www.helipal.com/hm-5-10-z-01-main-rotor-blade.html?osCsid=cln4qah64681np9qqcbqbfunu3
