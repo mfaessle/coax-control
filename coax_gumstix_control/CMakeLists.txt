@@ -37,3 +37,5 @@ rosbuild_gensrv()
 #target_link_libraries(example ${PROJECT_NAME})
 
 rosbuild_add_executable(coax_gumstix_control src/CoaxGumstixControl.cpp)
+rosbuild_add_executable(test_publisher src/TestPublisher.cpp)
+rosbuild_add_executable(test_subscriber src/TestSubscriber.cpp)

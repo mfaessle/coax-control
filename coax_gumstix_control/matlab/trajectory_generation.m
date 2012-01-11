@@ -157,9 +157,9 @@ switch TYPE
         
     case 7 % step
         
-        stepsize = pi/2;
+        stepsize = 0.3;
         
-        initial_pose = [0 0 0.8 -0.8*pi]';
+        initial_pose = [1 0 1.0 -0.8*pi]';
         
         if (t < 10) 
             x_ref      = initial_pose(1);
@@ -176,14 +176,14 @@ switch TYPE
         else
             x_ref      = initial_pose(1);
             y_ref      = initial_pose(2);
-            z_ref      = initial_pose(3);
+            z_ref      = initial_pose(3) + stepsize;
             xdot_ref   = 0;
             ydot_ref   = 0;
             zdot_ref   = 0;
             xddot_ref  = 0;
             yddot_ref  = 0;
             zddot_ref  = 0;
-            psi_ref    = initial_pose(4) + stepsize;
+            psi_ref    = initial_pose(4);
             psidot_ref = 0;
         end
         

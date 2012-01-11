@@ -84,4 +84,12 @@
       <param name="message" value="coax_imu56"/>
     </node>
 
+    <node pkg="ipc_geometry_msgs"
+          name="Quaternion_rawcontrol_publisher"
+          type="geometry_msgs_Quaternion_publisher"
+          output="screen">
+      <remap from="~topic" to="/rawcontrol_ipc"/>
+      <param name="message" value="rawcontrol56"/>
+    </node>
+
 </launch>

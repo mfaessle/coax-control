@@ -1,0 +1,11 @@
+<launch>
+
+    <node pkg="coax_gumstix_control"
+          name="test_subscriber"
+          type="test_subscriber"
+          output="screen">
+
+      <remap from="/test_subscriber/fmdes" to="/fmdes"/>
+    </node>
+
+</launch>

@@ -92,6 +92,7 @@ private:
 	ros::Publisher coax_info_pub;
 	ros::Publisher coax_imu_pub;
 	ros::Publisher control_mode_pub;
+	ros::Publisher raw_control_ipc_pub;
 	
 	ros::Subscriber coax_fmdes_sub;
 	ros::Subscriber coax_odom_sub;
@@ -113,6 +114,7 @@ private:
 	int coax_nav_mode;
 	int raw_control_age;
 	int matlab_FM_age;
+	int odom_age;
 	
 	double roll_trim;
 	double pitch_trim;

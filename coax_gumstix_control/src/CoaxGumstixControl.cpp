@@ -23,6 +23,7 @@ CoaxGumstixControl::CoaxGumstixControl(ros::NodeHandle & n)
 	coax_info_pub = n.advertise<geometry_msgs::Quaternion>("info",1);
 	coax_imu_pub = n.advertise<geometry_msgs::Quaternion>("imu",1);
 	control_mode_pub = n.advertise<geometry_msgs::Quaternion>("control_mode",1);
+	raw_control_ipc_pub = n.advertise<geometry_msgs::Quaternion>("rawcontrol_ipc",1);
 	
 	coax_fmdes_sub = n.subscribe("fmdes", 1, &CoaxGumstixControl::coaxFMCallback, this);
 	coax_odom_sub = n.subscribe("odom", 1, &CoaxGumstixControl::coaxOdomCallback, this);
@@ -40,9 +41,10 @@ CoaxGumstixControl::CoaxGumstixControl(ros::NodeHandle & n)
 	coax_nav_mode = 0;
 	raw_control_age = 0;
 	matlab_FM_age = 0;
+	odom_age = 0;
 	
-	roll_trim = 0.08;
-	pitch_trim = 0.1;
+	roll_trim = 0.0;
+	pitch_trim = 0.0;
 	motor_up = prev_motor_up = 0;
 	motor_lo = prev_motor_lo = 0;
 	servo_roll = 0;
@@ -190,8 +192,8 @@ void CoaxGumstixControl::coaxOdomCallback(const nav_msgs::Odometry::ConstPtr & m
 	double delta_t = time_now - time_prev;
 	
 	// body rates
-	roll_rate = message->twist.twist.angular.x;
-	pitch_rate = message->twist.twist.angular.y;
+	roll_rate = imu_p;//message->twist.twist.angular.x;
+	pitch_rate = imu_q;//message->twist.twist.angular.y;
 	yaw_rate = imu_r;
 	
 	// Estimate stabilizer bar orientation
@@ -280,6 +282,7 @@ void CoaxGumstixControl::coaxOdomCallback(const nav_msgs::Odometry::ConstPtr & m
 	// set control commands
 	setControls(control);
 	raw_control_age = 0;
+	odom_age = 0;
 	
 	time_prev = time_now;
 }
@@ -493,7 +496,8 @@ void CoaxGumstixControl::rawControlPublisher(unsigned int rate)
 	ros::Rate loop_rate(rate);
 	
 	coax_msgs::CoaxRawControl raw_control;
-	
+	geometry_msgs::Quaternion raw_control_ipc;
+
 	while(ros::ok())
 	{
 		if (raw_control_age < 20) {
@@ -508,16 +512,27 @@ void CoaxGumstixControl::rawControlPublisher(unsigned int rate)
 			raw_control.servo2 = 0;
 		}
 		
+		raw_control_ipc.x = raw_control.motor1;
+		raw_control_ipc.y = raw_control.motor2;
+		raw_control_ipc.z = raw_control.servo1;
+		raw_control_ipc.w = raw_control.servo2;
+		
 		if ((coax_state_age > 0.5*rate) && (coax_state_age <= 0.5*rate + 1)) {
 			ROS_INFO("No more Data from CoaX Board!!!");
 		}
 		
-		if (matlab_FM_age > 10 && MATLAB_ACTIVE) { // Matlab not active anymore -> switch to oboard hover control
+		if (matlab_FM_age > 20 && MATLAB_ACTIVE) { // Matlab not active anymore -> swit$
 			MATLAB_ACTIVE = false;
-			ROS_INFO("Matlab is not active!!!");
+			//ROS_INFO("Matlab is not active!!!");
 		}
+
+		if ((matlab_FM_age > 3) && (matlab_FM_age < 100)){
+			ROS_INFO("Matlab value age [%d]",matlab_FM_age);
+		}		
 		
 		raw_control_pub.publish(raw_control);
+		raw_control_ipc_pub.publish(raw_control_ipc);
+		
 		if (raw_control_age < 1000) {
 			raw_control_age += 1;
 		}
@@ -527,6 +542,9 @@ void CoaxGumstixControl::rawControlPublisher(unsigned int rate)
 		if (matlab_FM_age < 1000) {
 			matlab_FM_age += 1;
 		}
+		if (odom_age < 1000) {
+			odom_age += 1;
+		} 
 		
 		// Estimate rotor speeds (do that here to have the same frequency as we apply inputs)
 		double prev_Omega_up_des = model_params.rs_mup*prev_motor_up + model_params.rs_bup;
@@ -800,7 +818,7 @@ int main(int argc, char** argv)
 	
 	int comm_freq;
 	n.param("comm_freq", comm_freq, 100);
-	api.configureComm(comm_freq, SBS_MODES | SBS_BATTERY | SBS_GYRO); // configuration of sending back data from CoaX
+	api.configureComm(comm_freq, SBS_MODES | SBS_BATTERY | SBS_GYRO | SBS_RPY); // configuration of sending back data from CoaX
 	api.setTimeout(500, 5000);
 	
 	int CoaX;

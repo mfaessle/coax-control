@@ -1,4 +1,4 @@
-load test_poly
+load report_step_z
 
 figure(1)
 plot3(Data.position(1,:),Data.position(2,:),Data.position(3,:))
@@ -30,15 +30,15 @@ legend('actual','nominal')
 ylabel('Velocity [m/s]')
 xlabel('Time [s]')
 
-figure(3)
-
-subplot(2,1,1)
-plot(Data.time,Data.inputs(1:3,:))
-legend('Forces')
-
-subplot(2,1,2)
-plot(Data.time,Data.inputs(4,:))
-legend('yaw moment')
+% figure(3)
+% 
+% subplot(2,1,1)
+% plot(Data.time,Data.inputs(1:3,:))
+% legend('Forces')
+% 
+% subplot(2,1,2)
+% plot(Data.time,Data.inputs(4,:))
+% legend('yaw moment')
 
 % qx = Data.orientation(1,:)';
 % qy = Data.orientation(2,:)';

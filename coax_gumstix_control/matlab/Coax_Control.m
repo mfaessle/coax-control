@@ -7,14 +7,17 @@ if (COAX56)
     mid = std_msgs_Bool('connect','publisher','nav_mode56','nav_mode56');
     cid = geometry_msgs_Quaternion('connect','publisher','FM_des56','FM_des56');
     cmid = geometry_msgs_Quaternion('connect','subscriber','control_mode56','control_mode56');
-    roll_trim = 0.0285;
-    pitch_trim = 0.0921;
+    rid = geometry_msgs_Quaternion('connect','subscriber','rawcontrol56','rawcontrol56');
+    roll_trim = -0.01;
+    pitch_trim = 0.0;
 else
     pid = nav_msgs_Odometry('connect','subscriber','odom57','odom57');
     iid = geometry_msgs_Quaternion('connect','subscriber','coax_info57','coax_info57');
+    imuid = geometry_msgs_Quaternion('connect','subscriber','coax_imu57','coax_imu57');
     mid = std_msgs_Bool('connect','publisher','nav_mode57','nav_mode57');
     cid = geometry_msgs_Quaternion('connect','publisher','FM_des57','FM_des57');
     cmid = geometry_msgs_Quaternion('connect','subscriber','control_mode57','control_mode57');
+    rid = geometry_msgs_Quaternion('connect','subscriber','rawcontrol56','rawcontrol56');
     roll_trim = 0;
     pitch_trim = 0;
 end
@@ -38,6 +41,7 @@ TRAJECTORY_STANDINGCIRCLE = 4;
 TRAJECTORY_YAWOSCIL = 5;
 TRAJECTORY_HORZLINE = 6;
 TRAJECTORY_STEP = 7;
+TRAJECTORY_POLY = 8;
 
 % Start Maneuver
 START_HEIGHT = 0.3;
@@ -56,7 +60,7 @@ SINK_VELOCITY = 0.1; % [m/s] positive!
 SINK_TIME = START_HEIGHT/SINK_VELOCITY;
 
 % Gotopos Maneuver
-GOTOPOS_VELOCITY = 0.1;
+GOTOPOS_VELOCITY = 0.15;
 
 % Parameters
 % param = parameter(); % Skybotix parameters
@@ -66,13 +70,7 @@ load ../../system_identification/nlgr_hy
 id_param = cell2mat(getpar(nlgr));
 param = set_model_param(id_param); % set identified parameters
 contr_param = control_parameter();
-
-% MPC Stuff
-Ts_highlevel = 0.027;
-N_horz = 10;
-Q = diag([0.5 0.5 35 0.1 0.1 0.1]);
-R = eye(3);
-mpc_mat = mpc_matrices(Ts_highlevel,N_horz,Q,R,param.m);
+param.m = 0.308; % for gumstix;
 
 % Initial Values
 CONTROL_MODE = CONTROL_LANDED;
@@ -80,7 +78,7 @@ e_i = [0 0 0 0]';
 FIRST_HOVER = 0;
 FIRST_LANDING = 0;
 FIRST_TRAJECTORY = 0;
-TRAJECTORY_TYPE = TRAJECTORY_LYINGCIRCLE;
+TRAJECTORY_TYPE = TRAJECTORY_POLY;
 SERVICE_LANDING = 0;
 SERVICE_TRAJECTORY = 0;
 LOW_POWER_DETECTED = 0;
@@ -100,16 +98,19 @@ Lintwists = [];
 Angtwists = [];
 Inputs = [];
 Trajectory = [];
+Rawcontrol = [];
+Gyros = [];
 volt_compUp = 0;
 volt_compLo = 0;
 imu_p = 0;
 imu_q = 0;
 imu_r = 0;
+rawcont = zeros(4,1);
 
 fprintf('Ready to Rock \n');
 
 while (1)
-%tic
+
 %% Control Mode Transitions
 mode = geometry_msgs_Quaternion('read',cmid,1);
 if (~isempty(mode) && (int8(mode.x)~=last_ctrl_mode_request))
@@ -161,7 +162,7 @@ if (~isempty(mode) && (int8(mode.x)~=last_ctrl_mode_request))
                 FIRST_LANDING = 1;
             end
         case 7 % Lost Zigbee connection
-            fprintf('Lost Zigbee connection for more than 0.5s \n'); 
+            fprintf('Lost Zigbee connection for more than 0.5s \n');
         case 8 % failed to call reach_nav_state
             if (CONTROL_MODE == CONTROL_START)
                 CONTROL_MODE = CONTROL_LANDED;
@@ -201,20 +202,20 @@ odom = nav_msgs_Odometry('read',pid,1);
 while (isempty(odom))
     odom = nav_msgs_Odometry('read',pid,1);
 end
-x        = odom.pose.pose.position.x;
-y        = odom.pose.pose.position.y;
-z        = odom.pose.pose.position.z;
-xdot     = odom.twist.twist.linear.x;
-ydot     = odom.twist.twist.linear.y;
-zdot     = odom.twist.twist.linear.z;
-p        = odom.twist.twist.angular.x;
-q        = odom.twist.twist.angular.y;
-r        = odom.twist.twist.angular.z;
-qx       = odom.pose.pose.orientation.x;
-qy       = odom.pose.pose.orientation.y;
-qz       = odom.pose.pose.orientation.z;
-qw       = odom.pose.pose.orientation.w;
-Rb2w     = [qw^2+qx^2-qy^2-qz^2 2*qx*qy-2*qz*qw 2*qx*qz+2*qy*qw; ...
+x = odom.pose.pose.position.x;
+y = odom.pose.pose.position.y;
+z = odom.pose.pose.position.z;
+xdot = odom.twist.twist.linear.x;
+ydot = odom.twist.twist.linear.y;
+zdot = odom.twist.twist.linear.z;
+p = odom.twist.twist.angular.x;
+q = odom.twist.twist.angular.y;
+r = odom.twist.twist.angular.z;
+qx = odom.pose.pose.orientation.x;
+qy = odom.pose.pose.orientation.y;
+qz = odom.pose.pose.orientation.z;
+qw = odom.pose.pose.orientation.w;
+Rb2w = [qw^2+qx^2-qy^2-qz^2 2*qx*qy-2*qz*qw 2*qx*qz+2*qy*qw; ...
             2*qx*qy+2*qz*qw qw^2-qx^2+qy^2-qz^2 2*qy*qz-2*qx*qw; ...
             2*qx*qz-2*qy*qw 2*qy*qz+2*qx*qw qw^2-qx^2-qy^2+qz^2];
 
@@ -223,6 +224,10 @@ if (~isempty(imu))
     imu_p = imu.x;
     imu_q = imu.y;
     imu_r = imu.z;
+end
+rawcont_msg = geometry_msgs_Quaternion('read',rid,1);
+if (~isempty(rawcont_msg))
+    rawcont = [rawcont_msg.x rawcont_msg.y rawcont_msg.z rawcont_msg.w]';
 end
 
 %% Time
@@ -288,7 +293,7 @@ roll = atan2(Rb2w(3,2),Rb2w(3,3));
 pitch = asin(-Rb2w(3,1));
 yaw = atan2(Rb2w(2,1),Rb2w(1,1));
 
-coax_state = [position'  velocity'  roll pitch yaw  bodyrates(1:2)' imu_r]';
+coax_state = [position' velocity' roll pitch yaw bodyrates(1:2)' imu_r]';
 
 %% Control According to Control Mode
 switch CONTROL_MODE
@@ -309,7 +314,7 @@ switch CONTROL_MODE
         if (dt_start < IDLE_TIME)
             Fx_des = 0;
             Fy_des = 0;
-            Fz_des = 0.3*param.m*param.g;
+            Fz_des = 0.4*param.m*param.g;
             Mz_des = 0;
         elseif (dt_start < IDLE_TIME + RISE_TIME)
             %rise
@@ -356,41 +361,6 @@ switch CONTROL_MODE
 
     case CONTROL_HOVER
         % Take current position from vicon and set it as hover position
-        
-        
-%         %%% MPC control
-%         if (FIRST_HOVER)
-%             hover_position = coax_state(1:3);
-%             hover_orientation = atan2(Rb2w(2,1),Rb2w(1,1));
-%             FIRST_HOVER = 0;
-%         end
-%         if (LOW_POWER_DETECTED)
-%             CONTROL_MODE = CONTROL_LANDING;
-%             FIRST_LANDING = 1;
-%         end
-%         
-%         % compute trajectory
-%         traj = [zeros(3,3) hover_position];
-%         t_switch = 100;
-%         next_traj = traj;
-%        
-%         F_des_mpc = mpc_control([position' velocity']', 0, N_horz, mpc_mat, Ts_highlevel, param.m, traj, t_switch, next_traj);
-% 
-%         Fx_des = F_des_mpc(1);
-%         Fy_des = F_des_mpc(2);
-%         Fz_des = F_des_mpc(3);
-% 
-%         psi_T = hover_orientation;
-%         psidot_T = 0;
-%         ori_error = atan2(Rb2w(2,1),Rb2w(1,1)) - psi_T;
-%         while (ori_error > pi)
-%             ori_error = ori_error - 2*pi;
-%         end
-%         while (ori_error < -pi)
-%             ori_error = ori_error + 2*pi;
-%         end
-%         Mz_des = -contr_param.K_psi*ori_error - contr_param.K_omegaz*(imu_r-Rb2w(3,3)*psidot_T);
-%         %%%
 
         if (FIRST_HOVER)
             hover_position = coax_state(1:3);
@@ -408,60 +378,7 @@ switch CONTROL_MODE
     case CONTROL_GOTOPOS
         % take a desired position and orientation as input
         % move to this position
-%         %%% MPC control
-%         if (FIRST_GOTOPOS)
-%             % compute trajectory
-%             load trajectory
-%             
-%             gotopos_time = time;
-%             k_gtp = 1;
-%         end
-%         if (LOW_POWER_DETECTED && ~SERVICE_LANDING)
-%             CONTROL_MODE = CONTROL_HOVER;
-%             FIRST_HOVER = 1;
-%         end
-%         
-%         dt_gotopos = etime(time, gotopos_time);
-%         
-%         if (dt_gotopos < times_poly(end))
-%             if (dt_gotopos > times_poly(k_gtp+1))
-%                 k_gtp = k_gtp+1;
-%             end
-%         
-%             traj = traj_param((k_gtp-1)*3+1:k_gtp*3,:);
-%             t_switch = times_poly(k_gtp+1);
-%             if (k_gtp < size(traj_param,1)/3)
-%                 next_traj = traj_param((k_gtp)*3+1:(k_gtp+1)*3,:);
-%             else
-%                 next_traj = [zeros(3,size(traj_param,2)-1) gotopos_position'];
-%             end
-%             point_state = [position' velocity']';
-% 
-%             F_des_mpc = mpc_control(point_state, dt_gotopos, N_horz, mpc_mat, Ts_highlevel, param.m, traj, t_switch, next_traj);
-% 
-%             Fx_des = F_des_mpc(1);
-%             Fy_des = F_des_mpc(2);
-%             Fz_des = F_des_mpc(3);
-% 
-%             psi_T = 0;
-%             psidot_T = 0;
-%             ori_error = atan2(Rb2w(2,1),Rb2w(1,1)) - psi_T;
-%             while (ori_error > pi)
-%                 ori_error = ori_error - 2*pi;
-%             end
-%             while (ori_error < -pi)
-%                 ori_error = ori_error + 2*pi;
-%             end
-%             Mz_des = -contr_param.K_psi*ori_error - contr_param.K_omegaz*(imu_r-Rb2w(3,3)*psidot_T);
-%         else
-%             CONTROL_MODE = CONTROL_HOVER; % in the end
-%             hover_position = gotopos_position;
-%             hover_orientation = gotopos_orientation;
-%             trajectory = [hover_position' 0 0 0 0 0 0 hover_orientation 0]';
-%             [Fx_des, Fy_des, Fz_des, Mz_des, e_i] = control_function(coax_state, Rb2w, trajectory, e_i, dt, param, contr_param);
-%         end
-%         %%%
-        
+
         if (FIRST_GOTOPOS)
             initial_gotopos_position = coax_state(1:3);
             initial_gotopos_orientation = atan2(Rb2w(2,1),Rb2w(1,1));
@@ -471,11 +388,11 @@ switch CONTROL_MODE
             gotopos_duration = gotopos_distance/GOTOPOS_VELOCITY;
             gotopos_rot_distance = gotopos_orientation - atan2(Rb2w(2,1),Rb2w(1,1));
             while (gotopos_rot_distance > pi)
-				gotopos_rot_distance = gotopos_rot_distance - 2*pi;
+                gotopos_rot_distance = gotopos_rot_distance - 2*pi;
             end
             while (gotopos_rot_distance < -pi)
-				gotopos_rot_distance = gotopos_rot_distance + 2*pi;
-            end            
+                gotopos_rot_distance = gotopos_rot_distance + 2*pi;
+            end
             FIRST_GOTOPOS = 0;
         end
         if (LOW_POWER_DETECTED && ~SERVICE_LANDING)
@@ -496,9 +413,12 @@ switch CONTROL_MODE
                 trajectory = [desPosition' 0 0 0 0 0 0 gotopos_orientation 0]';
                 [Fx_des, Fy_des, Fz_des, Mz_des, e_i] = control_function(coax_state, Rb2w, trajectory, e_i, dt, param, contr_param);
             elseif (SERVICE_TRAJECTORY)
-                CONTROL_MODE = CONTROL_TRAJECTORY;
-                SERVICE_TRAJECTORY = 0;
-                desPosition = coax_state(1:3);
+                if (dt_gotopos > gotopos_duration + 5)
+                    CONTROL_MODE = CONTROL_TRAJECTORY;
+                    SERVICE_TRAJECTORY = 0;
+                end
+                % desPosition = coax_state(1:3);
+                desPosition = gotopos_position;
                 trajectory = [desPosition' 0 0 0 0 0 0 gotopos_orientation 0]';
                 [Fx_des, Fy_des, Fz_des, Mz_des, e_i] = control_function(coax_state, Rb2w, trajectory, e_i, dt, param, contr_param);
             else
@@ -515,13 +435,21 @@ switch CONTROL_MODE
         % calculate desired state according to current time and desired
         % trajectory
         % calculate control inputs according to desired state
-
+        shift = [-2 0 0.5]';
+        
         current_position = coax_state(1:3);
         if (FIRST_TRAJECTORY)
-            [~,initial_pose] = trajectory_generation(0,TRAJECTORY_TYPE);
-            initial_trajectory_position = initial_pose(1:3);
-            initial_trajectory_orientation = initial_pose(4);
-            if (norm(current_position - initial_trajectory_position) > 0.1)
+            if (TRAJECTORY_TYPE == TRAJECTORY_POLY)
+                % compute trajectory
+                load ../../path_planning/trajectory10
+                initial_trajectory_position = traj_param(1:3,end) + shift;
+                initial_trajectory_orientation = -pi;
+            else
+                [~,initial_pose] = trajectory_generation(0,TRAJECTORY_TYPE);
+                initial_trajectory_position = initial_pose(1:3);
+                initial_trajectory_orientation = initial_pose(4);
+            end
+            if (norm(current_position - initial_trajectory_position) > 0.05)
                 CONTROL_MODE = CONTROL_GOTOPOS;
                 FIRST_GOTOPOS = 1;
                 SERVICE_TRAJECTORY = 1;
@@ -530,6 +458,7 @@ switch CONTROL_MODE
             else
                 FIRST_TRAJECTORY = 0;
                 trajectory_time = time;
+                k_gtp = 1;
             end
             dt_traj = 0; % only for data acquisition needed
             desPosition = coax_state(1:3);
@@ -537,9 +466,40 @@ switch CONTROL_MODE
             [Fx_des, Fy_des, Fz_des, Mz_des, e_i] = control_function(coax_state, Rb2w, trajectory, e_i, dt, param, contr_param);
         else
             dt_traj = etime(time, trajectory_time);
-            trajectory = trajectory_generation(dt_traj,TRAJECTORY_TYPE);
-            [Fx_des, Fy_des, Fz_des, Mz_des, e_i] = control_function(coax_state, Rb2w, trajectory, e_i, dt, param, contr_param);
-            if (dt_traj > 60)
+            if (TRAJECTORY_TYPE == TRAJECTORY_POLY)
+                if (dt_traj < times_poly(end))
+                    if (dt_traj > times_poly(k_gtp+1))
+                        k_gtp = k_gtp+1;
+                    end
+                    traj = traj_param((k_gtp-1)*3+1:k_gtp*3,:);
+                    n_poly = size(traj,2)-1;
+                    x_T = zeros(3,1) + shift;
+                    v_T = zeros(3,1);
+                    a_T = zeros(3,1);
+                    for j = 1:n_poly+1
+                        x_T = x_T + (traj(:,j)*dt_traj^(n_poly+1-j));
+                    end
+                    for j = 1:n_poly
+                        v_T = v_T + ((n_poly+1-j)*traj(:,j)*dt_traj^(n_poly-j));
+                    end
+                    for j = 1:n_poly-1
+                        a_T = a_T + ((n_poly+1-j)*(n_poly-j)*traj(:,j)*dt_traj^(n_poly-1-j));
+                    end
+                    
+                    trajectory = [x_T' v_T' a_T' initial_trajectory_orientation 0]';
+                    [Fx_des, Fy_des, Fz_des, Mz_des, e_i] = control_function(coax_state, Rb2w, trajectory, e_i, dt, param, contr_param);
+                else
+                    CONTROL_MODE = CONTROL_HOVER; % in the end
+                    hover_position = poly_end_pos + shift;
+                    hover_orientation = initial_trajectory_orientation;
+                    trajectory = [hover_position' 0 0 0 0 0 0 hover_orientation 0]';
+                    [Fx_des, Fy_des, Fz_des, Mz_des, e_i] = control_function(coax_state, Rb2w, trajectory, e_i, dt, param, contr_param);
+                end
+            else
+                trajectory = trajectory_generation(dt_traj,TRAJECTORY_TYPE);
+                [Fx_des, Fy_des, Fz_des, Mz_des, e_i] = control_function(coax_state, Rb2w, trajectory, e_i, dt, param, contr_param);
+            end
+            if (dt_traj > 20)
                 CONTROL_MODE = CONTROL_LANDING;
                 FIRST_LANDING = 1;
             end
@@ -616,8 +576,8 @@ geometry_msgs_Quaternion('send',cid,FM_des);
 prev_time = time;
 
 %%%%%%%%%
-if (CONTROL_MODE == CONTROL_TRAJECTORY)
-    if ((dt_traj > 10) && (dt_traj < 50))
+if (CONTROL_MODE == CONTROL_HOVER)
+    if 1%(dt_traj > 0)
         pos = [odom.pose.pose.position.x odom.pose.pose.position.y odom.pose.pose.position.z]';
         ori = [odom.pose.pose.orientation.x odom.pose.pose.orientation.y odom.pose.pose.orientation.z odom.pose.pose.orientation.w]';
         lintwist = [odom.twist.twist.linear.x odom.twist.twist.linear.y odom.twist.twist.linear.z]';
@@ -630,6 +590,8 @@ if (CONTROL_MODE == CONTROL_TRAJECTORY)
         Angtwists(:,i) = angtwist;
         Inputs(:,i) = [Fx_des Fy_des Fz_des Mz_des]';
         Trajectory(:,i) = trajectory';
+        Rawcontrol(:,i) = rawcont;
+        Gyros(:,i) = [imu_p imu_q imu_r]';
         
         i = i+1;
     else
@@ -638,8 +600,6 @@ if (CONTROL_MODE == CONTROL_TRAJECTORY)
 end
 %%%%%%%%%
 % fprintf('CONTROL_MODE: %d \n',CONTROL_MODE);
-% while (toc < Ts_highlevel-0.004)
-% end
 
 end % end of loop
 
@@ -652,8 +612,10 @@ if (~isempty(TimeStamps))
     Data.angtwist = Angtwists;
     Data.inputs = Inputs;
     Data.trajectory = Trajectory;
-
-    save ViconData_lyingcircle Data
+    Data.rawcontrol = Rawcontrol;
+    Data.gyros = Gyros;
+    
+    %save test_bla_values Data
 end
 %%%%%%%%%
 
