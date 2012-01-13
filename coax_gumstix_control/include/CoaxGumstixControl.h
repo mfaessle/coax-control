@@ -54,7 +54,7 @@ public:
 	void coaxFMCallback(const geometry_msgs::Quaternion::ConstPtr & message);
 	void matlabNavModeCallback(const std_msgs::Bool::ConstPtr & message);
 	
-	void controlFunction(double* control, double* FM_des, double* z_bar, model_params_t model_params);
+	void controlFunction(double* control, double* FM_des, model_params_t model_params);
 	void setControls(double* control);
 	
 	void rawControlPublisher(unsigned int rate);
@@ -112,7 +112,6 @@ private:
 	
 	int coax_state_age;
 	int coax_nav_mode;
-	int raw_control_age;
 	int matlab_FM_age;
 	int odom_age;
 	
@@ -131,6 +130,7 @@ private:
 	double Omega_lo;
 	double prev_Omega_up;
 	double prev_Omega_lo;
+	double z_bar[3];
 	double prev_z_bar[3];
 	double prev_motor_up;
 	double prev_motor_lo;
@@ -138,10 +138,15 @@ private:
 	double imu_p;
 	double imu_q;
 	double imu_r;
+	double imu_roll;
+	double imu_pitch;
+	double imu_yaw;
 	
-	double roll_rate;
-	double pitch_rate;
-	double yaw_rate;
+	double yaw_est;
+	double yaw_drift;
+	int yaw_drift_count;
+	bool YAW_DRIFT_COMP;
+	
 	double Rb2w[3][3];
 	double FM_des[4];
 	double position[3];

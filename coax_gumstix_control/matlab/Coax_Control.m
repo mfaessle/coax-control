@@ -615,7 +615,7 @@ if (~isempty(TimeStamps))
     Data.rawcontrol = Rawcontrol;
     Data.gyros = Gyros;
     
-    %save test_bla_values Data
+    save test_imu_yawcomp Data
 end
 %%%%%%%%%
 
