@@ -4,7 +4,7 @@ CoaX Specifications
 
 Base Helicopter: Walkera HM5#10
 
-Mass: 0.301 kg
+Mass: 0.302 kg (without gumstix/camera)
 
 Rotor Diameter: 0.342 m
 

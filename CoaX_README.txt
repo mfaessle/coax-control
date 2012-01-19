@@ -35,14 +35,6 @@ Getting Started:
 
 
 ================
-Run coax_server: (On Mac)
-================
-
-rosrun coax_server coax_server /dev/tty.usbserial-A700eEDO:1    (for Coax56)
-rosrun coax_server coax_server /dev/tty.usbserial-A700eExt:1    (for Coax57)
-
-
-================
 Run Matlab Controller:
 ================
 
@@ -51,7 +43,6 @@ Run Matlab Controller:
 	1.2 Vicon running and tracking CoaX
 	1.3 Running roscore
 	1.4 Running central
-	1.5 Zigbee module plugged into computer
 
 2. Start CoaX
 	2.1 Switch RC on
@@ -67,24 +58,53 @@ Run Matlab Controller:
 
 
 ================
-Run ROS Controller:
+Run coax_gumstix Controller:
 ================
 
 1. Requirements
-	1.1 Same as in "Run Matlab Controller"
+	1.1 Make sure vicon_calibrate and vicon2odometry are pointing to the correct xml and vsk files respectively (in coax_interface56.launch)
+        1.2 Vicon running and tracking CoaX
+        1.3 Running roscore
+        1.4 Running central
+        1.5 /etc/hosts files on computer and gumstix edited such that they can connect to each other
 
 2. Start CoaX
         2.1 Switch RC on
         2.2 Switch CoaX on
         2.3 Release "kill switch" by moving yaw stick on the RC to the lower left corner and release it
 
-3. Run "roslaunch coax_ros_control coax_ros_cont_cable56.launch"
+3. Connecto to Gumstix
+   	3.1 ssh gumros@192.168.129.194
+	3.2 password: gumros
 
-4. Call ROS services
-   	4.1 Set target pose: Run "rosservice call /set_target_pose -- x_des y_des z_des yaw_des"
-	    (Run "rosservice call /set_control_mode 4" to actually go to that position
-	4.2 Set trajectory type: "rosservice call /set_trajectory_type 1" (check number of desired trajectory)
-	4.3 Set Control Mode: "rosservice call /set_control_mode 1" (to make the CoaX take off and go to hover)
+4. Change settings on Gumstix
+   	4.1 sudo chmod 777 /dev/ttyS0 (enable reading an writing to coax board)
+	4.1 export ROS_MASTER_URI=http://... (uri of roscore running on computer, must match witch /etc/hosts)
+
+5. Lauch ROS nodes and Matlab
+   	5.1 Run "roslaunch coax_gumstix_control launch_computer.launch" (on Computer)
+	5.2 Run "roslaunch coax_gumstix_control launch_gumstix.launch" (on Gumstix)
+	5.3 Run "Coax_Control.m" in "coax_gumstix_control/matlab" (on Computer)
+
+6. Call ROS services
+	6.1 Set Control Mode: "rosservice call /set_control_mode 1" (to make the CoaX take off and go to hover, see Matlab code for other commands)
+
+
+================
+Update Code on Gumstix:
+================
+
+1. Requirements
+	1.1 None, git is installed on the gumstix and the code can directly be pulled form github
+
+2. Pull new code from github
+   	2.1 Run "git pull origin" in "coax-control" folder
+	
+3. Adapt CMakeLists.txt
+   	3.1 Edit "coax_gumstix_control/CMakeLists.txt" on gumstix
+	3.2 CoaX communication library path must point to the deploy folder -> set(COAXHOME $ENV{HOME}/coax/deploy) 
+
+4. Recompile "coax_gumstix_control"
 
 
 ================
@@ -119,7 +139,7 @@ Charging:
 	Typically used charging current: 3A
 
 3. Charging RC batteries: (RCX Transmitter Li-Polymer Battery 11.1V 1800mAh)
-	Recommended charging current: 0.5A - 1.0A
+	Recommended charging current: 1.0A
 	
 
 ================
