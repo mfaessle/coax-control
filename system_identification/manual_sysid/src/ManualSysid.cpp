@@ -30,7 +30,11 @@ public:
 	
 	void coaxStateCallback(const coax_msgs::CoaxState::ConstPtr & message)
 	{
-		
+		/*
+		Make sure in the main function of coax_interface that the raw control commands are included in the coax state message
+		 -> SBS_O_ATTITUDE and SBS_O_ALTITUDE must be included in the communication configuration
+		 -> api.configureComm(100, ... SBS_O_ATTITUDE | SBS_O_ALTITUDE);
+		*/
 		geometry_msgs::Pose coax_data;
 		coax_data.position.x = message->gyro[0];
 		coax_data.position.y = -message->gyro[1];

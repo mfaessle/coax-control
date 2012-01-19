@@ -12,14 +12,14 @@ rpy = zeros(3,1);
 linvel = zeros(3,1);
 angvel = zeros(3,1);
 
-RC = zeros(4,1);
+INPUTS = zeros(4,1);
 POS = zeros(3,1);
 RPY = zeros(3,1);
 LINVEL = zeros(3,1);
 ANGVEL = zeros(3,1);
 TIME = 0;
 
-N = 1000;
+N = 6000;
 
 tic
 for k = 1:N
@@ -44,7 +44,7 @@ for k = 1:N
         angvel = [odom.twist.twist.angular.x odom.twist.twist.angular.y odom.twist.twist.angular.z]';
     end
     
-    RC(:,k) = [coax_data.orientation.x coax_data.orientation.y coax_data.orientation.z -coax_data.orientation.w]';
+    INPUTS(:,k) = [coax_data.orientation.x coax_data.orientation.y coax_data.orientation.z -coax_data.orientation.w]';
     POS(:,k) = position;
     RPY(:,k) = rpy;
     LINVEL(:,k) = linvel;
@@ -55,13 +55,13 @@ end
 toc
 
 Data.time = TIME - TIME(1);
-Data.rc = RC;
+Data.inputs = INPUTS;
 Data.position = POS;
 Data.rpy = RPY;
 Data.linvel = LINVEL;
 Data.angvel = ANGVEL;
 
-save manualidData Data
+% save manualidValidate Data
 
 nav_msgs_Odometry('disconnect',pid);
 geometry_msgs_Pose('disconnect',cdid);

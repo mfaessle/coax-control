@@ -2,7 +2,7 @@
 % y Outputs
 % u Inputs
 % load ViconData
-load ViconData_lyingcircle
+load gumstix_sysid
 Nstart = 1;
 Nstop = size(Data.lintwist,2);
 Time = Data.time(Nstart:Nstop)';
@@ -23,8 +23,10 @@ y = [Data.position(:,Nstart:Nstop)' RPY]; % single measurements must be in rows!
 u = Data.inputs(:,Nstart:Nstop)';
 
 %% load parameters
-run parameter
 load nlgr_hy
+id_param = cell2mat(getpar(nlgr));
+param = set_model_param(id_param);
+param.m = 0.333;
 
 %% create IDDATA object with CoaX data
 z = iddata(y, u, [], 'SamplingInstants', Time);%, 'Name', 'CoaX_data');
@@ -149,70 +151,70 @@ nlgr = pem(z, nlgr, 'Display', 'Full');
 present(nlgr);
 
 %% Get Model Parameters
-id_param = cell2mat(getpar(nlgr));
-param = set_model_param(id_param); % set identified parameters
-
-%% Simulate Model
-t0 = Time(1);
-% x0 = findstates(nlgr,z);
-x0 = cell2mat(getinit(nlgr));
-
-% Outputs
-X = zeros(length(Time),length(x0));
-X(1,:) = x0';
-
-t = t0;
-x = x0;
-for i=Nstart : Nstop-1
-    
-    tstart = Time(i-Nstart+1);
-    tstop = Time(i+1-Nstart+1);
-    
-    control = u(i-Nstart+1,:)';
-    
-    [time,state] = ode45(@CoaX_grey_box_pose,[tstart tstop],x,[],control,m,g,Ixx,Iyy,Izz,d_up,d_lo,k_springup,k_springlo,l_up,l_lo,k_Tup,k_Tlo,k_Mup,k_Mlo,Tf_motup,Tf_motlo,Tf_up,rs_mup,rs_bup,rs_mlo,rs_blo,zeta_mup,zeta_bup,zeta_mlo,zeta_blo,max_SPangle);
-    
-    x = state(end,:)';
-    
-    X(i-Nstart+1,:) = x';
-end
-
-%% Plot
-figure;
-subplot(4,1,1)
-plot(Time,X(:,1:6))
-grid on;
-legend('x','y','z','u','v','w')
-title('Translational states')
-
-subplot(4,1,2)
-plot(Time,X(:,7:12))
-grid on;
-legend('\phi','\theta','\psi','p','q','r')
-title('Rotational states')
-
-subplot(4,1,3)
-plot(Time,X(:,13:14))
-grid on;
-legend('\omega_{up}','\omega_{lo}')
-title('Rotor speeds')
-
-subplot(4,1,4)
-plot(Time,X(:,15:17))
-grid on;
-legend('x','y','z')
-title('Upper thrust vector direction')
-
-figure;
-subplot(2,1,1)
-plot(Time,u(:,1:2))
-grid on;
-legend('u_{mot,up}','u_{mot,lo}')
-title('Motor Inputs')
-
-subplot(2,1,2)
-plot(Time,u(:,3:4))
-grid on;
-legend('u_{serv1}','u_{serv2}')
-title('Servo Inputs')
+% id_param = cell2mat(getpar(nlgr));
+% param = set_model_param(id_param); % set identified parameters
+% 
+% %% Simulate Model
+% t0 = Time(1);
+% % x0 = findstates(nlgr,z);
+% x0 = cell2mat(getinit(nlgr));
+% 
+% % Outputs
+% X = zeros(length(Time),length(x0));
+% X(1,:) = x0';
+% 
+% t = t0;
+% x = x0;
+% for i=Nstart : Nstop-1
+%     
+%     tstart = Time(i-Nstart+1);
+%     tstop = Time(i+1-Nstart+1);
+%     
+%     control = u(i-Nstart+1,:)';
+%     
+%     [time,state] = ode45(@CoaX_grey_box_pose,[tstart tstop],x,[],control,m,g,Ixx,Iyy,Izz,d_up,d_lo,k_springup,k_springlo,l_up,l_lo,k_Tup,k_Tlo,k_Mup,k_Mlo,Tf_motup,Tf_motlo,Tf_up,rs_mup,rs_bup,rs_mlo,rs_blo,zeta_mup,zeta_bup,zeta_mlo,zeta_blo,max_SPangle);
+%     
+%     x = state(end,:)';
+%     
+%     X(i-Nstart+1,:) = x';
+% end
+% 
+% %% Plot
+% figure;
+% subplot(4,1,1)
+% plot(Time,X(:,1:6))
+% grid on;
+% legend('x','y','z','u','v','w')
+% title('Translational states')
+% 
+% subplot(4,1,2)
+% plot(Time,X(:,7:12))
+% grid on;
+% legend('\phi','\theta','\psi','p','q','r')
+% title('Rotational states')
+% 
+% subplot(4,1,3)
+% plot(Time,X(:,13:14))
+% grid on;
+% legend('\omega_{up}','\omega_{lo}')
+% title('Rotor speeds')
+% 
+% subplot(4,1,4)
+% plot(Time,X(:,15:17))
+% grid on;
+% legend('x','y','z')
+% title('Upper thrust vector direction')
+% 
+% figure;
+% subplot(2,1,1)
+% plot(Time,u(:,1:2))
+% grid on;
+% legend('u_{mot,up}','u_{mot,lo}')
+% title('Motor Inputs')
+% 
+% subplot(2,1,2)
+% plot(Time,u(:,3:4))
+% grid on;
+% legend('u_{serv1}','u_{serv2}')
+% title('Servo Inputs')
 
