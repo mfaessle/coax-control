@@ -79,11 +79,8 @@ public:
 		coax_msgs::CoaxReachNavState srv;
 		srv.request.desiredState = des_state;
 		srv.request.timeout = timeout;
-		if (reach_nav_state.call(srv)){
-			ROS_INFO("Set nav_state to: %d, Result: %d", des_state, srv.response.result);
-		}else{
-			ROS_INFO("Failed to call service reach_nav_state");
-		}
+		reach_nav_state.call(srv);
+		
 		if (srv.response.result == 0) {
 			return 0; // successful
 		} else {
@@ -294,7 +291,7 @@ int main(int argc, char** argv)
 	n.param("simulation", simulation, 0);
 	if (!simulation) {
 		ros::Duration(1.5).sleep(); // make sure coax_server has enough time to boot up
-		api.configureComm(100, SBS_MODES | SBS_TIMESTAMP | SBS_BATTERY | SBS_GYRO);// | SBS_ACCEL); // configuration of sending back data from CoaX
+		api.configureComm(100, SBS_MODES | SBS_TIMESTAMP | SBS_BATTERY | SBS_GYRO | SBS_O_ATTITUDE | SBS_O_ALTITUDE);// | SBS_ACCEL); // configuration of sending back data from CoaX
 		api.setTimeout(500, 5000);
 	} else {
 		ROS_INFO("CoaX Interface in Simulation Mode");

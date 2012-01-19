@@ -1,0 +1,195 @@
+function [trajectory, initial_pose] = trajectory_generation(t,TYPE)
+
+% Reference contains:
+% [x_ref y_ref z_ref u_ref v_ref w_ref udot_ref vdot_ref wdot_ref]
+
+switch TYPE
+    case 0 % SPIRAL
+    
+        radius     = 1;
+        omega      = 2*pi/10;
+        vel_vert   = 0.5;
+        
+        initial_pose = [radius 0 0.5 pi/2];
+        
+        x_ref      = radius*cos(omega*t);
+        y_ref      = radius*sin(omega*t);
+        z_ref      = initial_pose(3) + vel_vert*t;
+        xdot_ref   = -radius*omega*sin(omega*t);
+        ydot_ref   = radius*omega*cos(omega*t);
+        zdot_ref   = vel_vert;
+        xddot_ref  = -radius*omega^2*cos(omega*t);
+        yddot_ref  = -radius*omega^2*sin(omega*t);
+        zddot_ref  = 0;
+        psi_ref    = omega*t + initial_pose(4);
+        psidot_ref = omega;
+    
+    case 1 % ROTINPLACE
+
+        omega      = 2*pi/3;
+        
+        initial_pose = [1 1 1 0]';
+        
+        x_ref      = initial_pose(1);
+        y_ref      = initial_pose(2);
+        z_ref      = initial_pose(3);
+        xdot_ref   = 0;
+        ydot_ref   = 0;
+        zdot_ref   = 0;
+        xddot_ref  = 0;
+        yddot_ref  = 0;
+        zddot_ref  = 0;
+        psi_ref    = omega*t + initial_pose(4);
+        psidot_ref = omega;
+    
+    case 2 % Vertical Oscillation
+
+        amplitude  = 0.2;
+        omega      = (t/30)*2*pi/4;
+        yaw_amp    = 0.3;
+        yaw_omega  = 2*pi/2;
+        
+        initial_pose = [0.5 0 0.8 -pi/2]';
+        
+        x_ref      = initial_pose(1);
+        y_ref      = initial_pose(2);
+        z_ref      = initial_pose(3) + amplitude*sin(omega*t);
+        xdot_ref   = 0;
+        ydot_ref   = 0;
+        zdot_ref   = amplitude*omega*cos(omega*t);
+        xddot_ref  = 0;
+        yddot_ref  = 0;
+        zddot_ref  = -amplitude*omega^2*sin(omega*t);
+        psi_ref    = initial_pose(4) + yaw_amp*sin(yaw_omega*t);
+        psidot_ref = yaw_omega*yaw_amp*cos(yaw_omega*t);
+    
+    case 3 % LYINGCIRCLE
+
+        radius     = 0.5;
+        omega      = 2*pi/5;
+        omega_vert = 2*omega;
+        vert_amp   = 0;
+        
+        initial_pose = [0.5 0 1 -pi]';
+        
+        x_ref      = radius*cos(omega*t) - radius + initial_pose(1);
+        y_ref      = radius*sin(omega*t) + initial_pose(2);
+        z_ref      = initial_pose(3) + vert_amp*sin(omega_vert*t);
+        xdot_ref   = -radius*omega*sin(omega*t);
+        ydot_ref   = radius*omega*cos(omega*t);
+        zdot_ref   = omega_vert*vert_amp*cos(omega_vert*t);
+        xddot_ref  = -radius*omega^2*cos(omega*t);
+        yddot_ref  = -radius*omega^2*sin(omega*t);
+        zddot_ref  = -omega_vert^2*vert_amp*sin(omega_vert*t);
+        psi_ref    = initial_pose(4);%omega*t + initial_pose(4);
+        psidot_ref = 0;%omega;
+
+    case 4 % STANDINGCIRCLE
+
+        radius     = 1;
+        omega      = 2*pi/10;
+        
+        initial_pose = [0 0 radius+0.5 0]';
+        
+        x_ref      = radius*sin(omega*t);
+        y_ref      = 0;
+        z_ref      = initial_pose(3) + radius*cos(omega*t);
+        xdot_ref   = radius*omega*cos(omega*t);
+        ydot_ref   = 0*t;
+        zdot_ref   = -radius*omega*sin(omega*t);
+        xddot_ref  = -radius*omega^2*sin(omega*t);
+        yddot_ref  = 0;
+        zddot_ref  = -radius*omega^2*cos(omega*t);
+        psi_ref    = initial_pose(4);
+        psidot_ref = 0;
+    
+    case 5 % Yaw Oscillations
+        
+        amplitude  = pi/6;
+        omega      = 2*pi/5;
+        
+        initial_pose = [0 0 1.5 0]';
+        
+        x_ref      = initial_pose(1);
+        y_ref      = initial_pose(2);
+        z_ref      = initial_pose(3);
+        xdot_ref   = 0;
+        ydot_ref   = 0;
+        zdot_ref   = 0;
+        xddot_ref  = 0;
+        yddot_ref  = 0;
+        zddot_ref  = 0;
+        psi_ref    = initial_pose(4) + amplitude*sin(omega*t);
+        psidot_ref = amplitude*omega*cos(omega*t);
+        
+    case 6 % horizontal line
+        
+        length = 1;
+        vel = 0.15;
+        
+        initial_pose = [0.5 0 1 pi]';
+        
+        if (t < length/vel) 
+            x_ref      = initial_pose(1) - t*vel;
+            y_ref      = initial_pose(2);
+            z_ref      = initial_pose(3);
+            xdot_ref   = -vel;
+            ydot_ref   = 0;
+            zdot_ref   = 0;
+            xddot_ref  = 0;
+            yddot_ref  = 0;
+            zddot_ref  = 0;
+            psi_ref    = initial_pose(4);
+            psidot_ref = 0;
+        else
+            x_ref      = initial_pose(1) - length;
+            y_ref      = initial_pose(2);
+            z_ref      = initial_pose(3);
+            xdot_ref   = 0;
+            ydot_ref   = 0;
+            zdot_ref   = 0;
+            xddot_ref  = 0;
+            yddot_ref  = 0;
+            zddot_ref  = 0;
+            psi_ref    = initial_pose(4);
+            psidot_ref = 0;
+        end
+        
+    case 7 % step
+        
+        stepsize = pi/2;
+        
+        initial_pose = [0 0 0.8 -0.8*pi]';
+        
+        if (t < 10) 
+            x_ref      = initial_pose(1);
+            y_ref      = initial_pose(2);
+            z_ref      = initial_pose(3);
+            xdot_ref   = 0;
+            ydot_ref   = 0;
+            zdot_ref   = 0;
+            xddot_ref  = 0;
+            yddot_ref  = 0;
+            zddot_ref  = 0;
+            psi_ref    = initial_pose(4);
+            psidot_ref = 0;
+        else
+            x_ref      = initial_pose(1);
+            y_ref      = initial_pose(2);
+            z_ref      = initial_pose(3);
+            xdot_ref   = 0;
+            ydot_ref   = 0;
+            zdot_ref   = 0;
+            xddot_ref  = 0;
+            yddot_ref  = 0;
+            zddot_ref  = 0;
+            psi_ref    = initial_pose(4) + stepsize;
+            psidot_ref = 0;
+        end
+        
+end
+
+trajectory = [x_ref y_ref z_ref xdot_ref ydot_ref zdot_ref ...
+              xddot_ref yddot_ref zddot_ref psi_ref psidot_ref];
+         
+         
