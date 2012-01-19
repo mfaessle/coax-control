@@ -15,9 +15,8 @@ int main(int argc, char **argv)
 	
 	ros::NodeHandle n;
 	
-
-	ros::Subscriber sub = n.subscribe("fmdes", 1, fmCallback);
-	
+	ros::TransportHints hints_fmdes;
+	ros::Subscriber sub = n.subscribe("fmdes", 1, fmCallback, hints_fmdes.udp());
 	
 	
 	ros::Rate loop_rate(100);

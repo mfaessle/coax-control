@@ -25,8 +25,8 @@ CoaxGumstixControl::CoaxGumstixControl(ros::NodeHandle & n)
 	control_mode_pub = n.advertise<geometry_msgs::Quaternion>("control_mode",1);
 	raw_control_ipc_pub = n.advertise<geometry_msgs::Quaternion>("rawcontrol_ipc",1);
 	
-	coax_fmdes_sub = n.subscribe("fmdes", 1, &CoaxGumstixControl::coaxFMCallback, this);
-	coax_odom_sub = n.subscribe("odom", 1, &CoaxGumstixControl::coaxOdomCallback, this);
+	coax_fmdes_sub = n.subscribe("fmdes", 1, &CoaxGumstixControl::coaxFMCallback, this, hints_fmdes.udp());
+	coax_odom_sub = n.subscribe("odom", 1, &CoaxGumstixControl::coaxOdomCallback, this, hints_odom.udp());
 	coax_state_sub = n.subscribe("state", 1, &CoaxGumstixControl::coaxStateCallback, this);
 	matlab_nav_mode_sub = n.subscribe("nav_mode", 1, &CoaxGumstixControl::matlabNavModeCallback, this);
 	
@@ -589,7 +589,7 @@ void CoaxGumstixControl::rawControlPublisher(unsigned int rate)
 			ROS_INFO("Matlab value age [%d]",matlab_FM_age);
 		}
 		if ((odom_age > 3) && (odom_age < 100)){ // For network testing
-			ROS_INFO("Value value age [%d]",odom_age);
+			ROS_INFO("Vicon value age [%d]",odom_age);
 		}
 		
 		if (coax_state_age < 1000) {

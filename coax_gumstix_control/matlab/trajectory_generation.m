@@ -24,42 +24,45 @@ switch TYPE
         psi_ref    = omega*t + initial_pose(4);
         psidot_ref = omega;
     
-    case 1 % ROTINPLACE
+    case 1 % Horizontal Oscillation
 
-        omega      = 2*pi/3;
+        amplitude  = 0.5;
+        omega      = 2*pi/10;
+        yaw_amp    = 0;
+        yaw_omega  = 2*pi/2;
         
-        initial_pose = [1 1 1 0]';
+        initial_pose = [0.5 0 1.5 -pi/2]';
         
-        x_ref      = initial_pose(1);
+        x_ref      = initial_pose(1) - amplitude + amplitude*cos(omega*t);
         y_ref      = initial_pose(2);
         z_ref      = initial_pose(3);
-        xdot_ref   = 0;
+        xdot_ref   = -amplitude*omega*sin(omega*t);
         ydot_ref   = 0;
         zdot_ref   = 0;
-        xddot_ref  = 0;
+        xddot_ref  = amplitude*omega^2*cos(omega*t);
         yddot_ref  = 0;
         zddot_ref  = 0;
-        psi_ref    = omega*t + initial_pose(4);
-        psidot_ref = omega;
+        psi_ref    = initial_pose(4) + yaw_amp*sin(yaw_omega*t);
+        psidot_ref = yaw_omega*yaw_amp*cos(yaw_omega*t);
     
     case 2 % Vertical Oscillation
 
-        amplitude  = 0.2;
-        omega      = (t/30)*2*pi/4;
-        yaw_amp    = 0.3;
+        amplitude  = 0.5;
+        omega      = 2*pi/10;
+        yaw_amp    = 0;
         yaw_omega  = 2*pi/2;
         
-        initial_pose = [0.5 0 0.8 -pi/2]';
+        initial_pose = [0.5 0 2 -pi/2]';
         
         x_ref      = initial_pose(1);
         y_ref      = initial_pose(2);
-        z_ref      = initial_pose(3) + amplitude*sin(omega*t);
+        z_ref      = initial_pose(3) - amplitude + amplitude*cos(omega*t);
         xdot_ref   = 0;
         ydot_ref   = 0;
-        zdot_ref   = amplitude*omega*cos(omega*t);
+        zdot_ref   = -amplitude*omega*sin(omega*t);
         xddot_ref  = 0;
         yddot_ref  = 0;
-        zddot_ref  = -amplitude*omega^2*sin(omega*t);
+        zddot_ref  = amplitude*omega^2*cos(omega*t);
         psi_ref    = initial_pose(4) + yaw_amp*sin(yaw_omega*t);
         psidot_ref = yaw_omega*yaw_amp*cos(yaw_omega*t);
     

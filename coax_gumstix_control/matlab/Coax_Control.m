@@ -34,7 +34,7 @@ CONTROL_TRAJECTORY = 5; % Follow Trajectory
 CONTROL_LANDING = 6; % Landing maneuver
 
 TRAJECTORY_SPIRAL = 0;
-TRAJECTORY_ROTINPLACE = 1;
+TRAJECTORY_HORZOSCIL = 1;
 TRAJECTORY_VERTOSCIL = 2;
 TRAJECTORY_LYINGCIRCLE = 3;
 TRAJECTORY_STANDINGCIRCLE = 4;
@@ -70,7 +70,7 @@ load ../../system_identification/nlgr_hy
 id_param = cell2mat(getpar(nlgr));
 param = set_model_param(id_param); % set identified parameters
 contr_param = control_parameter();
-param.m = 0.308; % for gumstix;
+param.m = 0.333; % for gumstix;
 
 % Initial Values
 CONTROL_MODE = CONTROL_LANDED;
@@ -91,7 +91,7 @@ jump_count = 0;
 FIRST_RUN = 1;
 FIRST_GOTOPOS = 1;
 i = 1;
-TimeStamps = [];
+Time = [];
 Positions = [];
 Orientations = [];
 Lintwists = [];
@@ -107,6 +107,7 @@ imu_q = 0;
 imu_r = 0;
 rawcont = zeros(4,1);
 
+t0_exp = clock;
 fprintf('Ready to Rock \n');
 
 while (1)
@@ -435,21 +436,20 @@ switch CONTROL_MODE
         % calculate desired state according to current time and desired
         % trajectory
         % calculate control inputs according to desired state
-        shift = [-2 0 0.5]';
         
         current_position = coax_state(1:3);
         if (FIRST_TRAJECTORY)
             if (TRAJECTORY_TYPE == TRAJECTORY_POLY)
                 % compute trajectory
-                load ../../path_planning/trajectory10
-                initial_trajectory_position = traj_param(1:3,end) + shift;
+                load ../../path_planning/trajectory8
+                initial_trajectory_position = traj_param(1:3,end);
                 initial_trajectory_orientation = -pi;
             else
                 [~,initial_pose] = trajectory_generation(0,TRAJECTORY_TYPE);
                 initial_trajectory_position = initial_pose(1:3);
                 initial_trajectory_orientation = initial_pose(4);
             end
-            if (norm(current_position - initial_trajectory_position) > 0.05)
+            if (norm(current_position - initial_trajectory_position) > 0.15)
                 CONTROL_MODE = CONTROL_GOTOPOS;
                 FIRST_GOTOPOS = 1;
                 SERVICE_TRAJECTORY = 1;
@@ -473,7 +473,7 @@ switch CONTROL_MODE
                     end
                     traj = traj_param((k_gtp-1)*3+1:k_gtp*3,:);
                     n_poly = size(traj,2)-1;
-                    x_T = zeros(3,1) + shift;
+                    x_T = zeros(3,1);
                     v_T = zeros(3,1);
                     a_T = zeros(3,1);
                     for j = 1:n_poly+1
@@ -490,7 +490,7 @@ switch CONTROL_MODE
                     [Fx_des, Fy_des, Fz_des, Mz_des, e_i] = control_function(coax_state, Rb2w, trajectory, e_i, dt, param, contr_param);
                 else
                     CONTROL_MODE = CONTROL_HOVER; % in the end
-                    hover_position = poly_end_pos + shift;
+                    hover_position = poly_end_pos;
                     hover_orientation = initial_trajectory_orientation;
                     trajectory = [hover_position' 0 0 0 0 0 0 hover_orientation 0]';
                     [Fx_des, Fy_des, Fz_des, Mz_des, e_i] = control_function(coax_state, Rb2w, trajectory, e_i, dt, param, contr_param);
@@ -499,7 +499,7 @@ switch CONTROL_MODE
                 trajectory = trajectory_generation(dt_traj,TRAJECTORY_TYPE);
                 [Fx_des, Fy_des, Fz_des, Mz_des, e_i] = control_function(coax_state, Rb2w, trajectory, e_i, dt, param, contr_param);
             end
-            if (dt_traj > 20)
+            if (dt_traj > 40)
                 CONTROL_MODE = CONTROL_LANDING;
                 FIRST_LANDING = 1;
             end
@@ -576,14 +576,14 @@ geometry_msgs_Quaternion('send',cid,FM_des);
 prev_time = time;
 
 %%%%%%%%%
-if (CONTROL_MODE == CONTROL_HOVER)
-    if 1%(dt_traj > 0)
+if (CONTROL_MODE == CONTROL_TRAJECTORY)
+    if (dt_traj > 0)
         pos = [odom.pose.pose.position.x odom.pose.pose.position.y odom.pose.pose.position.z]';
         ori = [odom.pose.pose.orientation.x odom.pose.pose.orientation.y odom.pose.pose.orientation.z odom.pose.pose.orientation.w]';
         lintwist = [odom.twist.twist.linear.x odom.twist.twist.linear.y odom.twist.twist.linear.z]';
         angtwist = [odom.twist.twist.angular.x odom.twist.twist.angular.y odom.twist.twist.angular.z]';
 
-        TimeStamps(i) = odom.header.stamp;
+        Time(i) = etime(time,t0_exp);
         Positions(:,i) = pos;
         Orientations(:,i) = ori;
         Lintwists(:,i) = lintwist;
@@ -604,8 +604,8 @@ end
 end % end of loop
 
 %%%%%%%%%
-if (~isempty(TimeStamps))
-    Data.time = TimeStamps - TimeStamps(1);
+if (~isempty(Time))
+    Data.time = Time - Time(1);
     Data.position = Positions;
     Data.orientation = Orientations;
     Data.lintwist = Lintwists;
@@ -615,7 +615,7 @@ if (~isempty(TimeStamps))
     Data.rawcontrol = Rawcontrol;
     Data.gyros = Gyros;
     
-    save test_imu_yawcomp Data
+%     save gumstix_horzoscil Data
 end
 %%%%%%%%%
 

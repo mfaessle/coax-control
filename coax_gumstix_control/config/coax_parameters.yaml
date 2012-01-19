@@ -1,4 +1,4 @@
-mass: 0.302
+mass: 0.333
 
 inertia:
   Ixx: 1.837e-3
@@ -18,18 +18,18 @@ spring_constant:
   lower: 0.190327
 
 thrust_factor:
-  upper: 2.03195e-5
-  lower: 3.69007e-5
+  upper: 2.03355e-5
+  lower: 3.87023e-5
 
 moment_factor:
-  upper: 1.0169e-6
+  upper: 1.01907e-6
   lower: 8.94525e-7
 
 following_time:
   bar: 1.78956
   motors:
-    upper: 0.192567
-    lower: 0.115429
+    upper: 0.193116
+    lower: 0.113728
 
 speed_conversion:
   slope:
@@ -44,7 +44,7 @@ phase_lag:
     upper: -0.00206728
     lower: 0.00181741
   offset:
-    upper: 0.176401
-    lower: 0.0145523
+    upper: 0.35
+    lower: 0.35
 
 max_swashplate_angle: 0.26

@@ -25,6 +25,7 @@
       <remap from="/coax_gumstix_control/nav_mode" to="/matlab_nav_mode"/>
 
       <remap from="/coax_gumstix_control/rawcontrol" to="/rawcontrol"/>
+      <remap from="/coax_gumstix_control/rawcontrol_ipc" to="/rawcontrol_ipc"/>
       <remap from="/coax_gumstix_control/info" to="/coax_info"/>
       <remap from="/coax_gumstix_control/imu" to="/coax_imu"/>
       <remap from="/coax_gumstix_control/control_mode" to="/control_mode"/>

@@ -101,6 +101,9 @@ private:
 	
 	std::vector<ros::ServiceServer> set_control_mode;
 	
+	ros::TransportHints hints_fmdes;
+	ros::TransportHints hints_odom;
+	
 	model_params_t model_params;
 	control_params_t control_params;
 	
