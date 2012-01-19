@@ -240,7 +240,7 @@ void CoaxRosControl::coaxOdomCallback(const nav_msgs::Odometry::ConstPtr & messa
 			dt_start = time_now - start_time;
 			if (dt_start < IDLE_TIME/2){
 				control[0] = 0.35;
-				control[1] = 0;
+				control[1] = 0.35;
 				control[2] = 0;
 				control[3] = 0;
 			}else if (dt_start < IDLE_TIME){
